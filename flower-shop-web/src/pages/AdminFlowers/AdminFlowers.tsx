@@ -4,6 +4,7 @@ import {
   Drawer,
   Empty,
   Form,
+  Grid,
   Image,
   Input,
   InputNumber,
@@ -76,6 +77,7 @@ function fromForm(values: FlowerForm): Flower {
 type FeaturedFilter = "all" | "featured" | "normal";
 
 export function AdminFlowers() {
+  const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<FlowerForm>();
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -347,7 +349,7 @@ export function AdminFlowers() {
         title={editing ? `编辑作品 · ${editing.name}` : "新增作品"}
         open={drawerOpen}
         onClose={closeDrawer}
-        width={720}
+        width={screens.lg ? 720 : "100%"}
         destroyOnHidden
         extra={
           <Space>

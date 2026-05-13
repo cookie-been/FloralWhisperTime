@@ -1,4 +1,4 @@
-import { Button, Empty, Progress, Spin, Tag, message } from "antd";
+import { Button, Empty, Grid, Progress, Spin, Tag, message } from "antd";
 import { ArrowRight, Flower2, Image as ImageIcon, MapPin, Sparkles, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +21,7 @@ function formatDate(value?: string) {
 }
 
 export function AdminDashboard() {
+  const screens = Grid.useBreakpoint();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -126,7 +127,7 @@ export function AdminDashboard() {
               percent={summary.featuredRate}
               strokeColor="#2E7D32"
               trailColor="#e7e0d7"
-              size={220}
+              size={screens.md ? 220 : 184}
               format={(percent) => (
                 <div className="text-center">
                   <div className="text-3xl font-semibold text-[#1b281e]">{percent}%</div>
