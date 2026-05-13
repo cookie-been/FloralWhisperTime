@@ -36,8 +36,12 @@ a {
 
 .admin-sidebar {
   background:
-    radial-gradient(circle at top, rgba(116, 150, 120, 0.24), transparent 34%),
-    linear-gradient(180deg, #1f3126 0%, #23372b 56%, #1b2b21 100%);
+    radial-gradient(circle at top, rgba(168, 196, 171, 0.24), transparent 34%),
+    linear-gradient(180deg, #18241c 0%, #223228 56%, #152019 100%);
+}
+
+.admin-nav-item {
+  backdrop-filter: blur(12px);
 }
 
 .admin-panel {

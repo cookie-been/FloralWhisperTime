@@ -41,8 +41,10 @@ export function AdminShell() {
                   end={item.path === "/admin"}
                   className={({ isActive }) =>
                     [
-                      "flex items-start gap-3 rounded-lg px-3 py-3 transition",
-                      isActive ? "bg-white text-[#1f3d2d] shadow-[0_12px_30px_rgba(0,0,0,0.18)]" : "text-white/78 hover:bg-white/8 hover:text-white",
+                      "admin-nav-item flex items-start gap-3 rounded-lg px-3 py-3 transition",
+                      isActive
+                        ? "border border-white/70 bg-white text-[#1f3d2d] shadow-[0_12px_30px_rgba(0,0,0,0.18)]"
+                        : "border border-white/10 bg-white/8 text-white hover:border-white/24 hover:bg-white/14 hover:text-white",
                     ].join(" ")
                   }
                 >
@@ -51,14 +53,14 @@ export function AdminShell() {
                       <span
                         className={[
                           "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                          isActive ? "bg-[#eef1e9] text-forest" : "bg-white/8 text-white/88",
+                          isActive ? "bg-[#eef1e9] text-forest" : "bg-white/14 text-white",
                         ].join(" ")}
                       >
                         <Icon size={18} />
                       </span>
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold">{item.label}</span>
-                        <span className={["mt-1 block text-xs leading-5", isActive ? "text-[#58725f]" : "text-white/58"].join(" ")}>
+                        <span className={["mt-1 block text-xs leading-5", isActive ? "text-[#58725f]" : "text-white/74"].join(" ")}>
                           {item.description}
                         </span>
                       </span>
@@ -72,12 +74,12 @@ export function AdminShell() {
           <div className="mt-auto space-y-3 pt-8">
             <NavLink
               to={adminPublicLink.path}
-              className="flex items-center justify-between rounded-lg border border-white/12 bg-white/6 px-4 py-3 text-sm font-medium text-white/85 transition hover:bg-white/10 hover:text-white"
+              className="flex items-center justify-between rounded-lg border border-white/16 bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:border-white/28 hover:bg-white/16"
             >
               <span>{adminPublicLink.label}</span>
               <ArrowUpRight size={16} />
             </NavLink>
-            <Button block size="large" icon={<LogOut size={16} />} onClick={logout}>
+            <Button block size="large" icon={<LogOut size={16} />} onClick={logout} className="border-white/18 bg-white/10 !text-white hover:!border-white/28 hover:!bg-white/16">
               退出登录
             </Button>
           </div>

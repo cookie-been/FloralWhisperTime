@@ -1,4 +1,4 @@
-import { Button, Empty, Spin, Tag, message } from "antd";
+import { Button, Empty, Progress, Spin, Tag, message } from "antd";
 import { ArrowRight, Flower2, Image as ImageIcon, MapPin, Sparkles, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
@@ -44,6 +44,15 @@ export function AdminDashboard() {
     const recentFlowers = [...data.flowers]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 4);
+    const categoryDistribution = data.categories
+      .filter((item) => item.id !== "all")
+      .map((category) => ({
+        id: category.id,
+        name: category.name,
+        count: data.flowers.filter((flower) => flower.categoryId === category.id).length,
+      }))
+      .sort((a, b) => b.count - a.count);
+    const featuredRate = data.flowers.length ? Math.round((featuredCount / data.flowers.length) * 100) : 0;
 
     return {
       categoryCount,
@@ -51,6 +60,8 @@ export function AdminDashboard() {
       latestFlower,
       attentionFlowers,
       recentFlowers,
+      categoryDistribution,
+      featuredRate,
     };
   }, [data]);
 
@@ -79,7 +90,7 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-4">
         {stats.map((item) => {
           const Icon = item.icon;
           return (
@@ -97,6 +108,70 @@ export function AdminDashboard() {
             </div>
           );
         })}
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+        <div className="admin-panel p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Charts</p>
+              <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">精选占比</h3>
+            </div>
+            <Tag color={summary.featuredRate >= 40 ? "green" : "gold"}>{summary.featuredRate}%</Tag>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center">
+            <Progress
+              type="dashboard"
+              percent={summary.featuredRate}
+              strokeColor="#2E7D32"
+              trailColor="#e7e0d7"
+              size={220}
+              format={(percent) => (
+                <div className="text-center">
+                  <div className="text-3xl font-semibold text-[#1b281e]">{percent}%</div>
+                  <div className="mt-1 text-sm text-muted">作品处于精选状态</div>
+                </div>
+              )}
+            />
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg bg-[#fbfaf8] px-4 py-4">
+              <p className="text-sm font-medium text-muted">精选作品</p>
+              <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{summary.featuredCount}</p>
+            </div>
+            <div className="rounded-lg bg-[#fbfaf8] px-4 py-4">
+              <p className="text-sm font-medium text-muted">普通作品</p>
+              <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{data.flowers.length - summary.featuredCount}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="admin-panel p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Charts</p>
+              <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">分类分布</h3>
+            </div>
+            <span className="text-sm text-muted">{summary.categoryCount} 个分类</span>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            {summary.categoryDistribution.map((item) => {
+              const percent = data.flowers.length ? Math.round((item.count / data.flowers.length) * 100) : 0;
+              return (
+                <div key={item.id}>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-[#1b281e]">{item.name}</p>
+                    <p className="text-sm text-muted">{item.count} 件</p>
+                  </div>
+                  <Progress percent={percent} showInfo={false} strokeColor="#6AA96B" trailColor="#ebe4da" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
