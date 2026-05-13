@@ -72,7 +72,7 @@ export function AdminShell() {
 
   return (
     <div className="min-h-screen bg-[#f6f3ee] text-ink">
-      <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[272px_minmax(0,1fr)]">
+      <div className="grid min-h-screen w-full lg:grid-cols-[288px_minmax(0,1fr)] 2xl:px-5">
         <aside className="admin-sidebar hidden min-h-full flex-col border-r border-white/10 px-5 py-6 lg:flex">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">Floral Whisper</p>
