@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Form, Input, InputNumber, message } from "antd";
+import { Button, Form, Input, InputNumber, Upload, message } from "antd";
+import type { RcFile } from "antd/es/upload";
 import { ArrowUpRight, Building2, Image as ImageIcon, MapPin, Sparkles } from "lucide-react";
-import { getBrandStory, getShopInfo, getSiteConfig, updateSiteConfig } from "@/services/api";
+import { getBrandStory, getShopInfo, getSiteConfig, updateSiteConfig, uploadFlowerImage } from "@/services/api";
 import type { BrandStory, ShopInfo, SiteConfig } from "@/types";
 
 type SettingsForm = SiteConfig & {
@@ -95,6 +96,17 @@ export function AdminSettings() {
     sectionRefs[key].current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleHeroUpload = async (file: RcFile) => {
+    try {
+      const result = await uploadFlowerImage(file);
+      form.setFieldValue("heroImage", result.url);
+      message.success("首屏背景图已上传");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "上传失败");
+    }
+    return false;
+  };
+
   if (booting) {
     return <div className="admin-panel px-6 py-16 text-center text-muted">正在载入站点配置...</div>;
   }
@@ -137,8 +149,15 @@ export function AdminSettings() {
               <Form.Item name="heroTitle" label="首页主标题" rules={[{ required: true, message: "请输入首页主标题" }]}>
                 <Input />
               </Form.Item>
-              <Form.Item name="heroImage" label="首屏背景图 URL">
-                <Input />
+              <Form.Item label="首屏背景图">
+                <div className="space-y-3">
+                  <Form.Item name="heroImage" noStyle>
+                    <Input placeholder="可直接粘贴图片 URL，或使用下方上传按钮" />
+                  </Form.Item>
+                  <Upload beforeUpload={handleHeroUpload} showUploadList={false} accept="image/*">
+                    <Button>上传图片并回填</Button>
+                  </Upload>
+                </div>
               </Form.Item>
             </div>
             <Form.Item name="heroDescription" label="首页简介">
