@@ -1,0 +1,36 @@
+.filter-row {
+  display: flex;
+  gap: 16rpx;
+  margin: 24rpx 0;
+}
+
+.filter-row button {
+  margin: 0;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: #666666;
+  font-size: 24rpx;
+  line-height: 60rpx;
+}
+
+.filter-row button::after {
+  border: 0;
+}
+
+.filter-row button.active {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+.flower-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
+}
+
+.empty {
+  padding: 80rpx 24rpx;
+  text-align: center;
+  color: #666666;
+}

@@ -1,0 +1,23 @@
+.map-card {
+  overflow: hidden;
+  border-radius: 24rpx;
+  background: #ffffff;
+  box-shadow: 0 16rpx 40rpx rgba(46, 125, 50, 0.1);
+}
+
+.map {
+  width: 100%;
+  height: 420rpx;
+}
+
+.nav-button {
+  margin: 24rpx;
+  border-radius: 999rpx;
+  background: #2e7d32;
+  color: #ffffff;
+  font-size: 28rpx;
+}
+
+.nav-button::after {
+  border: 0;
+}

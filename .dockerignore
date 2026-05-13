@@ -1,0 +1,11 @@
+.git
+.tools
+**/node_modules
+**/dist
+**/*.log
+**/*.err
+**/.DS_Store
+**/tsconfig.tsbuildinfo
+*.zip
+*.zip:Zone.Identifier
+

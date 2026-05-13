@@ -1,0 +1,30 @@
+.tabs {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.tabs-inner {
+  display: inline-flex;
+  gap: 16rpx;
+  padding: 4rpx 0 10rpx;
+}
+
+.tab {
+  margin: 0;
+  border: 0;
+  border-radius: 999rpx;
+  background: #ffffff;
+  padding: 0 28rpx;
+  color: #666666;
+  font-size: 26rpx;
+  line-height: 68rpx;
+}
+
+.tab::after {
+  border: 0;
+}
+
+.tab.active {
+  background: #2e7d32;
+  color: #ffffff;
+}

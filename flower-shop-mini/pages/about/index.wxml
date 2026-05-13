@@ -1,0 +1,17 @@
+<view class="page">
+  <image class="hero" src="{{story.images[0]}}" mode="aspectFill" />
+  <view class="panel story">
+    <text class="eyebrow">Brand Story</text>
+    <text class="title">{{story.title}}</text>
+    <text class="subtitle">{{story.subtitle}}</text>
+    <text class="content">{{story.content}}</text>
+  </view>
+  <view class="section-title">店铺信息</view>
+  <view class="panel shop">
+    <text class="shop-name">{{shop.name}}</text>
+    <text>地址：{{shop.address}}</text>
+    <text>电话：{{shop.phone}}</text>
+    <text>微信：{{shop.wechat}}</text>
+    <text>营业时间：周一至周五 09:30-21:00，周末 10:00-21:30</text>
+  </view>
+</view>

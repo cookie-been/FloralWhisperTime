@@ -1,0 +1,28 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/category/index",
+    "pages/flower-detail/index",
+    "pages/about/index",
+    "pages/contact/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "花语时光",
+    "navigationBarBackgroundColor": "#2E7D32",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#E8F5E9"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#2E7D32",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/category/index", "text": "分类" },
+      { "pagePath": "pages/about/index", "text": "关于我们" },
+      { "pagePath": "pages/contact/index", "text": "联系我们" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,74 @@
+.detail {
+  margin-top: 24rpx;
+  padding: 30rpx;
+}
+
+.name-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.name {
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.price {
+  flex-shrink: 0;
+  color: #2e7d32;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.desc,
+.value {
+  display: block;
+  color: #666666;
+  font-size: 26rpx;
+  line-height: 1.8;
+}
+
+.desc {
+  margin-top: 20rpx;
+}
+
+.info-block {
+  margin-top: 28rpx;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8rpx;
+  color: #333333;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 24rpx;
+}
+
+.tag {
+  border-radius: 999rpx;
+  background: #e8f5e9;
+  padding: 8rpx 18rpx;
+  color: #2e7d32;
+  font-size: 24rpx;
+}
+
+.related-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
+}
+
+.empty {
+  padding: 80rpx 24rpx;
+  text-align: center;
+  color: #666666;
+}

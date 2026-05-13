@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "category-tabs": "/components/CategoryTabs/index",
+    "flower-card": "/components/FlowerCard/index"
+  },
+  "navigationBarTitleText": "花束分类"
+}

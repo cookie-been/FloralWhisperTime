@@ -1,0 +1,22 @@
+<view class="page">
+  <swiper-banner items="{{banners}}" />
+  <view class="notice panel">今日可预约婚礼手捧花、生日花束和开业花篮。</view>
+
+  <view class="section-title">花束分类</view>
+  <view class="category-grid">
+    <view wx:for="{{categories}}" wx:key="id" wx:if="{{item.id !== 'all'}}" class="category" data-id="{{item.id}}" bindtap="goCategory">
+      <text class="category-icon">{{item.name.slice(0, 1)}}</text>
+      <text>{{item.name}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">热门花束</view>
+  <view class="flower-grid">
+    <flower-card wx:for="{{hotFlowers}}" wx:key="id" flower="{{item}}" show-price />
+  </view>
+
+  <view class="story panel" bindtap="goAbout">
+    <text class="story-title">{{siteConfig.heroTitle || '让花束像一封慢慢抵达的信'}}</text>
+    <text class="story-desc">{{siteConfig.heroDescription || '了解花语时光的品牌故事'}}</text>
+  </view>
+</view>

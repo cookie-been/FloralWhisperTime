@@ -1,0 +1,9 @@
+<swiper class="banner" indicator-dots autoplay circular interval="3000">
+  <swiper-item wx:for="{{items}}" wx:key="id">
+    <image class="banner-image" src="{{item.image}}" mode="aspectFill" />
+    <view class="banner-copy">
+      <text class="banner-title">{{item.title}}</text>
+      <text class="banner-desc">{{item.desc}}</text>
+    </view>
+  </swiper-item>
+</swiper>

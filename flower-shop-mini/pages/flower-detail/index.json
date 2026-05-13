@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "image-gallery": "/components/ImageGallery/index",
+    "flower-card": "/components/FlowerCard/index"
+  },
+  "navigationBarTitleText": "花束详情"
+}

@@ -1,0 +1,13 @@
+<scroll-view scroll-x class="tabs">
+  <view class="tabs-inner">
+    <button
+      wx:for="{{categories}}"
+      wx:key="id"
+      class="tab {{activeId === item.id ? 'active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="handleChange"
+    >
+      {{item.name}}
+    </button>
+  </view>
+</scroll-view>

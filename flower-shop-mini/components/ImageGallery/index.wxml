@@ -1,0 +1,7 @@
+<view class="gallery">
+  <swiper class="gallery-main" indicator-dots circular>
+    <swiper-item wx:for="{{images}}" wx:key="*this">
+      <image class="gallery-image" src="{{item}}" mode="aspectFill" bindtap="preview" data-current="{{item}}" />
+    </swiper-item>
+  </swiper>
+</view>

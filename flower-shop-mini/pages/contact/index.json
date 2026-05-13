@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "shop-map": "/components/ShopMap/index"
+  },
+  "navigationBarTitleText": "联系我们"
+}

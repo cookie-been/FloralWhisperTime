@@ -1,0 +1,29 @@
+<view class="page" wx:if="{{flower}}">
+  <image-gallery images="{{flower.images}}" />
+  <view class="detail panel">
+    <view class="name-row">
+      <text class="name">{{flower.name}}</text>
+      <text class="price">¥{{flower.price}}</text>
+    </view>
+    <text class="desc">{{flower.description}}</text>
+    <view class="info-block">
+      <text class="label">主要花材</text>
+      <text class="value">{{materialsText}}</text>
+    </view>
+    <view class="info-block">
+      <text class="label">花语寓意</text>
+      <text class="value">{{flower.meaning}}</text>
+    </view>
+    <view class="tags">
+      <text wx:for="{{flower.tags}}" wx:key="*this" class="tag">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">相关推荐</view>
+  <view class="related-list">
+    <flower-card wx:for="{{related}}" wx:key="id" flower="{{item}}" show-price />
+  </view>
+</view>
+<view class="page" wx:else>
+  <view class="empty panel">作品不存在或加载中</view>
+</view>

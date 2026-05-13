@@ -1,0 +1,30 @@
+package com.floralwhisper.common;
+
+import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+  @ExceptionHandler(ApiException.class)
+  public ResponseEntity<Map<String, String>> handleApiException(ApiException error) {
+    return ResponseEntity.status(error.getStatus()).body(Map.of("message", error.getMessage()));
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException error) {
+    FieldError fieldError = error.getBindingResult().getFieldError();
+    String message = fieldError == null ? "参数错误" : fieldError.getDefaultMessage();
+    return ResponseEntity.badRequest().body(Map.of("message", message));
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String, String>> handleException(Exception error) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "服务器错误"));
+  }
+}
+

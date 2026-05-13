@@ -1,0 +1,12 @@
+<view class="page">
+  <category-tabs categories="{{categories}}" active-id="{{activeCategoryId}}" bind:change="handleCategoryChange" />
+  <view class="filter-row">
+    <button class="{{sortBy === 'featured' ? 'active' : ''}}" data-sort="featured" bindtap="handleSort">热门</button>
+    <button class="{{sortBy === 'latest' ? 'active' : ''}}" data-sort="latest" bindtap="handleSort">最新</button>
+    <button class="{{sortBy === 'price_asc' ? 'active' : ''}}" data-sort="price_asc" bindtap="handleSort">价格</button>
+  </view>
+  <view wx:if="{{flowers.length}}" class="flower-list">
+    <flower-card wx:for="{{flowers}}" wx:key="id" flower="{{item}}" show-price />
+  </view>
+  <view wx:else class="empty panel">没有找到匹配的花束作品</view>
+</view>

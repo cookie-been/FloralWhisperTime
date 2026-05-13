@@ -1,0 +1,251 @@
+{
+  "categories": [
+    {
+      "id": "all",
+      "name": "全部",
+      "icon": "leaf",
+      "description": "花语时光全部作品",
+      "sort": 999
+    },
+    {
+      "id": "wedding",
+      "name": "婚礼系列",
+      "icon": "rings",
+      "description": "仪式感与浪漫并存",
+      "sort": 100
+    },
+    {
+      "id": "daily",
+      "name": "日常花礼",
+      "icon": "gift",
+      "description": "适合生日、探望与日常惊喜",
+      "sort": 90
+    },
+    {
+      "id": "opening",
+      "name": "开业花篮",
+      "icon": "store",
+      "description": "明亮体面的商务花礼",
+      "sort": 80
+    },
+    {
+      "id": "seasonal",
+      "name": "节气花束",
+      "icon": "sun",
+      "description": "顺应季节的自然花材",
+      "sort": 70
+    },
+    {
+      "id": "custom",
+      "name": "定制花艺",
+      "icon": "scissors",
+      "description": "空间、宴会与专属主题定制",
+      "sort": 60
+    },
+    {
+      "id": "preserved",
+      "name": "永生花系列",
+      "icon": "sparkles",
+      "description": "长久保存的温柔纪念",
+      "sort": 50
+    }
+  ],
+  "flowers": [
+    {
+      "id": "wedding_001",
+      "name": "永恒之约",
+      "categoryId": "wedding",
+      "images": [
+        "https://picsum.photos/seed/wedding-rose-1/900/1100",
+        "https://picsum.photos/seed/wedding-rose-2/900/1100",
+        "https://picsum.photos/seed/wedding-rose-3/900/1100"
+      ],
+      "price": 899,
+      "description": "以白玫瑰与淡紫绣球构成层次，适合户外婚礼、求婚和纪念日。",
+      "materials": [
+        "白玫瑰",
+        "绣球",
+        "尤加利叶",
+        "满天星"
+      ],
+      "meaning": "象征纯洁的爱情与长久承诺。",
+      "tags": [
+        "婚礼",
+        "白色系",
+        "清新",
+        "户外"
+      ],
+      "featured": true,
+      "sort": 100,
+      "createdAt": "2026-01-15T10:00:00Z"
+    },
+    {
+      "id": "daily_001",
+      "name": "晨光奶油",
+      "categoryId": "daily",
+      "images": [
+        "https://picsum.photos/seed/daily-cream-1/900/1100",
+        "https://picsum.photos/seed/daily-cream-2/900/1100"
+      ],
+      "price": 268,
+      "description": "奶油色玫瑰搭配洋桔梗，柔和明亮，是日常表达心意的轻盈选择。",
+      "materials": [
+        "奶油玫瑰",
+        "洋桔梗",
+        "小菊",
+        "银叶菊"
+      ],
+      "meaning": "把平凡一天变成值得收藏的片刻。",
+      "tags": [
+        "生日",
+        "奶油色",
+        "温柔"
+      ],
+      "featured": true,
+      "sort": 95,
+      "createdAt": "2026-02-03T10:00:00Z"
+    },
+    {
+      "id": "opening_001",
+      "name": "绿野启程",
+      "categoryId": "opening",
+      "images": [
+        "https://picsum.photos/seed/opening-green-1/900/1100",
+        "https://picsum.photos/seed/opening-green-2/900/1100"
+      ],
+      "price": 688,
+      "description": "绿色系叶材和跳色花材组合，适合新店开业、品牌活动和展厅布置。",
+      "materials": [
+        "向日葵",
+        "跳舞兰",
+        "龟背竹",
+        "散尾葵"
+      ],
+      "meaning": "寓意生长、繁盛与新的开始。",
+      "tags": [
+        "开业",
+        "商务",
+        "绿色系"
+      ],
+      "featured": true,
+      "sort": 88,
+      "createdAt": "2026-02-14T10:00:00Z"
+    },
+    {
+      "id": "seasonal_001",
+      "name": "春日来信",
+      "categoryId": "seasonal",
+      "images": [
+        "https://picsum.photos/seed/spring-letter-1/900/1100",
+        "https://picsum.photos/seed/spring-letter-2/900/1100"
+      ],
+      "price": 328,
+      "description": "以郁金香、风信子和小苍兰表现春天的轻盈气息。",
+      "materials": [
+        "郁金香",
+        "风信子",
+        "小苍兰",
+        "蕾丝花"
+      ],
+      "meaning": "适合把春天和问候一起送达。",
+      "tags": [
+        "节气",
+        "春日",
+        "浅色系"
+      ],
+      "featured": false,
+      "sort": 78,
+      "createdAt": "2026-03-01T10:00:00Z"
+    }
+  ],
+  "shopInfo": {
+    "name": "花语时光",
+    "phone": "021-6688-5200",
+    "wechat": "FloralWhisperTime",
+    "address": "上海市徐汇区衡山路 88 号 1 层",
+    "latitude": 31.2047,
+    "longitude": 121.4442,
+    "hours": {
+      "monday": {
+        "open": "09:30",
+        "close": "21:00"
+      },
+      "tuesday": {
+        "open": "09:30",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "09:30",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "09:30",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "09:30",
+        "close": "21:30"
+      },
+      "saturday": {
+        "open": "10:00",
+        "close": "21:30"
+      },
+      "sunday": {
+        "open": "10:00",
+        "close": "20:30"
+      }
+    }
+  },
+  "brandStory": {
+    "title": "让花束像一封慢慢抵达的信",
+    "subtitle": "花语时光相信，每一束花都应该有清楚的情绪和自然的呼吸。",
+    "content": "我们从季节花材出发，为婚礼、日常赠礼、商业空间和私人宴会设计花艺。店铺坚持少量精选、手工制作，用克制的色彩和舒展的结构表达真诚心意。",
+    "images": [
+      "https://picsum.photos/seed/shop-front/1200/800",
+      "https://picsum.photos/seed/florist-table/1200/800"
+    ]
+  },
+  "teamMembers": [
+    {
+      "id": "tang",
+      "name": "唐予安",
+      "title": "主理人 / 花艺设计师",
+      "avatar": "https://picsum.photos/seed/florist-tang/600/600",
+      "bio": "擅长自然系婚礼花艺和空间花艺，偏爱低饱和配色。"
+    },
+    {
+      "id": "lin",
+      "name": "林向晚",
+      "title": "花束设计师",
+      "avatar": "https://picsum.photos/seed/florist-lin/600/600",
+      "bio": "负责日常花礼与节气花束，让小束花也拥有完整的故事。"
+    }
+  ],
+  "contacts": [],
+  "siteConfig": {
+    "brandName": "花语时光",
+    "heroEyebrow": "清新文艺 ? 自然温暖",
+    "heroTitle": "花语时光",
+    "heroDescription": "用季节花材和克制色彩，制作适合婚礼、日常赠礼与空间陈列的鲜花作品。",
+    "heroImage": "https://picsum.photos/seed/floral-hero/1920/1080",
+    "primaryCtaText": "浏览作品",
+    "secondaryCtaText": "联系门店",
+    "stats": [
+      {
+        "value": "860+",
+        "label": "已服务客户"
+      },
+      {
+        "value": "320+",
+        "label": "花艺作品"
+      },
+      {
+        "value": "6",
+        "label": "主题分类"
+      }
+    ],
+    "contactIntro": "欢迎预约花束、婚礼花艺、商业空间花艺和节日定制服务。",
+    "businessHoursText": "周一至周五 09:30-21:00，周末 10:00-21:30",
+    "footerDescription": "纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。"
+  }
+}
