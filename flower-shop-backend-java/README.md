@@ -83,6 +83,15 @@ ADMIN_AUTH_SECRET='replace-with-a-long-random-secret' \
 mvn spring-boot:run
 ```
 
+额外安全相关变量：
+
+- `JWT_EXPIRES_IN_SECONDS`：JWT 过期时间，默认 `43200`
+- `JWT_ISSUER`：JWT 签发者，默认 `flower-shop-backend-java`
+- `CORS_ALLOWED_ORIGIN_PATTERNS`：允许来源，默认 `*`
+- `CORS_ALLOWED_METHODS`：允许方法，默认 `GET,POST,PUT,DELETE,OPTIONS`
+- `CORS_ALLOWED_HEADERS`：允许请求头，默认 `*`
+- `CORS_ALLOW_CREDENTIALS`：是否允许携带凭据，默认 `false`
+
 ## 兼容接口
 
 - `GET /api/health`
@@ -102,3 +111,35 @@ mvn spring-boot:run
 - `GET /api/brand-story`
 - `GET /api/team`
 - `POST /api/contact`
+
+## 旧 JSON 导入 MySQL
+
+默认不会在启动时导入旧版 `db.json`。只有显式打开下面的变量时，应用启动后才会执行一次受控导入：
+
+```bash
+JSON_IMPORT_ENABLED=true \
+JSON_IMPORT_PATH=../flower-shop-backend/data/db.json \
+JSON_IMPORT_REPLACE_EXISTING=true \
+mvn spring-boot:run
+```
+
+说明：
+
+- `JSON_IMPORT_ENABLED=true`：开启导入模式
+- `JSON_IMPORT_PATH`：旧版 `db.json` 路径
+- `JSON_IMPORT_REPLACE_EXISTING=true`：允许先清空现有数据再导入；未开启时，库里已有数据会直接失败退出
+
+导入内容包括：
+
+- 分类、花束与子表
+- 站点配置、统计项、门店信息、营业时间
+- 品牌故事与图片
+- 团队成员
+- 联系表单记录
+
+## 验证
+
+```bash
+mvn test
+mvn package
+```

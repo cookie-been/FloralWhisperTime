@@ -1,6 +1,7 @@
 package com.floralwhisper.security;
 
 import com.floralwhisper.config.AppProperties;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+  public static final String TOKEN_EXPIRED_ATTRIBUTE = "jwt.tokenExpired";
+
   private final JwtService jwtService;
   private final AppProperties properties;
 
@@ -35,6 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
               new UsernamePasswordAuthenticationToken(username, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
           SecurityContextHolder.getContext().setAuthentication(authentication);
         }
+      } catch (ExpiredJwtException error) {
+        request.setAttribute(TOKEN_EXPIRED_ATTRIBUTE, true);
+        SecurityContextHolder.clearContext();
       } catch (Exception ignored) {
         SecurityContextHolder.clearContext();
       }
@@ -42,4 +48,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 }
-

@@ -3,6 +3,7 @@ package com.floralwhisper.controller;
 import com.floralwhisper.dto.LoginRequest;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.service.AuthService;
+import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,7 @@ public class AdminController {
   }
 
   @PostMapping("/login")
-  public LoginResponse login(@RequestBody LoginRequest request) {
+  public LoginResponse login(@Valid @RequestBody LoginRequest request) {
     return authService.login(request);
   }
 
@@ -29,4 +30,3 @@ public class AdminController {
     return authService.currentAdmin();
   }
 }
-

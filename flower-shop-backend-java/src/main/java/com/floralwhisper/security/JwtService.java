@@ -2,6 +2,7 @@ package com.floralwhisper.security;
 
 import com.floralwhisper.config.AppProperties;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,7 @@ public class JwtService {
     Instant now = Instant.now();
     Instant expiresAt = now.plusSeconds(properties.getJwt().getExpiresInSeconds());
     return Jwts.builder()
+        .issuer(properties.getJwt().getIssuer())
         .subject(username)
         .issuedAt(Date.from(now))
         .expiration(Date.from(expiresAt))
@@ -30,8 +32,17 @@ public class JwtService {
   }
 
   public String parseUsername(String token) {
-    Claims claims = Jwts.parser().verifyWith(secretKey()).build().parseSignedClaims(token).getPayload();
+    Claims claims = parseClaims(token);
     return claims.getSubject();
+  }
+
+  public Claims parseClaims(String token) throws JwtException {
+    Claims claims = Jwts.parser().verifyWith(secretKey()).build().parseSignedClaims(token).getPayload();
+    String issuer = properties.getJwt().getIssuer();
+    if (issuer != null && !issuer.isBlank() && !issuer.equals(claims.getIssuer())) {
+      throw new JwtException("Unexpected JWT issuer");
+    }
+    return claims;
   }
 
   private SecretKey secretKey() {
@@ -39,4 +50,3 @@ public class JwtService {
     return Keys.hmacShaKeyFor(bytes.length >= 32 ? bytes : (properties.getJwt().getSecret() + "00000000000000000000000000000000").getBytes(StandardCharsets.UTF_8));
   }
 }
-

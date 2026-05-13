@@ -66,7 +66,7 @@ public class SiteController {
   }
 
   @PutMapping("/site-config")
-  public SiteConfigUpdateResponse updateSiteConfig(@RequestBody SiteConfigUpdateRequest request) {
+  public SiteConfigUpdateResponse updateSiteConfig(@Valid @RequestBody SiteConfigUpdateRequest request) {
     return siteService.updateSiteConfig(request);
   }
 
@@ -97,4 +97,3 @@ public class SiteController {
     return fileStorageService.store(file);
   }
 }
-

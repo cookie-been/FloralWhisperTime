@@ -14,9 +14,11 @@ import com.floralwhisper.mapper.FlowerMapper;
 import com.floralwhisper.mapper.FlowerMaterialMapper;
 import com.floralwhisper.mapper.FlowerTagMapper;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
@@ -29,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FlowerService {
+  private static final DateTimeFormatter API_CREATED_AT_FORMATTER = DateTimeFormatter.ISO_INSTANT;
+
   private final FlowerMapper flowerMapper;
   private final FlowerImageMapper flowerImageMapper;
   private final FlowerMaterialMapper flowerMaterialMapper;
@@ -128,9 +132,13 @@ public class FlowerService {
   private LocalDateTime parseDate(String value) {
     if (value == null || value.isBlank()) return LocalDateTime.now();
     try {
-      return OffsetDateTime.parse(value).toLocalDateTime();
+      return OffsetDateTime.parse(value).withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
     } catch (DateTimeParseException ignored) {
-      return LocalDateTime.now();
+      try {
+        return LocalDateTime.parse(value);
+      } catch (DateTimeParseException nestedIgnored) {
+        return LocalDateTime.now();
+      }
     }
   }
 
@@ -144,7 +152,9 @@ public class FlowerService {
     response.setMeaning(flower.getMeaning());
     response.setFeatured(Boolean.TRUE.equals(flower.getFeatured()));
     response.setSort(flower.getSort() == null ? 0 : flower.getSort());
-    response.setCreatedAt(flower.getCreatedAt() == null ? OffsetDateTime.now().toString() : flower.getCreatedAt().atOffset(ZoneOffset.UTC).toString());
+    response.setCreatedAt(flower.getCreatedAt() == null
+        ? API_CREATED_AT_FORMATTER.format(Instant.now())
+        : API_CREATED_AT_FORMATTER.format(flower.getCreatedAt().toInstant(ZoneOffset.UTC)));
     response.setImages(selectImages(flower.getId()));
     response.setMaterials(selectMaterials(flower.getId()));
     response.setTags(selectTags(flower.getId()));
