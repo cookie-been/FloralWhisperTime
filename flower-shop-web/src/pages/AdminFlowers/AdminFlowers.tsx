@@ -84,6 +84,7 @@ export function AdminFlowers() {
   const [editing, setEditing] = useState<Flower | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -167,6 +168,8 @@ export function AdminFlowers() {
   };
 
   const handleUpload = async (file: RcFile) => {
+    if (uploading) return false;
+    setUploading(true);
     try {
       const result = await uploadFlowerImage(file);
       const current = form.getFieldValue("images");
@@ -174,11 +177,14 @@ export function AdminFlowers() {
       message.success("图片已上传");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "上传失败");
+    } finally {
+      setUploading(false);
     }
     return false;
   };
 
   const save = async () => {
+    if (saving) return;
     const values = await form.validateFields();
     setSaving(true);
     try {
@@ -196,6 +202,8 @@ export function AdminFlowers() {
   };
 
   const remove = async (id: string) => {
+    if (saving) return;
+    setSaving(true);
     try {
       await deleteFlower(id);
       message.success("作品已删除");
@@ -203,6 +211,8 @@ export function AdminFlowers() {
       await load();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "删除失败");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -440,7 +450,7 @@ export function AdminFlowers() {
                 <Input.TextArea rows={4} placeholder="多个图片 URL 用逗号或换行分隔" />
               </Form.Item>
               <Upload beforeUpload={handleUpload} showUploadList={false} accept="image/*">
-                <Button>上传图片并追加 URL</Button>
+                <Button loading={uploading}>上传图片并追加 URL</Button>
               </Upload>
             </div>
           </div>

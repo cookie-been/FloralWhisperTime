@@ -2,6 +2,7 @@ import type { BrandStory, Category, ContactForm, Flower, FlowerQuery, PaginatedR
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
 const ADMIN_TOKEN_KEY = "flower_shop_admin_token";
+const inFlightMutations = new Map<string, Promise<unknown>>();
 
 export function getAdminToken() {
   return localStorage.getItem(ADMIN_TOKEN_KEY);
@@ -35,6 +36,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function withMutationGuard<T>(key: string, action: () => Promise<T>) {
+  if (inFlightMutations.has(key)) {
+    return Promise.reject(new Error("请求正在处理中，请勿重复提交"));
+  }
+
+  const promise = action().finally(() => {
+    inFlightMutations.delete(key);
+  });
+
+  inFlightMutations.set(key, promise);
+  return promise;
+}
+
 function withQuery(path: string, query: object) {
   const params = new URLSearchParams();
   Object.entries(query as Record<string, unknown>).forEach(([key, value]) => {
@@ -60,10 +74,12 @@ export function getRelatedFlowers(flower: Flower, limit = 3) {
 }
 
 export async function loginAdmin(username: string, password: string) {
-  const result = await request<{ token: string; username: string }>("/api/admin/login", {
-    method: "POST",
-    body: JSON.stringify({ username, password }),
-  });
+  const result = await withMutationGuard("admin:login", () =>
+    request<{ token: string; username: string }>("/api/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    }),
+  );
   setAdminToken(result.token);
   return result;
 }
@@ -82,37 +98,47 @@ export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
   storyContent?: string;
   storyImages?: string[] | string;
 }) {
-  return request<{ siteConfig: SiteConfig; shopInfo: ShopInfo; brandStory: BrandStory }>("/api/site-config", {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+  return withMutationGuard("admin:site-config:update", () =>
+    request<{ siteConfig: SiteConfig; shopInfo: ShopInfo; brandStory: BrandStory }>("/api/site-config", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  );
 }
 
 export function createFlower(flower: Flower) {
-  return request<Flower>("/api/flowers", {
-    method: "POST",
-    body: JSON.stringify(flower),
-  });
+  return withMutationGuard(`admin:flower:create:${flower.id}`, () =>
+    request<Flower>("/api/flowers", {
+      method: "POST",
+      body: JSON.stringify(flower),
+    }),
+  );
 }
 
 export function updateFlower(id: string, flower: Flower) {
-  return request<Flower>(`/api/flowers/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(flower),
-  });
+  return withMutationGuard(`admin:flower:update:${id}`, () =>
+    request<Flower>(`/api/flowers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(flower),
+    }),
+  );
 }
 
 export function deleteFlower(id: string) {
-  return request<void>(`/api/flowers/${id}`, { method: "DELETE" });
+  return withMutationGuard(`admin:flower:delete:${id}`, () =>
+    request<void>(`/api/flowers/${id}`, { method: "DELETE" }),
+  );
 }
 
 export async function uploadFlowerImage(file: File) {
   const formData = new FormData();
   formData.append("file", file);
-  return request<{ url: string }>("/api/uploads", {
-    method: "POST",
-    body: formData,
-  });
+  return withMutationGuard(`admin:upload:${file.name}:${file.size}`, () =>
+    request<{ url: string }>("/api/uploads", {
+      method: "POST",
+      body: formData,
+    }),
+  );
 }
 
 export function getCategories() {
@@ -150,8 +176,10 @@ export function getTeamMembers() {
 }
 
 export function submitContact(form: ContactForm) {
-  return request<{ success: boolean }>("/api/contact", {
-    method: "POST",
-    body: JSON.stringify(form),
-  });
+  return withMutationGuard(`public:contact:${form.phone}:${form.name}`, () =>
+    request<{ success: boolean }>("/api/contact", {
+      method: "POST",
+      body: JSON.stringify(form),
+    }),
+  );
 }

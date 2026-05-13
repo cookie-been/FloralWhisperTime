@@ -35,6 +35,7 @@ export function AdminSettings() {
   const [form] = Form.useForm<SettingsForm>();
   const [loading, setLoading] = useState(false);
   const [booting, setBooting] = useState(true);
+  const [uploadingHero, setUploadingHero] = useState(false);
 
   const brandName = Form.useWatch("brandName", form) ?? "";
   const heroEyebrow = Form.useWatch("heroEyebrow", form) ?? "";
@@ -77,6 +78,7 @@ export function AdminSettings() {
   }, [form]);
 
   const save = async () => {
+    if (loading) return;
     const values = await form.validateFields();
     setLoading(true);
     try {
@@ -97,12 +99,16 @@ export function AdminSettings() {
   };
 
   const handleHeroUpload = async (file: RcFile) => {
+    if (uploadingHero) return false;
+    setUploadingHero(true);
     try {
       const result = await uploadFlowerImage(file);
       form.setFieldValue("heroImage", result.url);
       message.success("首屏背景图已上传");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "上传失败");
+    } finally {
+      setUploadingHero(false);
     }
     return false;
   };
@@ -155,7 +161,7 @@ export function AdminSettings() {
                     <Input placeholder="可直接粘贴图片 URL，或使用下方上传按钮" />
                   </Form.Item>
                   <Upload beforeUpload={handleHeroUpload} showUploadList={false} accept="image/*">
-                    <Button>上传图片并回填</Button>
+                    <Button loading={uploadingHero}>上传图片并回填</Button>
                   </Upload>
                 </div>
               </Form.Item>

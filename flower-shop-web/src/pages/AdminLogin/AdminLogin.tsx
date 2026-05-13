@@ -26,6 +26,7 @@ export function AdminLogin() {
   }
 
   const onFinish = async (values: LoginForm) => {
+    if (loading) return;
     setLoading(true);
     try {
       await loginAdmin(values.username, values.password);
