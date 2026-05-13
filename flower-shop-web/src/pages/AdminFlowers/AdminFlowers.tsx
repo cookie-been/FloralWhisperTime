@@ -1,16 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button, Form, Input, InputNumber, message, Modal, Popconfirm, Select, Space, Switch, Table, Tag, Upload } from "antd";
-import type { RcFile } from "antd/es/upload";
 import {
-  clearAdminToken,
-  createFlower,
-  deleteFlower,
-  getCategories,
-  getFlowers,
-  updateFlower,
-  uploadFlowerImage,
-} from "@/services/api";
+  Button,
+  Drawer,
+  Empty,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Popconfirm,
+  Select,
+  Space,
+  Spin,
+  Switch,
+  Table,
+  Tag,
+  Upload,
+  message,
+} from "antd";
+import type { ColumnsType } from "antd/es/table";
+import type { RcFile } from "antd/es/upload";
+import { ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, Star } from "lucide-react";
+import { createFlower, deleteFlower, getCategories, getFlowers, updateFlower, uploadFlowerImage } from "@/services/api";
 import type { Category, Flower } from "@/types";
 
 type FlowerForm = Omit<Flower, "materials" | "tags" | "images"> & {
@@ -63,46 +73,95 @@ function fromForm(values: FlowerForm): Flower {
   };
 }
 
+type FeaturedFilter = "all" | "featured" | "normal";
+
 export function AdminFlowers() {
-  const navigate = useNavigate();
   const [form] = Form.useForm<FlowerForm>();
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editing, setEditing] = useState<Flower | null>(null);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>("all");
+
+  const watchedImages = Form.useWatch("images", form) ?? "";
+
+  const categoryMap = useMemo(
+    () => new Map(categories.filter((item) => item.id !== "all").map((item) => [item.id, item.name])),
+    [categories],
+  );
 
   const categoryOptions = useMemo(
     () => categories.filter((item) => item.id !== "all").map((item) => ({ label: item.name, value: item.id })),
     [categories],
   );
 
+  const imagePreviewList = useMemo(() => splitText(watchedImages), [watchedImages]);
+
+  const filteredFlowers = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+
+    return flowers.filter((flower) => {
+      const matchesKeyword =
+        !keyword ||
+        [flower.name, flower.description, flower.meaning, flower.tags.join(" "), flower.materials.join(" ")]
+          .join(" ")
+          .toLowerCase()
+          .includes(keyword);
+      const matchesCategory = selectedCategory === "all" || flower.categoryId === selectedCategory;
+      const matchesFeatured =
+        featuredFilter === "all" || (featuredFilter === "featured" ? flower.featured : !flower.featured);
+
+      return matchesKeyword && matchesCategory && matchesFeatured;
+    });
+  }, [featuredFilter, flowers, search, selectedCategory]);
+
+  const metrics = useMemo(
+    () => [
+      { label: "全部作品", value: flowers.length, note: "当前后端数据中的总作品数" },
+      { label: "当前筛选结果", value: filteredFlowers.length, note: "列表中此刻可见的作品数量" },
+      { label: "精选作品", value: flowers.filter((item) => item.featured).length, note: "会更容易在前台重点区域出现" },
+      { label: "分类数量", value: categoryOptions.length, note: "用于前台筛选与后台内容组织" },
+    ],
+    [categoryOptions.length, filteredFlowers.length, flowers],
+  );
+
   const load = async () => {
-    const [categoryList, flowerResult] = await Promise.all([getCategories(), getFlowers({ limit: 200 })]);
-    setCategories(categoryList);
-    setFlowers(flowerResult.list);
+    setLoading(true);
+    try {
+      const [categoryList, flowerResult] = await Promise.all([getCategories(), getFlowers({ limit: 200 })]);
+      setCategories(categoryList);
+      setFlowers(flowerResult.list);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "加载失败");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    load().catch((error) => message.error(error.message));
+    load().catch(() => undefined);
   }, []);
-
-  const logout = () => {
-    clearAdminToken();
-    message.success("已退出管理后台");
-    navigate("/admin/login", { replace: true });
-  };
 
   const startCreate = () => {
     setEditing(null);
     form.setFieldsValue({ ...emptyFlower, id: `daily_${Date.now()}` });
-    setOpen(true);
+    setDrawerOpen(true);
   };
 
   const startEdit = (flower: Flower) => {
     setEditing(flower);
     form.setFieldsValue(toForm(flower));
-    setOpen(true);
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setEditing(null);
+    form.resetFields();
   };
 
   const handleUpload = async (file: RcFile) => {
@@ -119,18 +178,18 @@ export function AdminFlowers() {
 
   const save = async () => {
     const values = await form.validateFields();
-    setLoading(true);
+    setSaving(true);
     try {
       const flower = fromForm(values);
       if (editing) await updateFlower(editing.id, flower);
       else await createFlower(flower);
       message.success(editing ? "作品已更新" : "作品已新增");
-      setOpen(false);
+      closeDrawer();
       await load();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "保存失败");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -138,127 +197,253 @@ export function AdminFlowers() {
     try {
       await deleteFlower(id);
       message.success("作品已删除");
+      if (editing?.id === id) closeDrawer();
       await load();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "删除失败");
     }
   };
 
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+  const columns: ColumnsType<Flower> = [
+    {
+      title: "封面",
+      dataIndex: "images",
+      width: 88,
+      render: (images: string[]) =>
+        images[0] ? <img src={images[0]} alt="" className="h-14 w-14 rounded-lg object-cover" /> : <div className="h-14 w-14 rounded-lg bg-[#f1ede8]" />,
+    },
+    {
+      title: "作品",
+      dataIndex: "name",
+      render: (_: unknown, record) => (
         <div>
-          <p className="text-sm font-semibold text-forest">Admin</p>
-          <h1 className="mt-2 text-4xl font-semibold">作品管理</h1>
-          <p className="mt-2 text-muted">这里保存到后端 JSON 数据库，Web 前台和小程序会读取同一份数据。</p>
+          <p className="font-semibold text-[#1b281e]">{record.name}</p>
+          <p className="mt-1 text-xs text-muted">{record.id}</p>
         </div>
+      ),
+    },
+    {
+      title: "分类",
+      dataIndex: "categoryId",
+      width: 120,
+      render: (categoryId: string) => categoryMap.get(categoryId) ?? categoryId,
+    },
+    {
+      title: "价格",
+      dataIndex: "price",
+      width: 110,
+      render: (price: number) => `¥${price}`,
+    },
+    {
+      title: "标签",
+      dataIndex: "tags",
+      render: (tags: string[]) => (
+        <Space size={[4, 4]} wrap>
+          {tags.slice(0, 3).map((tag) => (
+            <Tag key={tag} color="green">
+              {tag}
+            </Tag>
+          ))}
+        </Space>
+      ),
+    },
+    {
+      title: "状态",
+      width: 120,
+      render: (_: unknown, record) => (record.featured ? <Tag color="gold">精选</Tag> : <Tag>普通</Tag>),
+    },
+    {
+      title: "排序",
+      dataIndex: "sort",
+      width: 90,
+    },
+    {
+      title: "操作",
+      width: 164,
+      render: (_: unknown, record) => (
         <Space>
-          <Link to="/admin/settings">
-            <Button>站点配置</Button>
-          </Link>
-          <Button onClick={logout}>退出登录</Button>
-          <Button type="primary" size="large" onClick={startCreate}>
+          <Button size="small" onClick={() => startEdit(record)}>
+            编辑
+          </Button>
+          <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
+            <Button size="small" danger>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <section className="grid gap-4 xl:grid-cols-4">
+        {metrics.map((item) => (
+          <div key={item.label} className="admin-panel p-5">
+            <p className="text-sm font-medium text-muted">{item.label}</p>
+            <p className="mt-3 text-3xl font-semibold text-[#1b281e]">{item.value}</p>
+            <p className="mt-2 text-sm leading-6 text-muted">{item.note}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="admin-panel p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Workspace</p>
+            <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">作品工作台</h3>
+            <p className="mt-2 text-sm leading-6 text-muted">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
+          </div>
+          <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate}>
             新增作品
           </Button>
-        </Space>
-      </div>
+        </div>
 
-      <Table
-        rowKey="id"
-        dataSource={flowers}
-        columns={[
-          {
-            title: "封面",
-            dataIndex: "images",
-            width: 96,
-            render: (images: string[]) => <img src={images[0]} alt="" className="h-16 w-16 rounded-md object-cover" />,
-          },
-          { title: "名称", dataIndex: "name" },
-          { title: "分类", dataIndex: "categoryId", width: 110 },
-          { title: "参考价", dataIndex: "price", width: 100, render: (price: number) => `¥${price}` },
-          {
-            title: "标签",
-            dataIndex: "tags",
-            render: (tags: string[]) => (
-              <Space size={[4, 4]} wrap>
-                {tags.map((tag) => (
-                  <Tag key={tag} color="green">
-                    {tag}
-                  </Tag>
-                ))}
-              </Space>
-            ),
-          },
-          { title: "精选", dataIndex: "featured", width: 80, render: (featured: boolean) => (featured ? "是" : "否") },
-          {
-            title: "操作",
-            width: 160,
-            render: (_: unknown, record: Flower) => (
-              <Space>
-                <Button size="small" onClick={() => startEdit(record)}>
-                  编辑
-                </Button>
-                <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
-                  <Button size="small" danger>
-                    删除
-                  </Button>
-                </Popconfirm>
-              </Space>
-            ),
-          },
-        ]}
-      />
+        <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_220px_220px]">
+          <Input
+            size="large"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            prefix={<Search size={16} className="text-muted" />}
+            placeholder="搜索作品名称、花材、标签或描述"
+          />
+          <Select size="large" value={selectedCategory} onChange={setSelectedCategory} options={[{ label: "全部分类", value: "all" }, ...categoryOptions]} />
+          <Select
+            size="large"
+            value={featuredFilter}
+            onChange={(value) => setFeaturedFilter(value)}
+            options={[
+              { label: "全部状态", value: "all" },
+              { label: "仅看精选", value: "featured" },
+              { label: "仅看普通", value: "normal" },
+            ]}
+          />
+        </div>
+      </section>
 
-      <Modal
-        title={editing ? "编辑作品" : "新增作品"}
-        open={open}
-        onCancel={() => setOpen(false)}
-        onOk={save}
-        confirmLoading={loading}
-        width={820}
-        destroyOnHidden
-      >
-        <Form form={form} layout="vertical" className="mt-4">
-          <div className="grid gap-x-4 md:grid-cols-2">
-            <Form.Item name="id" label="作品 ID" rules={[{ required: true, message: "请输入作品 ID" }]}>
-              <Input disabled={Boolean(editing)} placeholder="daily_001" />
-            </Form.Item>
-            <Form.Item name="name" label="作品名称" rules={[{ required: true, message: "请输入作品名称" }]}>
-              <Input placeholder="例如：晨光奶油" />
-            </Form.Item>
-            <Form.Item name="categoryId" label="分类" rules={[{ required: true }]}>
-              <Select options={categoryOptions} />
-            </Form.Item>
-            <Form.Item name="price" label="参考价">
-              <InputNumber className="w-full" min={0} />
-            </Form.Item>
-            <Form.Item name="sort" label="排序权重">
-              <InputNumber className="w-full" />
-            </Form.Item>
-            <Form.Item name="featured" label="精选" valuePropName="checked">
-              <Switch />
-            </Form.Item>
+      <section className="admin-panel overflow-hidden p-0">
+        {loading ? (
+          <div className="flex min-h-[360px] items-center justify-center">
+            <Spin size="large" />
           </div>
-          <Form.Item name="description" label="设计描述">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item name="meaning" label="花语寓意">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-          <Form.Item name="materials" label="主要花材">
-            <Input placeholder="白玫瑰，绣球，尤加利叶" />
-          </Form.Item>
-          <Form.Item name="tags" label="标签">
-            <Input placeholder="生日，粉色系，温柔" />
-          </Form.Item>
-          <Form.Item name="images" label="图片 URL" rules={[{ required: true, message: "请上传图片或填写图片 URL" }]}>
-            <Input.TextArea rows={3} placeholder="多个图片 URL 用逗号或换行分隔" />
-          </Form.Item>
-          <Upload beforeUpload={handleUpload} showUploadList={false} accept="image/*">
-            <Button>上传图片并追加 URL</Button>
-          </Upload>
+        ) : filteredFlowers.length ? (
+          <Table
+            rowKey="id"
+            dataSource={filteredFlowers}
+            columns={columns}
+            pagination={{ pageSize: 8, showSizeChanger: false }}
+            rowClassName={() => "cursor-pointer"}
+            onRow={(record) => ({ onClick: () => startEdit(record) })}
+            scroll={{ x: 1120 }}
+          />
+        ) : (
+          <div className="px-6 py-16">
+            <Empty description="当前筛选条件下没有作品" />
+          </div>
+        )}
+      </section>
+
+      <Drawer
+        title={editing ? `编辑作品 · ${editing.name}` : "新增作品"}
+        open={drawerOpen}
+        onClose={closeDrawer}
+        width={720}
+        destroyOnHidden
+        extra={
+          <Space>
+            <Button onClick={closeDrawer}>取消</Button>
+            <Button type="primary" loading={saving} onClick={save}>
+              保存
+            </Button>
+          </Space>
+        }
+      >
+        <Form form={form} layout="vertical" className="space-y-6">
+          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+              <Sparkles size={16} className="text-forest" />
+              基本信息
+            </div>
+            <div className="mt-4 grid gap-x-4 md:grid-cols-2">
+              <Form.Item name="id" label="作品 ID" rules={[{ required: true, message: "请输入作品 ID" }]}>
+                <Input disabled={Boolean(editing)} placeholder="daily_001" />
+              </Form.Item>
+              <Form.Item name="name" label="作品名称" rules={[{ required: true, message: "请输入作品名称" }]}>
+                <Input placeholder="例如：晨光奶油" />
+              </Form.Item>
+              <Form.Item name="categoryId" label="分类" rules={[{ required: true }]}>
+                <Select options={categoryOptions} />
+              </Form.Item>
+              <Form.Item name="price" label="参考价">
+                <InputNumber className="w-full" min={0} />
+              </Form.Item>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+              <SlidersHorizontal size={16} className="text-forest" />
+              展示状态
+            </div>
+            <div className="mt-4 grid gap-x-4 md:grid-cols-2">
+              <Form.Item name="sort" label="排序权重">
+                <InputNumber className="w-full" />
+              </Form.Item>
+              <Form.Item name="featured" label="精选" valuePropName="checked">
+                <Switch checkedChildren={<Star size={14} />} unCheckedChildren=" " />
+              </Form.Item>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <p className="text-sm font-semibold text-[#1b281e]">文案内容</p>
+            <div className="mt-4 space-y-1">
+              <Form.Item name="description" label="设计描述">
+                <Input.TextArea rows={3} />
+              </Form.Item>
+              <Form.Item name="meaning" label="花语寓意">
+                <Input.TextArea rows={2} />
+              </Form.Item>
+              <Form.Item name="materials" label="主要花材">
+                <Input placeholder="白玫瑰，绣球，尤加利叶" />
+              </Form.Item>
+              <Form.Item name="tags" label="标签">
+                <Input placeholder="生日，粉色系，温柔" />
+              </Form.Item>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+              <ImagePlus size={16} className="text-forest" />
+              图片管理
+            </div>
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">当前图片</p>
+                {imagePreviewList.length ? (
+                  <div className="mt-3 grid grid-cols-3 gap-3">
+                    {imagePreviewList.map((url) => (
+                      <div key={url} className="overflow-hidden rounded-lg border border-black/6 bg-white">
+                        <Image src={url} alt="" height={96} className="!h-24 !w-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-lg border border-dashed border-black/10 bg-white px-4 py-6 text-sm text-muted">还没有图片，先上传或手动填写 URL。</div>
+                )}
+              </div>
+
+              <Form.Item name="images" label="图片 URL" rules={[{ required: true, message: "请上传图片或填写图片 URL" }]}>
+                <Input.TextArea rows={4} placeholder="多个图片 URL 用逗号或换行分隔" />
+              </Form.Item>
+              <Upload beforeUpload={handleUpload} showUploadList={false} accept="image/*">
+                <Button>上传图片并追加 URL</Button>
+              </Upload>
+            </div>
+          </div>
         </Form>
-      </Modal>
-    </section>
+      </Drawer>
+    </div>
   );
 }

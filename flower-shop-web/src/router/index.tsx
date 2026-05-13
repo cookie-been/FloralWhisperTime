@@ -1,6 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { ProtectedAdminRoute } from "@/components/auth/ProtectedAdminRoute";
 import { Layout } from "@/components/layout/Layout";
+import { AdminDashboard } from "@/pages/AdminDashboard/AdminDashboard";
 import { AdminFlowers } from "@/pages/AdminFlowers/AdminFlowers";
 import { AdminLogin } from "@/pages/AdminLogin/AdminLogin";
 import { AdminSettings } from "@/pages/AdminSettings/AdminSettings";
@@ -20,11 +22,17 @@ export const router = createBrowserRouter([
       { path: "gallery/:id", element: <FlowerDetail /> },
       { path: "about", element: <About /> },
       { path: "contact", element: <Contact /> },
-      { path: "admin/login", element: <AdminLogin /> },
+    ],
+  },
+  { path: "/admin/login", element: <AdminLogin /> },
+  {
+    path: "/admin",
+    element: <ProtectedAdminRoute />,
+    children: [
       {
-        path: "admin",
-        element: <ProtectedAdminRoute />,
+        element: <AdminShell />,
         children: [
+          { index: true, element: <AdminDashboard /> },
           { path: "flowers", element: <AdminFlowers /> },
           { path: "settings", element: <AdminSettings /> },
         ],

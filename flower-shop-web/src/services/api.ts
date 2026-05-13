@@ -127,6 +127,24 @@ export function getBrandStory() {
   return request<BrandStory>("/api/brand-story");
 }
 
+export async function getDashboardData() {
+  const [flowers, categories, siteConfig, shopInfo, brandStory] = await Promise.all([
+    getFlowers({ limit: 200 }),
+    getCategories(),
+    getSiteConfig(),
+    getShopInfo(),
+    getBrandStory(),
+  ]);
+
+  return {
+    flowers: flowers.list,
+    categories,
+    siteConfig,
+    shopInfo,
+    brandStory,
+  };
+}
+
 export function getTeamMembers() {
   return request<TeamMember[]>("/api/team");
 }

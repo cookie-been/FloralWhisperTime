@@ -33,3 +33,32 @@ a {
     linear-gradient(90deg, rgba(16, 38, 22, 0.62), rgba(16, 38, 22, 0.1)),
     url("https://picsum.photos/seed/floral-hero/1920/1080");
 }
+
+.admin-sidebar {
+  background:
+    radial-gradient(circle at top, rgba(116, 150, 120, 0.24), transparent 34%),
+    linear-gradient(180deg, #1f3126 0%, #23372b 56%, #1b2b21 100%);
+}
+
+.admin-panel {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 40px rgba(88, 69, 48, 0.08);
+}
+
+.admin-action-card {
+  border-radius: 8px;
+  border: 1px solid rgba(31, 49, 38, 0.08);
+  background: #fbfaf8;
+  padding: 16px;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.admin-action-card:hover {
+  border-color: rgba(46, 125, 50, 0.22);
+  background: #f7f4ef;
+  transform: translateY(-1px);
+}

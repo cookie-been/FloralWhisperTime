@@ -13,6 +13,8 @@ createRoot(document.getElementById("root")!).render(
       theme={{
         token: {
           colorPrimary: "#2E7D32",
+          colorBgLayout: "#f6f3ee",
+          colorBgContainer: "#ffffff",
           borderRadius: 8,
           fontFamily: "PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif",
         },
