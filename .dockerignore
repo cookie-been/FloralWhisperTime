@@ -3,6 +3,8 @@
 **/node_modules
 **/dist
 **/target
+!flower-shop-backend-java/target
+!flower-shop-backend-java/target/flower-shop-backend-java-1.0.0.jar
 **/*.log
 **/*.err
 **/.DS_Store

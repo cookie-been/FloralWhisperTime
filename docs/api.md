@@ -346,7 +346,49 @@ Authorization: Bearer <token>
 
 返回更新后的留言对象。
 
-## 5.5 创建作品
+## 5.5 AI 生成作品图
+
+#### `POST /api/admin/ai/images/generate`
+
+请求类型：
+
+- `multipart/form-data`
+
+请求字段：
+
+- `prompt`: string，必填
+- `referenceFiles`: file[]，可选，最多 3 张
+
+约束：
+
+- prompt 不能为空
+- 参考图最多 3 张
+- 单张参考图最大 20MB
+- 仅支持图片文件
+
+成功返回：
+
+```json
+{
+  "success": true,
+  "imageUrl": "/uploads/ai/ai-1747220000000-xxxx.png",
+  "source": "Doubao-Seedream-5.0-lite",
+  "mode": "text_to_image"
+}
+```
+
+或：
+
+```json
+{
+  "success": true,
+  "imageUrl": "/uploads/ai/ai-1747220000000-xxxx.png",
+  "source": "Doubao-Seedream-5.0-lite",
+  "mode": "image_to_image"
+}
+```
+
+## 5.6 创建作品
 
 #### `POST /api/flowers`
 
@@ -375,13 +417,13 @@ Authorization: Bearer <token>
 - `categoryId` 必填
 - `id` 可传，也可由服务端生成
 
-## 5.6 更新作品
+## 5.7 更新作品
 
 #### `PUT /api/flowers/{id}`
 
 请求体与创建作品相同。
 
-## 5.7 删除作品
+## 5.8 删除作品
 
 #### `DELETE /api/flowers/{id}`
 
@@ -391,7 +433,7 @@ Authorization: Bearer <token>
 204 No Content
 ```
 
-## 5.8 更新站点配置
+## 5.9 更新站点配置
 
 #### `PUT /api/site-config`
 
@@ -420,13 +462,13 @@ Authorization: Bearer <token>
 - `storyContent`
 - `storyImages`
 
-## 5.9 获取关于我们页配置
+## 5.10 获取关于我们页配置
 
 #### `GET /api/admin/about-page`
 
 返回关于我们页可编辑内容。
 
-## 5.10 更新关于我们页配置
+## 5.11 更新关于我们页配置
 
 #### `PUT /api/admin/about-page`
 
@@ -443,13 +485,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.11 获取关于我们时间轴
+## 5.12 获取关于我们时间轴
 
 #### `GET /api/admin/about-timeline`
 
 返回时间轴数组。
 
-## 5.12 新增时间轴条目
+## 5.13 新增时间轴条目
 
 #### `POST /api/admin/about-timeline`
 
@@ -464,13 +506,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.13 更新时间轴条目
+## 5.14 更新时间轴条目
 
 #### `PUT /api/admin/about-timeline/{id}`
 
 请求体与新增相同。
 
-## 5.14 删除时间轴条目
+## 5.15 删除时间轴条目
 
 #### `DELETE /api/admin/about-timeline/{id}`
 
@@ -480,13 +522,13 @@ Authorization: Bearer <token>
 204 No Content
 ```
 
-## 5.15 获取团队成员
+## 5.16 获取团队成员
 
 #### `GET /api/admin/team`
 
 返回团队成员数组。
 
-## 5.16 新增团队成员
+## 5.17 新增团队成员
 
 #### `POST /api/admin/team`
 
@@ -503,13 +545,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.17 更新团队成员
+## 5.18 更新团队成员
 
 #### `PUT /api/admin/team/{id}`
 
 请求体与新增相同。
 
-## 5.18 删除团队成员
+## 5.19 删除团队成员
 
 #### `DELETE /api/admin/team/{id}`
 

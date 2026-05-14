@@ -117,6 +117,15 @@ npm run dev
 
 其中“内容配置”统一维护首页、门店信息、品牌故事和关于我们内容。
 
+`作品管理` 已支持 AI 生成作品图工作流：
+
+- 自由输入 prompt
+- 支持最多 3 张参考图
+- 单张最大 20MB
+- 每次生成 1 张图
+- 生成图下载到本地 `uploads/ai/`
+- 人工审核后再进入新增作品流程
+
 ## 关键环境变量
 
 - `WEB_PORT`
@@ -129,6 +138,18 @@ npm run dev
 - `ADMIN_AUTH_SECRET`
 - `JWT_ISSUER`
 - `CORS_ALLOWED_ORIGIN_PATTERNS`
+- `AI_IMAGE_ENABLED`
+- `VOLCENGINE_API_KEY`
+- `VOLCENGINE_IMAGE_MODEL`
+- `VOLCENGINE_BASE_URL`
+- `VOLCENGINE_IMAGE_GENERATE_PATH`
+- `AI_IMAGE_MAX_REFERENCE_FILES`
+- `AI_IMAGE_MAX_REFERENCE_FILE_SIZE_BYTES`
+- `AI_IMAGE_DOWNLOAD_SUBDIR`
+- `AI_IMAGE_REQUEST_TIMEOUT_SECONDS`
+- `AI_IMAGE_SIZE`
+- `AI_IMAGE_RESPONSE_FORMAT`
+- `AI_IMAGE_WATERMARK`
 
 生产环境必须替换默认密码和签名密钥。
 

@@ -49,6 +49,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/uploads").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PUT, "/api/site-config").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PATCH, "/api/admin/contacts/*/read").hasRole("ADMIN")
+            .requestMatchers("/api/admin/ai/**").hasRole("ADMIN")
             .requestMatchers("/api/admin/me").hasRole("ADMIN")
             .requestMatchers("/api/admin/contacts").hasRole("ADMIN")
             .anyRequest().permitAll())

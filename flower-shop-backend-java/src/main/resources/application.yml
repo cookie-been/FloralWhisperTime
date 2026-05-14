@@ -13,8 +13,8 @@ spring:
     locations: classpath:db/migration
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+      max-file-size: 20MB
+      max-request-size: 64MB
 
 mybatis-plus:
   configuration:
@@ -44,6 +44,20 @@ app:
     allowed-headers: ${CORS_ALLOWED_HEADERS:*}
     allow-credentials: ${CORS_ALLOW_CREDENTIALS:false}
     max-age-seconds: ${CORS_MAX_AGE_SECONDS:3600}
+  ai-image:
+    enabled: ${AI_IMAGE_ENABLED:false}
+    provider: ${AI_IMAGE_PROVIDER:volcengine}
+    api-key: ${VOLCENGINE_API_KEY:}
+    model: ${VOLCENGINE_IMAGE_MODEL:Doubao-Seedream-5.0-lite}
+    base-url: ${VOLCENGINE_BASE_URL:https://operator.las.cn-beijing.volces.com/api/v1}
+    generate-path: ${VOLCENGINE_IMAGE_GENERATE_PATH:/images/generations}
+    max-reference-files: ${AI_IMAGE_MAX_REFERENCE_FILES:3}
+    max-reference-file-size-bytes: ${AI_IMAGE_MAX_REFERENCE_FILE_SIZE_BYTES:20971520}
+    download-subdir: ${AI_IMAGE_DOWNLOAD_SUBDIR:ai}
+    request-timeout-seconds: ${AI_IMAGE_REQUEST_TIMEOUT_SECONDS:120}
+    size: ${AI_IMAGE_SIZE:1024x1280}
+    response-format: ${AI_IMAGE_RESPONSE_FORMAT:url}
+    watermark: ${AI_IMAGE_WATERMARK:false}
   importer:
     enabled: ${JSON_IMPORT_ENABLED:false}
     json-path: ${JSON_IMPORT_PATH:../flower-shop-backend/data/db.json}

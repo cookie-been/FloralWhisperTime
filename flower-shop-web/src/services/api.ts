@@ -174,6 +174,18 @@ export async function uploadFlowerImage(file: File) {
   );
 }
 
+export async function generateAdminAiImage(prompt: string, files: File[]) {
+  const formData = new FormData();
+  formData.append("prompt", prompt);
+  files.forEach((file) => formData.append("referenceFiles", file));
+  return withMutationGuard(`admin:ai-image:${prompt}:${files.map((file) => `${file.name}:${file.size}`).join("|")}`, () =>
+    request<{ success: boolean; imageUrl: string; source: string; mode: string }>("/api/admin/ai/images/generate", {
+      method: "POST",
+      body: formData,
+    }),
+  );
+}
+
 export function getCategories() {
   return request<Category[]>("/api/categories");
 }

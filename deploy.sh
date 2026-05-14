@@ -50,6 +50,14 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
 }
 
+package_backend_artifact() {
+  log "Packaging backend application jar..."
+  (
+    cd "$REPO_ROOT/flower-shop-backend-java"
+    mvn -q -DskipTests package
+  )
+}
+
 compose_cmd() {
   local -a cmd=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
   if [[ -n "$WEB_PORT_OVERRIDE" ]]; then
@@ -124,6 +132,7 @@ ensure_prerequisites() {
   require_cmd sed
   require_cmd grep
   require_cmd tr
+  require_cmd mvn
   if (( GIT_PULL == 1 )); then
     require_cmd git
   fi
@@ -308,10 +317,12 @@ fi
 
 if (( PULL_BASE == 1 )); then
   log "Pulling newer base images..."
+  package_backend_artifact
   compose_cmd build --pull backend web
 fi
 
 if (( SKIP_BUILD == 0 )); then
+  package_backend_artifact
   log "Building and starting containers..."
   if (( DETACH == 1 )); then
     compose_cmd up -d --build

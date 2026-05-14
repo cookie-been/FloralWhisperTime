@@ -360,6 +360,10 @@ a {
   line-height: 1.8;
 }
 
+.ant-upload-wrapper .ant-upload-select.picture-card {
+  border-radius: 8px;
+}
+
 .admin-mobile-drawer .ant-drawer-header {
   padding: 18px 20px 14px;
   border-bottom: 1px solid rgba(41, 57, 46, 0.08);

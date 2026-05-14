@@ -22,7 +22,7 @@ import type { ColumnsType } from "antd/es/table";
 import type { RcFile } from "antd/es/upload";
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { createFlower, deleteFlower, getCategories, getFlowers, updateFlower, uploadFlowerImage } from "@/services/api";
+import { createFlower, deleteFlower, generateAdminAiImage, getCategories, getFlowers, updateFlower, uploadFlowerImage } from "@/services/api";
 import type { Category, Flower } from "@/types";
 
 type FlowerForm = Omit<Flower, "materials" | "tags" | "images"> & {
@@ -87,6 +87,13 @@ function shouldIgnoreRowClick(target: EventTarget | null) {
 
 type FeaturedFilter = "all" | "featured" | "normal";
 
+interface GeneratedAiImageResult {
+  success: boolean;
+  imageUrl: string;
+  source: string;
+  mode: string;
+}
+
 export function AdminFlowers() {
   const [searchParams, setSearchParams] = useSearchParams();
   const screens = Grid.useBreakpoint();
@@ -101,6 +108,11 @@ export function AdminFlowers() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [search, setSearch] = useState(searchParams.get("keyword") ?? "");
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get("category") ?? "all");
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiReferenceFiles, setAiReferenceFiles] = useState<RcFile[]>([]);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [generatedAiImage, setGeneratedAiImage] = useState<GeneratedAiImageResult | null>(null);
   const initialFeatured = searchParams.get("featured");
   const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>(
     initialFeatured === "featured" || initialFeatured === "normal" ? initialFeatured : "all",
@@ -207,6 +219,14 @@ export function AdminFlowers() {
     form.resetFields();
   };
 
+  const resetAiDialog = () => {
+    setAiDialogOpen(false);
+    setAiPrompt("");
+    setAiReferenceFiles([]);
+    setGeneratedAiImage(null);
+    setAiGenerating(false);
+  };
+
   const clearSelection = () => setSelectedRowKeys([]);
 
   const resetFilters = () => {
@@ -234,6 +254,55 @@ export function AdminFlowers() {
       setUploading(false);
     }
     return false;
+  };
+
+  const handleAiReferenceBeforeUpload = (file: RcFile) => {
+    if (!file.type.startsWith("image/")) {
+      message.error("参考图仅支持图片文件");
+      return Upload.LIST_IGNORE;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      message.error("参考图单张大小不能超过 20MB");
+      return Upload.LIST_IGNORE;
+    }
+    if (aiReferenceFiles.length >= 3) {
+      message.error("参考图最多上传 3 张");
+      return Upload.LIST_IGNORE;
+    }
+    setAiReferenceFiles((current) => [...current, file]);
+    return Upload.LIST_IGNORE;
+  };
+
+  const removeAiReferenceFile = (file: RcFile) => {
+    setAiReferenceFiles((current) => current.filter((item) => item.uid !== file.uid));
+  };
+
+  const runAiGeneration = async () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt) {
+      message.error("请输入生成提示词");
+      return;
+    }
+    if (aiGenerating) return;
+
+    setAiGenerating(true);
+    try {
+      const result = await generateAdminAiImage(prompt, aiReferenceFiles);
+      setGeneratedAiImage(result);
+      message.success(result.mode === "image_to_image" ? "参考图生成完成" : "图片生成完成");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "AI 生成失败");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const useGeneratedImageForCreate = () => {
+    if (!generatedAiImage) return;
+    setEditing(null);
+    form.setFieldsValue({ ...emptyFlower, id: `daily_${Date.now()}`, images: generatedAiImage.imageUrl });
+    setDrawerOpen(true);
+    setAiDialogOpen(false);
   };
 
   const save = async () => {
@@ -450,9 +519,14 @@ export function AdminFlowers() {
             <h3 className="admin-section-title mt-2 text-xl">作品工作台</h3>
             <p className="mt-2 text-sm leading-6 text-muted">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
           </div>
-          <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate} block={!screens.sm}>
-            新增作品
-          </Button>
+          <Space wrap className="w-full justify-end sm:w-auto">
+            <Button size="large" icon={<Sparkles size={16} />} onClick={() => setAiDialogOpen(true)} block={!screens.sm}>
+              AI生成作品
+            </Button>
+            <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate} block={!screens.sm}>
+              新增作品
+            </Button>
+          </Space>
         </div>
 
         <div className="mt-5">
@@ -553,6 +627,104 @@ export function AdminFlowers() {
           </div>
         )}
       </section>
+
+      <Drawer
+        className="admin-mobile-drawer"
+        title={
+          <div className="admin-drawer-title">
+            <p>AI生成作品</p>
+            <h3>图片生成工作台</h3>
+            <span>输入 prompt，可选上传最多 3 张参考图。生成结果仅用于人工审核后进入新增作品流程。</span>
+          </div>
+        }
+        open={aiDialogOpen}
+        onClose={resetAiDialog}
+        width={screens.lg ? 760 : "100%"}
+        destroyOnHidden
+        extra={
+          <Space wrap>
+            <Button onClick={resetAiDialog}>关闭</Button>
+            <Button type="primary" loading={aiGenerating} disabled={!aiPrompt.trim()} onClick={() => void runAiGeneration()}>
+              生成
+            </Button>
+          </Space>
+        }
+      >
+        <div className="space-y-6">
+          <div className="admin-subpanel px-4 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+              <Sparkles size={16} className="text-forest" />
+              生成提示
+            </div>
+            <p className="mt-2 text-sm leading-6 text-muted">直接输入你希望生成的花艺作品描述。支持只写文本，也支持搭配参考图做以图生图。</p>
+            <Input.TextArea
+              className="mt-4"
+              rows={6}
+              value={aiPrompt}
+              onChange={(event) => setAiPrompt(event.target.value)}
+              placeholder="例如：生成一束现代感白绿色婚礼手捧花，奶油白玫瑰为主，搭配轻盈层次和自然垂坠感，画面干净克制。"
+            />
+          </div>
+
+          <div className="admin-subpanel px-4 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+              <ImagePlus size={16} className="text-forest" />
+              参考图
+            </div>
+            <p className="mt-2 text-sm leading-6 text-muted">可上传 1-3 张参考图参与生成。单张不超过 20MB，仅支持图片文件。</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Upload
+                beforeUpload={handleAiReferenceBeforeUpload}
+                onRemove={(file) => {
+                  removeAiReferenceFile(file as RcFile);
+                  return true;
+                }}
+                fileList={aiReferenceFiles}
+                multiple
+                accept="image/*"
+                listType="picture-card"
+              >
+                {aiReferenceFiles.length < 3 ? (
+                  <div className="flex flex-col items-center gap-2 text-muted">
+                    <ImagePlus size={18} />
+                    <span className="text-xs">上传参考图</span>
+                  </div>
+                ) : null}
+              </Upload>
+            </div>
+          </div>
+
+          <div className="admin-subpanel px-4 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+              <Star size={16} className="text-forest" />
+              生成结果
+            </div>
+            {generatedAiImage ? (
+              <div className="mt-4 space-y-4">
+                <div className="overflow-hidden rounded-lg border border-black/6 bg-white">
+                  <Image src={generatedAiImage.imageUrl} alt="AI生成作品" className="w-full object-cover" />
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
+                  <Tag color="green">{generatedAiImage.mode === "image_to_image" ? "以图生图" : "文生图"}</Tag>
+                  <span>模型：{generatedAiImage.source}</span>
+                </div>
+                <Space wrap>
+                  <Button loading={aiGenerating} onClick={() => void runAiGeneration()}>
+                    重新生成
+                  </Button>
+                  <Button type="primary" onClick={useGeneratedImageForCreate}>
+                    用于新建作品
+                  </Button>
+                </Space>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-lg border border-dashed border-black/10 bg-white px-4 py-6 text-sm text-muted">
+                {aiGenerating ? "正在生成图片，请稍候..." : "生成完成后会在这里显示图片结果。"}
+              </div>
+            )}
+          </div>
+        </div>
+      </Drawer>
 
       <Drawer
         title={
