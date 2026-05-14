@@ -172,9 +172,12 @@ class AdminControllerTest {
     response.setService("flower-shop-backend-java");
     response.setVersion("1.0.0");
     response.setDatabaseConnected(true);
+    response.setDatabaseVersion("8.0.36");
+    response.setDatabaseSize("128.50 MB");
     response.setUploadDirectoryReady(true);
     response.setUploadDirectoryPath("/app/uploads");
     response.setUploadFileCount(24);
+    response.setUptimeLabel("15分钟");
     response.setAiEnabled(true);
     response.setAiKeyConfigured(true);
     response.setAiProvider("volcengine");
@@ -183,6 +186,7 @@ class AdminControllerTest {
     response.setLatestBackupPresent(true);
     response.setLatestBackupName("20260515-002808");
     response.setLatestBackupPath("/app/backups/20260515-002808");
+    response.setLatestBackupModifiedAt("2026-05-15 08:28:08");
 
     when(siteService.getSystemStatus()).thenReturn(response);
 
@@ -192,8 +196,12 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.service").value("flower-shop-backend-java"))
         .andExpect(jsonPath("$.version").value("1.0.0"))
         .andExpect(jsonPath("$.databaseConnected").value(true))
+        .andExpect(jsonPath("$.databaseVersion").value("8.0.36"))
+        .andExpect(jsonPath("$.databaseSize").value("128.50 MB"))
+        .andExpect(jsonPath("$.uptimeLabel").value("15分钟"))
         .andExpect(jsonPath("$.aiKeyConfigured").value(true))
-        .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"));
+        .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"))
+        .andExpect(jsonPath("$.latestBackupModifiedAt").value("2026-05-15 08:28:08"));
   }
 
   @Test

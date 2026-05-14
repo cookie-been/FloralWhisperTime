@@ -334,9 +334,12 @@ Authorization: Bearer <token>
   "service": "flower-shop-backend-java",
   "version": "1.0.0",
   "databaseConnected": true,
+  "databaseVersion": "8.0.36",
+  "databaseSize": "128.50 MB",
   "uploadDirectoryReady": true,
   "uploadDirectoryPath": "/app/uploads",
   "uploadFileCount": 7,
+  "uptimeLabel": "3小时12分钟",
   "aiEnabled": true,
   "aiKeyConfigured": true,
   "aiProvider": "volcengine",
@@ -344,6 +347,7 @@ Authorization: Bearer <token>
   "aiTextModel": "doubao-1-5-pro-32k-250115",
   "latestBackupName": "20260515-002808",
   "latestBackupPath": "/app/backups/20260515-002808",
+  "latestBackupModifiedAt": "2026-05-15 08:28:08",
   "latestBackupPresent": true
 }
 ```
@@ -353,9 +357,12 @@ Authorization: Bearer <token>
 - `service`：服务标识
 - `version`：当前部署版本
 - `databaseConnected`：数据库探测结果
+- `databaseVersion`：当前数据库版本
+- `databaseSize`：当前业务库估算容量
 - `uploadDirectoryReady`：上传目录是否存在且可写
 - `uploadDirectoryPath`：上传目录绝对路径
 - `uploadFileCount`：上传目录文件总数
+- `uptimeLabel`：当前服务运行时长
 - `aiEnabled`：AI 图片能力是否启用
 - `aiKeyConfigured`：AI 密钥是否已配置
 - `aiProvider`：AI 提供商
@@ -363,6 +370,7 @@ Authorization: Bearer <token>
 - `aiTextModel`：文本建议模型
 - `latestBackupName`：最近备份目录名
 - `latestBackupPath`：最近备份目录绝对路径
+- `latestBackupModifiedAt`：最近备份目录最后更新时间
 - `latestBackupPresent`：是否发现备份目录
 
 ## 5.4 AI 配置

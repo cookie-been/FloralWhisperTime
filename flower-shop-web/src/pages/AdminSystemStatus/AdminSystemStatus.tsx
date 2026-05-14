@@ -19,6 +19,7 @@ export function AdminSystemStatus() {
     if (!status) return [];
     return [
       { label: "当前版本", value: status.version, note: "用于确认部署与升级结果", icon: ServerCog },
+      { label: "运行时长", value: status.uptimeLabel || "未知", note: "用于判断服务是否发生过近期重启", icon: ServerCog },
       { label: "上传文件数", value: status.uploadFileCount, note: status.uploadDirectoryReady ? "上传目录可写" : "上传目录异常", icon: HardDriveDownload },
       { label: "AI 配置", value: status.aiEnabled ? "已启用" : "未启用", note: status.aiKeyConfigured ? "密钥已配置" : "密钥未配置", icon: Sparkles },
       { label: "最近备份", value: status.latestBackupPresent ? status.latestBackupName : "暂无", note: "用于升级前回滚和恢复", icon: KeyRound },
@@ -85,11 +86,17 @@ export function AdminSystemStatus() {
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>
               <p className="mt-2 text-muted">{status.databaseConnected ? "已连接" : "连接失败"}</p>
+              <p className="mt-2 text-muted">数据库版本：{status.databaseVersion || "未知"}</p>
+              <p className="mt-2 text-muted">数据库容量：{status.databaseSize || "未知"}</p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">上传目录</p>
               <p className="mt-2 break-all text-muted">{status.uploadDirectoryPath}</p>
               <p className="mt-2 text-muted">{status.uploadDirectoryReady ? "目录存在且可写" : "目录不可写或不存在"}</p>
+            </div>
+            <div className="admin-subpanel px-4 py-4">
+              <p className="font-semibold text-[#1b281e]">服务运行时长</p>
+              <p className="mt-2 text-muted">{status.uptimeLabel || "未知"}</p>
             </div>
           </div>
         </div>
@@ -140,6 +147,10 @@ export function AdminSystemStatus() {
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">备份标识</p>
                 <p className="mt-2 text-muted">{status.latestBackupName || "暂无"}</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">最近更新时间</p>
+                <p className="mt-2 text-muted">{status.latestBackupModifiedAt || "暂无"}</p>
               </div>
             </div>
           </div>

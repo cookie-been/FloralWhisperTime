@@ -43,12 +43,20 @@ import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.math.BigDecimal;
 import java.io.File;
+import java.time.Clock;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +64,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SiteService {
   private static final long SINGLETON_ID = 1L;
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private final SiteConfigMapper siteConfigMapper;
   private final SiteConfigStatMapper siteConfigStatMapper;
@@ -71,7 +80,11 @@ public class SiteService {
   private final AppProperties appProperties;
   private final DataSource dataSource;
   private final BuildProperties buildProperties;
+  private final Instant startedAt;
+  private final ZoneId zoneId;
+  private final Clock clock;
 
+  @Autowired
   public SiteService(
       SiteConfigMapper siteConfigMapper,
       SiteConfigStatMapper siteConfigStatMapper,
@@ -87,6 +100,44 @@ public class SiteService {
       AppProperties appProperties,
       DataSource dataSource,
       @Nullable BuildProperties buildProperties) {
+    this(
+        siteConfigMapper,
+        siteConfigStatMapper,
+        shopInfoMapper,
+        shopHourMapper,
+        aboutPageMapper,
+        aboutTimelineEntryMapper,
+        aiSettingsMapper,
+        brandStoryMapper,
+        brandStoryImageMapper,
+        categoryMapper,
+        teamMemberMapper,
+        appProperties,
+        dataSource,
+        buildProperties,
+        Instant.now(),
+        ZoneId.systemDefault(),
+        Clock.systemDefaultZone());
+  }
+
+  SiteService(
+      SiteConfigMapper siteConfigMapper,
+      SiteConfigStatMapper siteConfigStatMapper,
+      ShopInfoMapper shopInfoMapper,
+      ShopHourMapper shopHourMapper,
+      AboutPageMapper aboutPageMapper,
+      AboutTimelineEntryMapper aboutTimelineEntryMapper,
+      AiSettingsMapper aiSettingsMapper,
+      BrandStoryMapper brandStoryMapper,
+      BrandStoryImageMapper brandStoryImageMapper,
+      CategoryMapper categoryMapper,
+      TeamMemberMapper teamMemberMapper,
+      AppProperties appProperties,
+      DataSource dataSource,
+      @Nullable BuildProperties buildProperties,
+      @Nullable Instant startedAt,
+      ZoneId zoneId,
+      Clock clock) {
     this.siteConfigMapper = siteConfigMapper;
     this.siteConfigStatMapper = siteConfigStatMapper;
     this.shopInfoMapper = shopInfoMapper;
@@ -101,6 +152,9 @@ public class SiteService {
     this.appProperties = appProperties;
     this.dataSource = dataSource;
     this.buildProperties = buildProperties;
+    this.startedAt = startedAt;
+    this.zoneId = zoneId;
+    this.clock = clock;
   }
 
   public SiteConfigResponse getSiteConfig() {
@@ -131,13 +185,17 @@ public class SiteService {
     File uploadsDir = resolveDirectory(appProperties.getUpload().getDir(), "uploads");
     File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
     File latestBackup = resolveLatestBackup(backupsDir);
+    DatabaseStatus databaseStatus = inspectDatabaseStatus();
 
     response.setService(resolveServiceName());
     response.setVersion(resolveVersion());
-    response.setDatabaseConnected(checkDatabaseConnection());
+    response.setDatabaseConnected(databaseStatus.connected());
+    response.setDatabaseVersion(databaseStatus.version());
+    response.setDatabaseSize(databaseStatus.size());
     response.setUploadDirectoryReady(uploadsDir.exists() && uploadsDir.isDirectory() && uploadsDir.canWrite());
     response.setUploadDirectoryPath(uploadsDir.getAbsolutePath());
     response.setUploadFileCount(countFiles(uploadsDir));
+    response.setUptimeLabel(formatUptime());
     response.setAiEnabled(Boolean.TRUE.equals(aiSettings.getEnabled()));
     response.setAiKeyConfigured(notBlank(aiSettings.getApiKey()));
     response.setAiProvider(aiSettings.getProvider());
@@ -146,6 +204,7 @@ public class SiteService {
     response.setLatestBackupPresent(latestBackup != null);
     response.setLatestBackupName(latestBackup == null ? "" : latestBackup.getName());
     response.setLatestBackupPath(latestBackup == null ? "" : latestBackup.getAbsolutePath());
+    response.setLatestBackupModifiedAt(formatBackupModifiedAt(latestBackup));
     return response;
   }
 
@@ -665,17 +724,71 @@ public class SiteService {
     return "dev";
   }
 
-  private boolean checkDatabaseConnection() {
+  private DatabaseStatus inspectDatabaseStatus() {
     try (Connection connection = dataSource.getConnection()) {
-      return connection != null && connection.isValid(2);
+      if (connection == null || !connection.isValid(2)) {
+        return new DatabaseStatus(false, "", "");
+      }
+      String version = "";
+      if (connection.getMetaData() != null && notBlank(connection.getMetaData().getDatabaseProductVersion())) {
+        version = connection.getMetaData().getDatabaseProductVersion().trim();
+      }
+      return new DatabaseStatus(true, version, resolveDatabaseSize(connection));
     } catch (Exception exception) {
-      return false;
+      return new DatabaseStatus(false, "", "");
     }
+  }
+
+  private String resolveDatabaseSize(Connection connection) {
+    try (Statement statement = connection.createStatement();
+         ResultSet resultSet =
+             statement.executeQuery(
+                 "SELECT CONCAT(FORMAT(IFNULL(SUM(data_length + index_length) / 1024 / 1024, 0), 2), ' MB') "
+                     + "FROM information_schema.TABLES "
+                     + "WHERE table_schema = DATABASE()")) {
+      if (resultSet.next()) {
+        String value = resultSet.getString(1);
+        return value == null ? "" : value.trim();
+      }
+    } catch (Exception exception) {
+      return "";
+    }
+    return "";
   }
 
   private File resolveDirectory(String configuredPath, String fallbackPath) {
     String path = notBlank(configuredPath) ? configuredPath.trim() : fallbackPath;
     return new File(path).getAbsoluteFile();
+  }
+
+  private String formatUptime() {
+    if (startedAt == null) {
+      return "未知";
+    }
+    Duration duration = Duration.between(startedAt, Instant.now(clock));
+    if (duration.isNegative()) {
+      return "未知";
+    }
+    long totalMinutes = duration.toMinutes();
+    if (totalMinutes < 60) {
+      return totalMinutes + "分钟";
+    }
+    long hours = totalMinutes / 60;
+    long minutes = totalMinutes % 60;
+    if (hours < 24) {
+      return minutes == 0 ? hours + "小时" : hours + "小时" + minutes + "分钟";
+    }
+    long days = hours / 24;
+    long remainHours = hours % 24;
+    return remainHours == 0 ? days + "天" : days + "天" + remainHours + "小时";
+  }
+
+  private String formatBackupModifiedAt(File backupDirectory) {
+    if (backupDirectory == null || !backupDirectory.exists()) {
+      return "";
+    }
+    return DATE_TIME_FORMATTER.format(
+        Instant.ofEpochMilli(backupDirectory.lastModified()).atZone(zoneId == null ? ZoneId.systemDefault() : zoneId));
   }
 
   private long countFiles(File directory) {
@@ -713,4 +826,6 @@ public class SiteService {
     }
     return latest;
   }
+
+  private record DatabaseStatus(boolean connected, String version, String size) {}
 }

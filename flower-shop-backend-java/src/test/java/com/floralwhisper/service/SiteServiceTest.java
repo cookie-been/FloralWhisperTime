@@ -22,8 +22,13 @@ import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.ZoneId;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -40,16 +45,27 @@ class SiteServiceTest {
     Files.writeString(uploadsDir.resolve("hero.jpg"), "demo");
 
     Path backupsDir = Files.createDirectories(tempDir.resolve("backups"));
-    Files.createDirectories(backupsDir.resolve("20260515-002808"));
-    Files.createDirectories(backupsDir.resolve("20260515-010101"));
+    Path olderBackup = Files.createDirectories(backupsDir.resolve("20260515-002808"));
+    Path latestBackup = Files.createDirectories(backupsDir.resolve("20260515-010101"));
+    Files.setLastModifiedTime(olderBackup, java.nio.file.attribute.FileTime.from(Instant.parse("2026-05-15T00:28:08Z")));
+    Files.setLastModifiedTime(latestBackup, java.nio.file.attribute.FileTime.from(Instant.parse("2026-05-15T01:01:01Z")));
 
     AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
     when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(true, "volcengine", "secret-key", "doubao-image", "doubao-text"));
 
     DataSource dataSource = mock(DataSource.class);
     Connection connection = mock(Connection.class);
+    java.sql.Statement statement = mock(java.sql.Statement.class);
+    ResultSet resultSet = mock(ResultSet.class);
+    DatabaseMetaData metaData = mock(DatabaseMetaData.class);
     when(dataSource.getConnection()).thenReturn(connection);
     when(connection.isValid(2)).thenReturn(true);
+    when(connection.createStatement()).thenReturn(statement);
+    when(statement.executeQuery(org.mockito.ArgumentMatchers.anyString())).thenReturn(resultSet);
+    when(resultSet.next()).thenReturn(true, false);
+    when(resultSet.getString(1)).thenReturn("128.50 MB");
+    when(connection.getMetaData()).thenReturn(metaData);
+    when(metaData.getDatabaseProductVersion()).thenReturn("8.0.36");
 
     BuildProperties buildProperties = new BuildProperties(new java.util.Properties() {{
       put("group", "com.floralwhisper");
@@ -74,13 +90,18 @@ class SiteServiceTest {
             mock(TeamMemberMapper.class),
             appProperties(uploadsDir, backupsDir),
             dataSource,
-            buildProperties);
+            buildProperties,
+            Instant.parse("2026-05-15T00:45:00Z"),
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
 
     SystemStatusResponse response = siteService.getSystemStatus();
 
     assertEquals("flower-shop-backend-java", response.getService());
     assertEquals("1.2.3", response.getVersion());
     assertTrue(response.isDatabaseConnected());
+    assertEquals("8.0.36", response.getDatabaseVersion());
+    assertEquals("128.50 MB", response.getDatabaseSize());
     assertTrue(response.isUploadDirectoryReady());
     assertEquals(1L, response.getUploadFileCount());
     assertEquals(uploadsDir.toFile().getAbsolutePath(), response.getUploadDirectoryPath());
@@ -92,6 +113,8 @@ class SiteServiceTest {
     assertTrue(response.isLatestBackupPresent());
     assertEquals("20260515-010101", response.getLatestBackupName());
     assertEquals(backupsDir.resolve("20260515-010101").toFile().getAbsolutePath(), response.getLatestBackupPath());
+    assertEquals("2026-05-15 09:01:01", response.getLatestBackupModifiedAt());
+    assertEquals("15分钟", response.getUptimeLabel());
   }
 
   @Test
@@ -120,11 +143,16 @@ class SiteServiceTest {
             mock(TeamMemberMapper.class),
             appProperties(uploadsDir, backupsDir),
             dataSource,
-            null);
+            null,
+            null,
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
 
     SystemStatusResponse response = siteService.getSystemStatus();
 
     assertFalse(response.isDatabaseConnected());
+    assertEquals("", response.getDatabaseVersion());
+    assertEquals("", response.getDatabaseSize());
     assertFalse(response.isUploadDirectoryReady());
     assertEquals(0L, response.getUploadFileCount());
     assertFalse(response.isAiEnabled());
@@ -132,6 +160,8 @@ class SiteServiceTest {
     assertFalse(response.isLatestBackupPresent());
     assertEquals("", response.getLatestBackupName());
     assertEquals("", response.getLatestBackupPath());
+    assertEquals("", response.getLatestBackupModifiedAt());
+    assertEquals("未知", response.getUptimeLabel());
   }
 
   private AppProperties appProperties(Path uploadsDir, Path backupsDir) {
