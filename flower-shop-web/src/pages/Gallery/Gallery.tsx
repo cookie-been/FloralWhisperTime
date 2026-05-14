@@ -7,14 +7,18 @@ import type { Category, Flower, FlowerQuery } from "@/types";
 export function Gallery() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [flowers, setFlowers] = useState<Flower[]>([]);
-  const [query, setQuery] = useState<FlowerQuery>({ categoryId: "all", sortBy: "featured", page: 1, limit: 40 });
+  const [total, setTotal] = useState(0);
+  const [query, setQuery] = useState<FlowerQuery>({ categoryId: "all", sortBy: "featured", page: 1, limit: 200 });
 
   useEffect(() => {
     getCategories().then(setCategories);
   }, []);
 
   useEffect(() => {
-    getFlowers(query).then((result) => setFlowers(result.list));
+    getFlowers(query).then((result) => {
+      setFlowers(result.list);
+      setTotal(result.total);
+    });
   }, [query]);
 
   const categoryOptions = useMemo(() => categories.map((item) => ({ label: item.name, value: item.id })), [categories]);
@@ -61,7 +65,7 @@ export function Gallery() {
 
       <div className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 lg:px-10">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
-          <p className="text-sm font-medium text-muted">共展示 {flowers.length} 件作品</p>
+          <p className="text-sm font-medium text-muted">共展示 {total} 件作品</p>
           <p className="text-sm text-muted">当前排序：{query.sortBy === "featured" ? "精选优先" : query.sortBy === "latest" ? "最新作品" : query.sortBy === "price_asc" ? "价格从低到高" : "价格从高到低"}</p>
         </div>
 
