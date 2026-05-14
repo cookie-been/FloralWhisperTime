@@ -2,8 +2,8 @@ import { Button, Empty, Grid, Progress, Spin, Tag, message } from "antd";
 import { ArrowRight, Flower2, Image as ImageIcon, MapPin, Sparkles, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { getDashboardData } from "@/services/api";
-import type { BrandStory, Category, Flower, ShopInfo, SiteConfig } from "@/types";
+import { getAdminContacts, getDashboardData } from "@/services/api";
+import type { BrandStory, Category, ContactMessage, Flower, PaginatedResult, ShopInfo, SiteConfig } from "@/types";
 
 interface DashboardData {
   flowers: Flower[];
@@ -11,6 +11,7 @@ interface DashboardData {
   siteConfig: SiteConfig;
   shopInfo: ShopInfo;
   brandStory: BrandStory;
+  contacts: PaginatedResult<ContactMessage>;
 }
 
 function formatDate(value?: string) {
@@ -26,8 +27,8 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDashboardData()
-      .then(setData)
+    Promise.all([getDashboardData(), getAdminContacts({ page: 1, limit: 100, status: "all" })])
+      .then(([dashboardData, contacts]) => setData({ ...dashboardData, contacts }))
       .catch((error) => message.error(error instanceof Error ? error.message : "概览加载失败"))
       .finally(() => setLoading(false));
   }, []);
@@ -37,6 +38,7 @@ export function AdminDashboard() {
 
     const categoryCount = data.categories.filter((item) => item.id !== "all").length;
     const featuredCount = data.flowers.filter((item) => item.featured).length;
+    const unreadContacts = data.contacts.list.filter((item) => !item.readAt).length;
     const latestFlower = [...data.flowers].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
     const attentionFlowers = data.flowers
       .filter((item) => !item.featured)
@@ -58,6 +60,8 @@ export function AdminDashboard() {
     return {
       categoryCount,
       featuredCount,
+      unreadContacts,
+      normalCount: data.flowers.length - featuredCount,
       latestFlower,
       attentionFlowers,
       recentFlowers,
@@ -87,10 +91,10 @@ export function AdminDashboard() {
   }
 
   const stats = [
-    { label: "作品总数", value: data.flowers.length, icon: Flower2, note: "当前已发布到前台的全部作品" },
-    { label: "精选作品", value: summary.featuredCount, icon: Star, note: "首页与重点展示中更容易被看见" },
-    { label: "作品分类", value: summary.categoryCount, icon: Sparkles, note: "用于前台筛选与内容组织" },
-    { label: "最近上新", value: formatDate(summary.latestFlower?.createdAt), icon: ImageIcon, note: summary.latestFlower?.name ?? "尚未发现作品记录" },
+    { label: "作品总数", value: data.flowers.length, icon: Flower2, note: "当前已发布到前台的全部作品", to: "/admin/flowers" },
+    { label: "待补精选", value: summary.normalCount, icon: Star, note: "仍可继续筛选为精选展示的普通作品", to: "/admin/flowers?featured=normal" },
+    { label: "未读留言", value: summary.unreadContacts, icon: Sparkles, note: "优先处理访客咨询与预约内容", to: "/admin/contacts?status=unread" },
+    { label: "最近上新", value: formatDate(summary.latestFlower?.createdAt), icon: ImageIcon, note: summary.latestFlower?.name ?? "尚未发现作品记录", to: "/admin/flowers" },
   ];
 
   return (
@@ -99,7 +103,7 @@ export function AdminDashboard() {
         {stats.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className="admin-stat-card p-5">
+            <Link key={item.label} to={item.to} className="admin-action-card block p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted">{item.label}</p>
@@ -110,7 +114,7 @@ export function AdminDashboard() {
                   <Icon size={18} />
                 </span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </section>
@@ -146,10 +150,10 @@ export function AdminDashboard() {
               <p className="text-sm font-medium text-muted">精选作品</p>
               <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{summary.featuredCount}</p>
             </div>
-            <div className="surface-card px-4 py-4">
+            <Link to="/admin/flowers?featured=normal" className="surface-card block px-4 py-4">
               <p className="text-sm font-medium text-muted">普通作品</p>
-              <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{data.flowers.length - summary.featuredCount}</p>
-            </div>
+              <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{summary.normalCount}</p>
+            </Link>
           </div>
         </div>
 
