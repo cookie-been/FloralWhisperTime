@@ -33,6 +33,10 @@ import {
 } from "@/services/api";
 import type { AboutPageContent, AboutTimelineEntry, TeamMember } from "@/types";
 
+interface AdminAboutProps {
+  embedded?: boolean;
+}
+
 type TeamMemberForm = TeamMember;
 type TimelineForm = AboutTimelineEntry;
 
@@ -61,7 +65,7 @@ const emptyMember: TeamMemberForm = {
   sort: 0,
 };
 
-export function AdminAbout() {
+export function AdminAbout({ embedded = false }: AdminAboutProps) {
   const [aboutForm] = Form.useForm<AboutPageContent>();
   const [timelineForm] = Form.useForm<TimelineForm>();
   const [memberForm] = Form.useForm<TeamMemberForm>();
@@ -396,18 +400,20 @@ export function AdminAbout() {
         ))}
       </section>
 
-      <section className="admin-toolbar p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="section-eyebrow">About Workspace</p>
-            <h3 className="admin-section-title mt-2 text-xl">关于页内容工作台</h3>
-            <p className="mt-2 text-sm leading-6 text-muted">统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。</p>
+      {embedded ? null : (
+        <section className="admin-toolbar p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="section-eyebrow">About Workspace</p>
+              <h3 className="admin-section-title mt-2 text-xl">关于页内容工作台</h3>
+              <p className="mt-2 text-sm leading-6 text-muted">统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。</p>
+            </div>
+            <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()}>
+              保存页首与故事
+            </Button>
           </div>
-          <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()}>
-            保存页首与故事
-          </Button>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
         <div className="admin-panel p-5">

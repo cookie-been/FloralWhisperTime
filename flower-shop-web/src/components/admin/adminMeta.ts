@@ -1,4 +1,4 @@
-import { BarChart3, BookOpenText, Flower2, Globe, MessageSquareMore, Settings } from "lucide-react";
+import { BarChart3, Flower2, Globe, MessageSquareMore, Settings } from "lucide-react";
 
 export const adminNavItems = [
   {
@@ -18,16 +18,9 @@ export const adminNavItems = [
   {
     key: "settings",
     path: "/admin/settings",
-    label: "站点配置",
-    description: "更新首页、门店与品牌故事",
+    label: "内容配置",
+    description: "统一维护站点首页、门店信息与关于我们",
     icon: Settings,
-  },
-  {
-    key: "about",
-    path: "/admin/about",
-    label: "关于我们",
-    description: "维护 About 页首图、故事、时间轴与团队",
-    icon: BookOpenText,
   },
   {
     key: "contacts",
@@ -57,13 +50,8 @@ export const adminPageMeta = {
   },
   "/admin/settings": {
     eyebrow: "Content",
-    title: "站点配置",
-    description: "维护首页表达、门店信息与品牌故事内容。",
-  },
-  "/admin/about": {
-    eyebrow: "About",
-    title: "关于我们",
-    description: "维护 About 页首图、品牌故事、发展时间轴与团队成员。",
+    title: "内容配置",
+    description: "统一维护站点首页、门店信息、品牌故事与关于我们内容。",
   },
   "/admin/contacts": {
     eyebrow: "Messages",

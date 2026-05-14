@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ProtectedAdminRoute } from "@/components/auth/ProtectedAdminRoute";
 import { Layout } from "@/components/layout/Layout";
@@ -37,7 +37,7 @@ export const router = createBrowserRouter([
           { index: true, element: <AdminDashboard /> },
           { path: "flowers", element: <AdminFlowers /> },
           { path: "settings", element: <AdminSettings /> },
-          { path: "about", element: <AdminAbout /> },
+          { path: "about", element: <Navigate to="/admin/settings?tab=about" replace /> },
           { path: "contacts", element: <AdminContacts /> },
         ],
       },
