@@ -392,21 +392,25 @@ a {
   margin-inline-end: 0;
 }
 
-.gallery-search.ant-input-search .ant-input-affix-wrapper {
+.gallery-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 0;
+}
+
+.gallery-search .ant-input-affix-wrapper {
   min-height: 40px;
-  display: flex;
-  align-items: center;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
-.gallery-search.ant-input-search .ant-input {
-  line-height: 1.5;
-}
-
-.gallery-search.ant-input-search .ant-input-suffix,
-.gallery-search.ant-input-search .ant-input-prefix,
-.gallery-search.ant-input-search .ant-input-search-button,
-.gallery-search.ant-input-search .ant-input-search-icon,
-.gallery-search.ant-input-search .ant-input-clear-icon {
+.gallery-search-button.ant-btn {
+  height: 40px;
+  width: 48px;
+  min-width: 48px;
+  padding: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;

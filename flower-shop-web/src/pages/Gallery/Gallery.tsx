@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Empty, Input, Pagination, Select, Segmented } from "antd";
+import { Button, Empty, Input, Pagination, Select, Segmented } from "antd";
+import { Search } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { FlowerCard } from "@/components/common/FlowerCard";
 import { getCategories, getFlowers } from "@/services/api";
@@ -14,6 +15,7 @@ export function Gallery() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState<FlowerQuery>({ categoryId: initialCategory, sortBy: "featured", page: 1, limit: 24 });
+  const [keywordInput, setKeywordInput] = useState(searchParams.get("keyword") ?? "");
   const currentPage = query.page ?? 1;
   const pageSize = query.limit ?? 24;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -24,7 +26,13 @@ export function Gallery() {
 
   useEffect(() => {
     const category = searchParams.get("category") ?? "all";
-    setQuery((prev) => (prev.categoryId === category ? prev : { ...prev, categoryId: category, page: 1 }));
+    const keyword = searchParams.get("keyword") ?? "";
+    setKeywordInput(keyword);
+    setQuery((prev) =>
+      prev.categoryId === category && (prev.keyword ?? "") === keyword
+        ? prev
+        : { ...prev, categoryId: category, keyword: keyword || undefined, page: 1 },
+    );
   }, [searchParams]);
 
   useEffect(() => {
@@ -65,6 +73,15 @@ export function Gallery() {
     setSearchParams(next, { replace: true });
   };
 
+  const submitKeyword = () => {
+    const trimmed = keywordInput.trim();
+    setQuery((prev) => ({ ...prev, keyword: trimmed || undefined, page: 1 }));
+    const next = new URLSearchParams(searchParams);
+    if (trimmed) next.set("keyword", trimmed);
+    else next.delete("keyword");
+    setSearchParams(next, { replace: true });
+  };
+
   return (
     <section className="min-h-screen bg-[#f4f1eb]">
       <div className="border-b border-black/6 bg-[#f8f5ef]">
@@ -100,12 +117,22 @@ export function Gallery() {
                   { label: "价格从高到低", value: "price_desc" },
                 ]}
               />
-              <Input.Search
-                allowClear
-                placeholder="搜索花束、花材或标签"
-                className="gallery-search md:col-span-2"
-                onSearch={(keyword) => setQuery((prev) => ({ ...prev, keyword, page: 1 }))}
-              />
+              <div className="gallery-search md:col-span-2">
+                <Input
+                  allowClear
+                  value={keywordInput}
+                  placeholder="搜索花束、花材或标签"
+                  onChange={(event) => setKeywordInput(event.target.value)}
+                  onPressEnter={submitKeyword}
+                />
+                <Button
+                  type="primary"
+                  className="gallery-search-button"
+                  aria-label="搜索作品"
+                  onClick={submitKeyword}
+                  icon={<Search size={16} />}
+                />
+              </div>
             </div>
           </div>
         </div>
