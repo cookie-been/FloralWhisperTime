@@ -13,6 +13,8 @@ Thumbs.db
 .tools/
 project.private.config.json
 flower-shop-mini/project.private.config.json
+.env
+flower-shop-backend-java/uploads/
 
 *.zip
 *:Zone.Identifier

@@ -66,6 +66,30 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+也可以直接执行仓库根目录的一键部署脚本：
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+脚本会自动完成这些动作：
+
+- 首次部署时根据 `.env.example` 生成 `.env`
+- 自动生成数据库密码、管理员密码、签名密钥
+- 创建上传目录
+- 从源码构建前端与 Java 后端容器镜像
+- 启动 `mysql + backend + web`
+- 自动等待 `/api/health` 和首页可访问
+
+常用参数：
+
+```bash
+./deploy.sh --env-file .env.production --web-port 8081
+./deploy.sh --pull
+./deploy.sh --skip-build
+```
+
 默认访问地址：`http://localhost:8080`
 
 可在 `.env` 中调整：
