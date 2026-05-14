@@ -14,4 +14,5 @@ public class Contact {
   private String phone;
   private String message;
   private LocalDateTime createdAt;
+  private LocalDateTime readAt;
 }

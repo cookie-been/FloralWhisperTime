@@ -3,6 +3,7 @@ export type {
   BusinessHours,
   Category,
   ContactForm,
+  ContactMessage,
   Flower,
   FlowerQuery,
   PaginatedResult,

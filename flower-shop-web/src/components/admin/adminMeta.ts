@@ -1,4 +1,4 @@
-import { BarChart3, Flower2, Globe, Settings } from "lucide-react";
+import { BarChart3, Flower2, Globe, MessageSquareMore, Settings } from "lucide-react";
 
 export const adminNavItems = [
   {
@@ -21,6 +21,13 @@ export const adminNavItems = [
     label: "站点配置",
     description: "更新首页、门店与品牌故事",
     icon: Settings,
+  },
+  {
+    key: "contacts",
+    path: "/admin/contacts",
+    label: "用户留言",
+    description: "查看访客提交的预约与咨询内容",
+    icon: MessageSquareMore,
   },
 ] as const;
 
@@ -45,5 +52,10 @@ export const adminPageMeta = {
     eyebrow: "Content",
     title: "站点配置",
     description: "维护首页表达、门店信息与品牌故事内容。",
+  },
+  "/admin/contacts": {
+    eyebrow: "Messages",
+    title: "用户留言",
+    description: "查看访客提交的预约、咨询与定制需求。",
   },
 } as const;

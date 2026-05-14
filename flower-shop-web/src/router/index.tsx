@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { ProtectedAdminRoute } from "@/components/auth/ProtectedAdminRoute";
 import { Layout } from "@/components/layout/Layout";
 import { AdminDashboard } from "@/pages/AdminDashboard/AdminDashboard";
+import { AdminContacts } from "@/pages/AdminContacts/AdminContacts";
 import { AdminFlowers } from "@/pages/AdminFlowers/AdminFlowers";
 import { AdminLogin } from "@/pages/AdminLogin/AdminLogin";
 import { AdminSettings } from "@/pages/AdminSettings/AdminSettings";
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
           { index: true, element: <AdminDashboard /> },
           { path: "flowers", element: <AdminFlowers /> },
           { path: "settings", element: <AdminSettings /> },
+          { path: "contacts", element: <AdminContacts /> },
         ],
       },
     ],

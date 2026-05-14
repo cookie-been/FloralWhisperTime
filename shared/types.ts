@@ -102,3 +102,12 @@ export interface ContactForm {
   phone: string;
   message: string;
 }
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  phone: string;
+  message: string;
+  createdAt: string;
+  readAt?: string | null;
+}

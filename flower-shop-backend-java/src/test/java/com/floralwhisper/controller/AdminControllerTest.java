@@ -1,8 +1,10 @@
 package com.floralwhisper.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -12,6 +14,8 @@ import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
 import com.floralwhisper.dto.LoginResponse;
+import com.floralwhisper.dto.PaginatedResult;
+import com.floralwhisper.entity.Contact;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -28,11 +32,14 @@ import com.floralwhisper.mapper.TeamMemberMapper;
 import com.floralwhisper.security.JwtAuthenticationFilter;
 import com.floralwhisper.security.JwtService;
 import com.floralwhisper.service.AuthService;
+import com.floralwhisper.service.ContactService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import org.junit.jupiter.api.Test;
@@ -70,6 +77,8 @@ class AdminControllerTest {
 
   @MockBean
   private AuthService authService;
+  @MockBean
+  private ContactService contactService;
   @MockBean private BrandStoryImageMapper brandStoryImageMapper;
   @MockBean private BrandStoryMapper brandStoryMapper;
   @MockBean private CategoryMapper categoryMapper;
@@ -132,6 +141,68 @@ class AdminControllerTest {
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.username").value("admin"));
+  }
+
+  @Test
+  void contactsRejectsMissingTokenWithFrontendCompatibleMessage() throws Exception {
+    mockMvc.perform(get("/api/admin/contacts"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录管理后台"));
+  }
+
+  @Test
+  void contactsReturnsPaginatedListWhenTokenIsValid() throws Exception {
+    Contact contact = new Contact();
+    contact.setId("contact_001");
+    contact.setName("林小姐");
+    contact.setPhone("13800138000");
+    contact.setMessage("想预约母亲节花束");
+    contact.setCreatedAt(LocalDateTime.of(2026, 5, 14, 11, 30));
+    contact.setReadAt(LocalDateTime.of(2026, 5, 14, 12, 0));
+
+    when(contactService.listContacts(2, 10, "母亲节", "read")).thenReturn(new PaginatedResult<>(List.of(contact), 1, 2, 10));
+
+    mockMvc.perform(get("/api/admin/contacts")
+            .param("page", "2")
+            .param("limit", "10")
+            .param("keyword", "母亲节")
+            .param("status", "read")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.list[0].id").value("contact_001"))
+        .andExpect(jsonPath("$.list[0].name").value("林小姐"))
+        .andExpect(jsonPath("$.list[0].phone").value("13800138000"))
+        .andExpect(jsonPath("$.list[0].message").value("想预约母亲节花束"))
+        .andExpect(jsonPath("$.list[0].readAt").value("2026-05-14T12:00:00"))
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.page").value(2))
+        .andExpect(jsonPath("$.limit").value(10));
+  }
+
+  @Test
+  void markContactReadRejectsMissingTokenWithFrontendCompatibleMessage() throws Exception {
+    mockMvc.perform(patch("/api/admin/contacts/contact_001/read"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录管理后台"));
+  }
+
+  @Test
+  void markContactReadReturnsUpdatedContactWhenTokenIsValid() throws Exception {
+    Contact updated = new Contact();
+    updated.setId("contact_001");
+    updated.setName("林小姐");
+    updated.setPhone("13800138000");
+    updated.setMessage("想预约母亲节花束");
+    updated.setCreatedAt(LocalDateTime.of(2026, 5, 14, 11, 30));
+    updated.setReadAt(LocalDateTime.of(2026, 5, 14, 12, 10));
+
+    when(contactService.markAsRead(eq("contact_001"))).thenReturn(updated);
+
+    mockMvc.perform(patch("/api/admin/contacts/contact_001/read")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value("contact_001"))
+        .andExpect(jsonPath("$.readAt").value("2026-05-14T12:10:00"));
   }
 
   private String expiredToken() {

@@ -1,6 +1,6 @@
-import type { BrandStory, Category, ContactForm, Flower, FlowerQuery, PaginatedResult, ShopInfo, SiteConfig, TeamMember } from "@/types";
+import type { BrandStory, Category, ContactForm, ContactMessage, Flower, FlowerQuery, PaginatedResult, ShopInfo, SiteConfig, TeamMember } from "@/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_TOKEN_KEY = "flower_shop_admin_token";
 const inFlightMutations = new Map<string, Promise<unknown>>();
 
@@ -86,6 +86,18 @@ export async function loginAdmin(username: string, password: string) {
 
 export function getCurrentAdmin() {
   return request<{ username: string }>("/api/admin/me");
+}
+
+export function getAdminContacts(query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread" } = {}) {
+  return request<PaginatedResult<ContactMessage>>(withQuery("/api/admin/contacts", query));
+}
+
+export function markAdminContactRead(id: string) {
+  return withMutationGuard(`admin:contact:read:${id}`, () =>
+    request<ContactMessage>(`/api/admin/contacts/${id}/read`, {
+      method: "PATCH",
+    }),
+  );
 }
 
 export function getSiteConfig() {
