@@ -93,6 +93,7 @@ export function AdminFlowers() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [search, setSearch] = useState(searchParams.get("keyword") ?? "");
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get("category") ?? "all");
   const initialFeatured = searchParams.get("featured");
@@ -197,11 +198,18 @@ export function AdminFlowers() {
     form.resetFields();
   };
 
+  const clearSelection = () => setSelectedRowKeys([]);
+
   const resetFilters = () => {
     setSearch("");
     setSelectedCategory("all");
     setFeaturedFilter("all");
   };
+
+  const selectedFlowers = useMemo(
+    () => filteredFlowers.filter((flower) => selectedRowKeys.includes(flower.id)),
+    [filteredFlowers, selectedRowKeys],
+  );
 
   const handleUpload = async (file: RcFile) => {
     if (uploading) return false;
@@ -243,10 +251,33 @@ export function AdminFlowers() {
     try {
       await deleteFlower(id);
       message.success("作品已删除");
+      setSelectedRowKeys((current) => current.filter((item) => item !== id));
       if (editing?.id === id) closeDrawer();
       await load();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "删除失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateFeaturedBatch = async (featured: boolean) => {
+    if (!selectedFlowers.length || saving) return;
+    setSaving(true);
+    try {
+      await Promise.all(
+        selectedFlowers.map((flower) =>
+          updateFlower(flower.id, {
+            ...flower,
+            featured,
+          }),
+        ),
+      );
+      message.success(featured ? "已批量设为精选" : "已批量取消精选");
+      clearSelection();
+      await load();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "批量更新失败");
     } finally {
       setSaving(false);
     }
@@ -396,6 +427,23 @@ export function AdminFlowers() {
             <Button onClick={resetFilters}>清空筛选</Button>
           ) : null}
         </div>
+        {selectedFlowers.length ? (
+          <div className="admin-filter-summary">
+            <div className="admin-filter-summary-copy">
+              <p>已选中 {selectedFlowers.length} 条</p>
+              <span>可直接批量调整精选状态，减少逐条进入编辑的重复操作。</span>
+            </div>
+            <Space wrap>
+              <Button type="primary" loading={saving} onClick={() => updateFeaturedBatch(true)}>
+                批量设为精选
+              </Button>
+              <Button loading={saving} onClick={() => updateFeaturedBatch(false)}>
+                批量取消精选
+              </Button>
+              <Button onClick={clearSelection}>取消选择</Button>
+            </Space>
+          </div>
+        ) : null}
       </section>
 
       <section className="admin-panel overflow-hidden p-0">
@@ -408,6 +456,10 @@ export function AdminFlowers() {
             rowKey="id"
             dataSource={filteredFlowers}
             columns={columns}
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys) => setSelectedRowKeys(keys as string[]),
+            }}
             pagination={{ pageSize: 8, showSizeChanger: false }}
             rowClassName={() => "cursor-pointer"}
             onRow={(record) => ({ onClick: () => startEdit(record) })}
