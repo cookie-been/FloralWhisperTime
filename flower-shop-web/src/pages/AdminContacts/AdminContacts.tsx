@@ -26,7 +26,7 @@ function truncateText(value: string, maxLength: number) {
 
 function shouldIgnoreRowClick(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("button, .ant-btn, .ant-popover, .ant-popconfirm"));
+  return Boolean(target.closest("button, .ant-btn, .ant-checkbox-wrapper, .ant-checkbox, .ant-popover, .ant-popconfirm"));
 }
 
 export function AdminContacts() {
