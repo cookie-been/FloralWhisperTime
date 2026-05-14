@@ -25,11 +25,11 @@ import { useSearchParams } from "react-router-dom";
 import {
   createFlower,
   deleteFlower,
+  getAdminAiSettings,
   generateAdminAiFlowerSuggestion,
   generateAdminAiImage,
   getCategories,
   getFlowers,
-  getSiteConfig,
   updateFlower,
   uploadFlowerImage,
   type AdminAiFlowerSuggestion,
@@ -222,10 +222,10 @@ export function AdminFlowers() {
   const load = async () => {
     setLoading(true);
     try {
-      const [categoryList, flowerResult, siteConfig] = await Promise.all([getCategories(), getFlowers({ limit: 200 }), getSiteConfig()]);
+      const [categoryList, flowerResult, adminAiSettings] = await Promise.all([getCategories(), getFlowers({ limit: 200 }), getAdminAiSettings()]);
       setCategories(categoryList);
       setFlowers(flowerResult.list);
-      setAiSettings(siteConfig.aiSettings ?? null);
+      setAiSettings(adminAiSettings);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "加载失败");
     } finally {

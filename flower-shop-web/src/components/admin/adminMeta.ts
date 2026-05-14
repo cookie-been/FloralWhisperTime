@@ -1,4 +1,4 @@
-import { BarChart3, Flower2, Globe, MessageSquareMore, Settings } from "lucide-react";
+import { BarChart3, Flower2, Globe, HardDriveDownload, MessageSquareMore, Settings } from "lucide-react";
 
 export const adminNavItems = [
   {
@@ -29,6 +29,13 @@ export const adminNavItems = [
     description: "查看访客提交的预约与咨询内容",
     icon: MessageSquareMore,
   },
+  {
+    key: "system",
+    path: "/admin/system",
+    label: "系统状态",
+    description: "查看版本、备份与 AI 配置状态",
+    icon: HardDriveDownload,
+  },
 ] as const;
 
 export const adminPublicLink = {
@@ -57,5 +64,10 @@ export const adminPageMeta = {
     eyebrow: "访客留言",
     title: "用户留言",
     description: "查看访客提交的预约、咨询与定制需求。",
+  },
+  "/admin/system": {
+    eyebrow: "运维状态",
+    title: "系统状态",
+    description: "快速确认版本、备份、AI 配置和上传目录是否正常。",
   },
 } as const;

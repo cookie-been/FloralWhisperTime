@@ -4,9 +4,12 @@ import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutPageUpdateRequest;
 import com.floralwhisper.dto.AboutTimelineEntryRequest;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
+import com.floralwhisper.dto.AiSettingsResponse;
+import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.LoginRequest;
 import com.floralwhisper.dto.LoginResponse;
+import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.entity.Contact;
 import com.floralwhisper.entity.TeamMember;
@@ -50,6 +53,21 @@ public class AdminController {
   @GetMapping("/me")
   public Map<String, String> me() {
     return authService.currentAdmin();
+  }
+
+  @GetMapping("/system/status")
+  public SystemStatusResponse systemStatus() {
+    return siteService.getSystemStatus();
+  }
+
+  @GetMapping("/system/ai-settings")
+  public AiSettingsResponse aiSettings() {
+    return siteService.getAdminAiSettings();
+  }
+
+  @PutMapping("/system/ai-settings")
+  public AiSettingsResponse updateAiSettings(@Valid @RequestBody AiSettingsUpdateRequest request) {
+    return siteService.updateAdminAiSettings(request);
   }
 
   @GetMapping("/contacts")

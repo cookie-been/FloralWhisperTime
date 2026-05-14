@@ -52,8 +52,6 @@ public class SiteConfigUpdateRequest {
   @Size(max = 3000, message = "故事正文不能超过 3000 个字符")
   private String storyContent;
   private List<String> storyImages;
-  @Valid
-  private AiSettingsUpdateRequest aiSettings;
 
   public List<SiteStatResponse> getStats() {
     return stats == null ? null : Collections.unmodifiableList(stats);

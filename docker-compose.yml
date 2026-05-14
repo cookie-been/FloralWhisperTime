@@ -33,6 +33,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD:-change-me}
       PUBLIC_BASE_URL: ""
       UPLOAD_DIR: /app/uploads
+      BACKUP_DIR: /app/backups
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Floral@2026}
       ADMIN_AUTH_SECRET: ${ADMIN_AUTH_SECRET:-replace-with-a-long-random-secret}
@@ -53,6 +54,7 @@ services:
       AI_IMAGE_WATERMARK: ${AI_IMAGE_WATERMARK:-false}
     volumes:
       - ./flower-shop-backend-java/uploads:/app/uploads
+      - ./backups:/app/backups
     expose:
       - "3001"
     healthcheck:

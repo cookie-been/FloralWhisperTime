@@ -17,8 +17,10 @@ import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
 import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
+import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.dto.PaginatedResult;
+import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.entity.Contact;
 import com.floralwhisper.mapper.AboutPageMapper;
@@ -155,6 +157,104 @@ class AdminControllerTest {
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.username").value("admin"));
+  }
+
+  @Test
+  void systemStatusRequiresAdminToken() throws Exception {
+    mockMvc.perform(get("/api/admin/system/status"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录管理后台"));
+  }
+
+  @Test
+  void systemStatusReturnsStatusPayloadWhenTokenIsValid() throws Exception {
+    SystemStatusResponse response = new SystemStatusResponse();
+    response.setService("flower-shop-backend-java");
+    response.setVersion("1.0.0");
+    response.setDatabaseConnected(true);
+    response.setUploadDirectoryReady(true);
+    response.setUploadDirectoryPath("/app/uploads");
+    response.setUploadFileCount(24);
+    response.setAiEnabled(true);
+    response.setAiKeyConfigured(true);
+    response.setAiProvider("volcengine");
+    response.setAiImageModel("doubao-seedream-5-0-260128");
+    response.setAiTextModel("doubao-1-5-pro-32k-250115");
+    response.setLatestBackupPresent(true);
+    response.setLatestBackupName("20260515-002808");
+    response.setLatestBackupPath("/app/backups/20260515-002808");
+
+    when(siteService.getSystemStatus()).thenReturn(response);
+
+    mockMvc.perform(get("/api/admin/system/status")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.service").value("flower-shop-backend-java"))
+        .andExpect(jsonPath("$.version").value("1.0.0"))
+        .andExpect(jsonPath("$.databaseConnected").value(true))
+        .andExpect(jsonPath("$.aiKeyConfigured").value(true))
+        .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"));
+  }
+
+  @Test
+  void aiSettingsRejectsMissingTokenWithFrontendCompatibleMessage() throws Exception {
+    mockMvc.perform(get("/api/admin/system/ai-settings"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录管理后台"));
+  }
+
+  @Test
+  void aiSettingsReturnsMaskedPayloadWhenTokenIsValid() throws Exception {
+    AiSettingsResponse response = new AiSettingsResponse();
+    response.setEnabled(true);
+    response.setProvider("volcengine");
+    response.setApiKeyMasked("3798ed26-****-****-****-84463770f183");
+    response.setApiKeyConfigured(true);
+    response.setModel("doubao-seedream-5-0-260128");
+    response.setBaseUrl("https://ark.cn-beijing.volces.com/api/v3");
+    response.setGeneratePath("/images/generations");
+    response.setSize("1920x1920");
+    response.setTextModel("doubao-1-5-pro-32k-250115");
+    response.setTextGeneratePath("/chat/completions");
+    response.setTextTemperature(0.4D);
+    response.setTextMaxTokens(1200);
+
+    when(siteService.getAdminAiSettings()).thenReturn(response);
+
+    mockMvc.perform(get("/api/admin/system/ai-settings")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.enabled").value(true))
+        .andExpect(jsonPath("$.apiKeyConfigured").value(true))
+        .andExpect(jsonPath("$.apiKeyMasked").value("3798ed26-****-****-****-84463770f183"))
+        .andExpect(jsonPath("$.apiKey").doesNotExist())
+        .andExpect(jsonPath("$.textModel").value("doubao-1-5-pro-32k-250115"));
+  }
+
+  @Test
+  void updateAiSettingsReturnsMaskedPayloadWhenTokenIsValid() throws Exception {
+    AiSettingsResponse response = new AiSettingsResponse();
+    response.setEnabled(true);
+    response.setProvider("volcengine");
+    response.setApiKeyMasked("3798ed26-****-****-****-84463770f183");
+    response.setApiKeyConfigured(true);
+    response.setModel("doubao-seedream-5-0-260128");
+    response.setBaseUrl("https://ark.cn-beijing.volces.com/api/v3");
+    response.setGeneratePath("/images/generations");
+    response.setSize("1920x1920");
+
+    when(siteService.updateAdminAiSettings(any())).thenReturn(response);
+
+    mockMvc.perform(put("/api/admin/system/ai-settings")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"enabled":true,"provider":"volcengine","model":"doubao-seedream-5-0-260128"}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.enabled").value(true))
+        .andExpect(jsonPath("$.apiKeyConfigured").value(true))
+        .andExpect(jsonPath("$.apiKeyMasked").value("3798ed26-****-****-****-84463770f183"));
   }
 
   @Test

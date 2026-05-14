@@ -2,6 +2,7 @@ package com.floralwhisper.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.floralwhisper.common.ApiException;
+import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutPageUpdateRequest;
 import com.floralwhisper.dto.AboutTimelineEntryRequest;
@@ -15,6 +16,7 @@ import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
 import com.floralwhisper.dto.SiteConfigUpdateResponse;
 import com.floralwhisper.dto.SiteStatResponse;
+import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.dto.TimeRangeResponse;
 import com.floralwhisper.entity.AboutPage;
@@ -40,9 +42,14 @@ import com.floralwhisper.mapper.SiteConfigMapper;
 import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.math.BigDecimal;
+import java.io.File;
+import java.sql.Connection;
 import java.util.List;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,6 +68,9 @@ public class SiteService {
   private final BrandStoryImageMapper brandStoryImageMapper;
   private final CategoryMapper categoryMapper;
   private final TeamMemberMapper teamMemberMapper;
+  private final AppProperties appProperties;
+  private final DataSource dataSource;
+  private final BuildProperties buildProperties;
 
   public SiteService(
       SiteConfigMapper siteConfigMapper,
@@ -73,7 +83,10 @@ public class SiteService {
       BrandStoryMapper brandStoryMapper,
       BrandStoryImageMapper brandStoryImageMapper,
       CategoryMapper categoryMapper,
-      TeamMemberMapper teamMemberMapper) {
+      TeamMemberMapper teamMemberMapper,
+      AppProperties appProperties,
+      DataSource dataSource,
+      @Nullable BuildProperties buildProperties) {
     this.siteConfigMapper = siteConfigMapper;
     this.siteConfigStatMapper = siteConfigStatMapper;
     this.shopInfoMapper = shopInfoMapper;
@@ -85,6 +98,9 @@ public class SiteService {
     this.brandStoryImageMapper = brandStoryImageMapper;
     this.categoryMapper = categoryMapper;
     this.teamMemberMapper = teamMemberMapper;
+    this.appProperties = appProperties;
+    this.dataSource = dataSource;
+    this.buildProperties = buildProperties;
   }
 
   public SiteConfigResponse getSiteConfig() {
@@ -100,9 +116,36 @@ public class SiteService {
     response.setContactIntro(config.getContactIntro());
     response.setBusinessHoursText(config.getBusinessHoursText());
     response.setFooterDescription(config.getFooterDescription());
-    response.setAiSettings(toAiSettingsResponse(ensureAiSettings()));
     response.setStats(siteConfigStatMapper.selectList(new LambdaQueryWrapper<SiteConfigStat>().orderByAsc(SiteConfigStat::getSort))
         .stream().map(this::toStatResponse).toList());
+    return response;
+  }
+
+  public AiSettingsResponse getAdminAiSettings() {
+    return toAiSettingsResponse(ensureAiSettings());
+  }
+
+  public SystemStatusResponse getSystemStatus() {
+    SystemStatusResponse response = new SystemStatusResponse();
+    AiSettings aiSettings = ensureAiSettings();
+    File uploadsDir = resolveDirectory(appProperties.getUpload().getDir(), "uploads");
+    File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
+    File latestBackup = resolveLatestBackup(backupsDir);
+
+    response.setService(resolveServiceName());
+    response.setVersion(resolveVersion());
+    response.setDatabaseConnected(checkDatabaseConnection());
+    response.setUploadDirectoryReady(uploadsDir.exists() && uploadsDir.isDirectory() && uploadsDir.canWrite());
+    response.setUploadDirectoryPath(uploadsDir.getAbsolutePath());
+    response.setUploadFileCount(countFiles(uploadsDir));
+    response.setAiEnabled(Boolean.TRUE.equals(aiSettings.getEnabled()));
+    response.setAiKeyConfigured(notBlank(aiSettings.getApiKey()));
+    response.setAiProvider(aiSettings.getProvider());
+    response.setAiImageModel(aiSettings.getModel());
+    response.setAiTextModel(aiSettings.getTextModel());
+    response.setLatestBackupPresent(latestBackup != null);
+    response.setLatestBackupName(latestBackup == null ? "" : latestBackup.getName());
+    response.setLatestBackupPath(latestBackup == null ? "" : latestBackup.getAbsolutePath());
     return response;
   }
 
@@ -184,9 +227,14 @@ public class SiteService {
     if (request.getStoryImages() != null) {
       replaceStoryImages(request.getStoryImages());
     }
-    updateAiSettings(request.getAiSettings());
 
     return new SiteConfigUpdateResponse(getSiteConfig(), getShopInfo(), getBrandStory());
+  }
+
+  @Transactional
+  public AiSettingsResponse updateAdminAiSettings(AiSettingsUpdateRequest request) {
+    updateAiSettings(request);
+    return getAdminAiSettings();
   }
 
   @Transactional
@@ -327,7 +375,7 @@ public class SiteService {
     AiSettings current = ensureAiSettings();
     current.setEnabled(request.getEnabled() == null ? current.getEnabled() : request.getEnabled());
     current.setProvider(text(request.getProvider(), current.getProvider()));
-    current.setApiKey(text(request.getApiKey(), current.getApiKey()));
+    current.setApiKey(secretText(request.getApiKey(), current.getApiKey()));
     current.setModel(text(request.getModel(), current.getModel()));
     current.setBaseUrl(text(request.getBaseUrl(), current.getBaseUrl()));
     current.setGeneratePath(text(request.getGeneratePath(), current.getGeneratePath()));
@@ -343,7 +391,8 @@ public class SiteService {
     AiSettingsResponse response = new AiSettingsResponse();
     response.setEnabled(Boolean.TRUE.equals(settings.getEnabled()));
     response.setProvider(settings.getProvider());
-    response.setApiKey(settings.getApiKey());
+    response.setApiKeyConfigured(notBlank(settings.getApiKey()));
+    response.setApiKeyMasked(maskApiKey(settings.getApiKey()));
     response.setModel(settings.getModel());
     response.setBaseUrl(settings.getBaseUrl());
     response.setGeneratePath(settings.getGeneratePath());
@@ -377,6 +426,27 @@ public class SiteService {
 
   private String text(String next, String current) {
     return next == null ? current : next.trim();
+  }
+
+  private String secretText(String next, String current) {
+    if (next == null) {
+      return current;
+    }
+    String trimmed = next.trim();
+    return trimmed.isEmpty() ? current : trimmed;
+  }
+
+  private String maskApiKey(String apiKey) {
+    if (!notBlank(apiKey)) {
+      return "";
+    }
+    String trimmed = apiKey.trim();
+    if (trimmed.length() <= 8) {
+      return "****";
+    }
+    int prefix = Math.min(8, trimmed.length());
+    int suffix = Math.min(4, trimmed.length() - prefix);
+    return trimmed.substring(0, prefix) + "-****-****-****-" + trimmed.substring(trimmed.length() - suffix);
   }
 
   private String optionalText(String value) {
@@ -575,5 +645,72 @@ public class SiteService {
 
   private boolean notBlank(String value) {
     return value != null && !value.isBlank();
+  }
+
+  private String resolveServiceName() {
+    if (buildProperties != null && notBlank(buildProperties.getName())) {
+      return buildProperties.getName().trim();
+    }
+    return "flower-shop-backend-java";
+  }
+
+  private String resolveVersion() {
+    if (buildProperties != null && notBlank(buildProperties.getVersion())) {
+      return buildProperties.getVersion().trim();
+    }
+    Package pkg = SiteService.class.getPackage();
+    if (pkg != null && notBlank(pkg.getImplementationVersion())) {
+      return pkg.getImplementationVersion().trim();
+    }
+    return "dev";
+  }
+
+  private boolean checkDatabaseConnection() {
+    try (Connection connection = dataSource.getConnection()) {
+      return connection != null && connection.isValid(2);
+    } catch (Exception exception) {
+      return false;
+    }
+  }
+
+  private File resolveDirectory(String configuredPath, String fallbackPath) {
+    String path = notBlank(configuredPath) ? configuredPath.trim() : fallbackPath;
+    return new File(path).getAbsoluteFile();
+  }
+
+  private long countFiles(File directory) {
+    if (!directory.exists() || !directory.isDirectory()) {
+      return 0;
+    }
+    File[] files = directory.listFiles();
+    if (files == null) {
+      return 0;
+    }
+    long total = 0;
+    for (File file : files) {
+      if (file.isDirectory()) {
+        total += countFiles(file);
+      } else {
+        total++;
+      }
+    }
+    return total;
+  }
+
+  private File resolveLatestBackup(File backupsDir) {
+    if (!backupsDir.exists() || !backupsDir.isDirectory()) {
+      return null;
+    }
+    File[] files = backupsDir.listFiles(File::isDirectory);
+    if (files == null || files.length == 0) {
+      return null;
+    }
+    File latest = files[0];
+    for (File file : files) {
+      if (file.getName().compareTo(latest.getName()) > 0) {
+        latest = file;
+      }
+    }
+    return latest;
   }
 }

@@ -6,7 +6,8 @@ import lombok.Data;
 public class AiSettingsResponse {
   private boolean enabled;
   private String provider;
-  private String apiKey;
+  private boolean apiKeyConfigured;
+  private String apiKeyMasked;
   private String model;
   private String baseUrl;
   private String generatePath;

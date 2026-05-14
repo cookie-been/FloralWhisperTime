@@ -170,21 +170,11 @@ Authorization: Bearer <token>
 - `contactIntro`
 - `businessHoursText`
 - `footerDescription`
-- `aiSettings`
 
-其中 `aiSettings` 当前支持：
+说明：
 
-- `enabled`
-- `provider`
-- `apiKey`
-- `model`
-- `baseUrl`
-- `generatePath`
-- `size`
-- `textModel`
-- `textGeneratePath`
-- `textTemperature`
-- `textMaxTokens`
+- 公开 `GET /api/site-config` 不再返回 AI 配置
+- AI 配置仅允许管理员通过后台专用接口读取和修改
 
 ### 4.7 门店信息
 
@@ -327,7 +317,69 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.3 用户留言列表
+## 5.3 系统状态
+
+#### `GET /api/admin/system/status`
+
+说明：
+
+- 仅管理员可访问
+- 返回当前运行实例的只读状态信息
+- 适用于部署验收、运维巡检和售后排障
+
+返回示例：
+
+```json
+{
+  "service": "flower-shop-backend-java",
+  "version": "1.0.0",
+  "databaseConnected": true,
+  "uploadDirectoryReady": true,
+  "uploadDirectoryPath": "/app/uploads",
+  "uploadFileCount": 7,
+  "aiEnabled": true,
+  "aiKeyConfigured": true,
+  "aiProvider": "volcengine",
+  "aiImageModel": "doubao-seedream-5-0-260128",
+  "aiTextModel": "doubao-1-5-pro-32k-250115",
+  "latestBackupName": "20260515-002808",
+  "latestBackupPath": "/app/backups/20260515-002808",
+  "latestBackupPresent": true
+}
+```
+
+字段说明：
+
+- `service`：服务标识
+- `version`：当前部署版本
+- `databaseConnected`：数据库探测结果
+- `uploadDirectoryReady`：上传目录是否存在且可写
+- `uploadDirectoryPath`：上传目录绝对路径
+- `uploadFileCount`：上传目录文件总数
+- `aiEnabled`：AI 图片能力是否启用
+- `aiKeyConfigured`：AI 密钥是否已配置
+- `aiProvider`：AI 提供商
+- `aiImageModel`：图片模型
+- `aiTextModel`：文本建议模型
+- `latestBackupName`：最近备份目录名
+- `latestBackupPath`：最近备份目录绝对路径
+- `latestBackupPresent`：是否发现备份目录
+
+## 5.4 AI 配置
+
+#### `GET /api/admin/system/ai-settings`
+
+返回脱敏后的 AI 配置：
+
+- `apiKey` 不会返回
+- 使用 `apiKeyConfigured` 表示是否已配置
+- 使用 `apiKeyMasked` 展示脱敏摘要
+
+#### `PUT /api/admin/system/ai-settings`
+
+更新后台 AI 配置。空字符串不会覆盖已有密钥。
+
+## 5.5 用户留言列表
 
 #### `GET /api/admin/contacts`
 
@@ -355,13 +407,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.4 标记留言已读
+## 5.6 标记留言已读
 
 #### `PATCH /api/admin/contacts/{id}/read`
 
 返回更新后的留言对象。
 
-## 5.5 AI 生成作品图
+## 5.7 AI 生成作品图
 
 #### `POST /api/admin/ai/images/generate`
 
@@ -482,7 +534,67 @@ Authorization: Bearer <token>
 204 No Content
 ```
 
-## 5.10 更新站点配置
+## 5.10 获取后台 AI 配置
+
+#### `GET /api/admin/system/ai-settings`
+
+需要管理员 Bearer Token。
+
+成功返回：
+
+```json
+{
+  "enabled": true,
+  "provider": "volcengine",
+  "apiKeyConfigured": true,
+  "apiKeyMasked": "3798ed26-****-****-****-f183",
+  "model": "doubao-seedream-5-0-260128",
+  "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+  "generatePath": "/images/generations",
+  "size": "1920x1920",
+  "textModel": "doubao-1-5-pro-32k-250115",
+  "textGeneratePath": "/chat/completions",
+  "textTemperature": 0.4,
+  "textMaxTokens": 1200
+}
+```
+
+说明：
+
+- 不返回明文 `apiKey`
+- `apiKeyConfigured` 表示当前是否已配置密钥
+- `apiKeyMasked` 为脱敏展示值
+
+## 5.11 更新后台 AI 配置
+
+#### `PUT /api/admin/system/ai-settings`
+
+需要管理员 Bearer Token。
+
+请求体示例：
+
+```json
+{
+  "enabled": true,
+  "provider": "volcengine",
+  "apiKey": "new-secret-key",
+  "model": "doubao-seedream-5-0-260128",
+  "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+  "generatePath": "/images/generations",
+  "size": "1920x1920",
+  "textModel": "doubao-1-5-pro-32k-250115",
+  "textGeneratePath": "/chat/completions",
+  "textTemperature": 0.4,
+  "textMaxTokens": 1200
+}
+```
+
+说明：
+
+- `apiKey` 留空或不传时，不会覆盖旧密钥
+- 成功响应返回脱敏后的 AI 配置
+
+## 5.12 更新站点配置
 
 #### `PUT /api/site-config`
 
@@ -510,25 +622,14 @@ Authorization: Bearer <token>
 - `storySubtitle`
 - `storyContent`
 - `storyImages`
-- `aiSettings.enabled`
-- `aiSettings.provider`
-- `aiSettings.apiKey`
-- `aiSettings.model`
-- `aiSettings.baseUrl`
-- `aiSettings.generatePath`
-- `aiSettings.size`
-- `aiSettings.textModel`
-- `aiSettings.textGeneratePath`
-- `aiSettings.textTemperature`
-- `aiSettings.textMaxTokens`
 
-## 5.11 获取关于我们页配置
+## 5.13 获取关于我们页配置
 
 #### `GET /api/admin/about-page`
 
 返回关于我们页可编辑内容。
 
-## 5.12 更新关于我们页配置
+## 5.14 更新关于我们页配置
 
 #### `PUT /api/admin/about-page`
 
@@ -545,13 +646,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.13 获取关于我们时间轴
+## 5.15 获取关于我们时间轴
 
 #### `GET /api/admin/about-timeline`
 
 返回时间轴数组。
 
-## 5.14 新增时间轴条目
+## 5.16 新增时间轴条目
 
 #### `POST /api/admin/about-timeline`
 
@@ -566,13 +667,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.15 更新时间轴条目
+## 5.17 更新时间轴条目
 
 #### `PUT /api/admin/about-timeline/{id}`
 
 请求体与新增相同。
 
-## 5.16 删除时间轴条目
+## 5.18 删除时间轴条目
 
 #### `DELETE /api/admin/about-timeline/{id}`
 

@@ -38,6 +38,8 @@ app:
   upload:
     dir: ${UPLOAD_DIR:uploads}
     public-base-url: ${PUBLIC_BASE_URL:http://localhost:${server.port}}
+  backup:
+    dir: ${BACKUP_DIR:../backups}
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:*}
     allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}

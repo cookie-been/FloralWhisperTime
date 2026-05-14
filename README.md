@@ -54,6 +54,45 @@
 ./deploy.sh --skip-build
 ```
 
+## 备份
+
+推荐使用根目录脚本：
+
+```bash
+./backup.sh
+```
+
+默认会备份：
+
+- MySQL 数据库
+- `flower-shop-backend-java/uploads/` 上传文件
+
+备份目录默认在：
+
+```text
+./backups/<timestamp>/
+```
+
+## 升级
+
+推荐使用根目录脚本：
+
+```bash
+./upgrade.sh
+```
+
+默认会先执行备份，再拉取代码、重建容器并做健康检查。
+
+## 回滚
+
+推荐使用根目录脚本：
+
+```bash
+./rollback.sh --latest --dry-run
+```
+
+建议先用 `--dry-run` 校验目标备份，再执行正式回滚。
+
 说明：
 
 - 默认会先执行 `git fetch` + `git pull --ff-only`
@@ -114,8 +153,17 @@ npm run dev
 - `/admin/flowers`：作品管理
 - `/admin/settings`：内容配置
 - `/admin/contacts`：用户留言
+- `/admin/system`：系统状态
 
 其中“内容配置”统一维护首页、门店信息、品牌故事和关于我们内容。
+
+`系统状态` 页面用于查看：
+
+- 当前部署版本
+- 数据库连通状态
+- 上传目录状态与文件数
+- AI 配置启用情况
+- 最近一次备份目录
 
 `作品管理` 已支持 AI 生成作品图工作流：
 
@@ -138,6 +186,7 @@ npm run dev
 - `ADMIN_AUTH_SECRET`
 - `JWT_ISSUER`
 - `CORS_ALLOWED_ORIGIN_PATTERNS`
+- `BACKUP_DIR`
 - `AI_IMAGE_ENABLED`
 - `VOLCENGINE_API_KEY`
 - `VOLCENGINE_IMAGE_MODEL`
@@ -155,4 +204,4 @@ npm run dev
 
 ## 功能范围
 
-当前版本支持品牌和花束作品展示、作品分类、搜索、排序、详情、相关推荐、关于我们、门店信息、地图、联系留言，以及 Web 管理后台的作品管理、内容配置、留言查看。不包含购物车、支付、订单、库存和会员系统。
+当前版本支持品牌和花束作品展示、作品分类、搜索、排序、详情、相关推荐、关于我们、门店信息、地图、联系留言，以及 Web 管理后台的作品管理、内容配置、留言查看、系统状态查看。不包含购物车、支付、订单、库存和会员系统。

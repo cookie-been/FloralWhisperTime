@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
-import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
@@ -103,19 +102,13 @@ class SiteControllerTest {
     SiteConfigResponse response = new SiteConfigResponse();
     response.setBrandName("花语时光");
     response.setHeroTitle("花语时光");
-    AiSettingsResponse aiSettings = new AiSettingsResponse();
-    aiSettings.setEnabled(true);
-    aiSettings.setProvider("volcengine");
-    aiSettings.setModel("Doubao-Seedream-5.0-lite");
-    response.setAiSettings(aiSettings);
     response.setStats(List.of(stat("860+", "已服务客户"), stat("320+", "花艺作品")));
     when(siteService.getSiteConfig()).thenReturn(response);
 
     mockMvc.perform(get("/api/site-config"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.brandName").value("花语时光"))
-        .andExpect(jsonPath("$.aiSettings.enabled").value(true))
-        .andExpect(jsonPath("$.aiSettings.model").value("Doubao-Seedream-5.0-lite"))
+        .andExpect(jsonPath("$.aiSettings").doesNotExist())
         .andExpect(jsonPath("$.stats[0].value").value("860+"))
         .andExpect(jsonPath("$.stats[1].label").value("花艺作品"));
   }
@@ -136,12 +129,6 @@ class SiteControllerTest {
   void updateSiteConfigReturnsMergedSitePayload() throws Exception {
     SiteConfigResponse siteConfig = new SiteConfigResponse();
     siteConfig.setBrandName("花语时光");
-    AiSettingsResponse aiSettings = new AiSettingsResponse();
-    aiSettings.setEnabled(true);
-    aiSettings.setProvider("volcengine");
-    aiSettings.setApiKey("db-key");
-    aiSettings.setModel("Doubao-Seedream-5.0-lite");
-    siteConfig.setAiSettings(aiSettings);
     siteConfig.setStats(List.of(stat("860+", "已服务客户")));
     ShopInfoResponse shopInfo = new ShopInfoResponse();
     shopInfo.setName("花语时光");
@@ -158,7 +145,7 @@ class SiteControllerTest {
                 """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.siteConfig.brandName").value("花语时光"))
-        .andExpect(jsonPath("$.siteConfig.aiSettings.apiKey").value("db-key"))
+        .andExpect(jsonPath("$.siteConfig.aiSettings").doesNotExist())
         .andExpect(jsonPath("$.brandStory.images[0]").value("/uploads/story-1.jpg"));
   }
 

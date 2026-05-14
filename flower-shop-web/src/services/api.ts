@@ -11,6 +11,7 @@ import type {
   PaginatedResult,
   ShopInfo,
   SiteConfig,
+  SystemStatus,
   TeamMember,
 } from "@/types";
 
@@ -102,6 +103,10 @@ export function getCurrentAdmin() {
   return request<{ username: string }>("/api/admin/me");
 }
 
+export function getAdminSystemStatus() {
+  return request<SystemStatus>("/api/admin/system/status");
+}
+
 export function getAdminContacts(query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread" } = {}) {
   return request<PaginatedResult<ContactMessage>>(withQuery("/api/admin/contacts", query));
 }
@@ -131,10 +136,22 @@ export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
   storySubtitle?: string;
   storyContent?: string;
   storyImages?: string[] | string;
-  aiSettings?: AiSettings;
 }) {
   return withMutationGuard("admin:site-config:update", () =>
     request<{ siteConfig: SiteConfig; shopInfo: ShopInfo; brandStory: BrandStory }>("/api/site-config", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  );
+}
+
+export function getAdminAiSettings() {
+  return request<AiSettings>("/api/admin/system/ai-settings");
+}
+
+export function updateAdminAiSettings(payload: AiSettings) {
+  return withMutationGuard("admin:ai-settings:update", () =>
+    request<AiSettings>("/api/admin/system/ai-settings", {
       method: "PUT",
       body: JSON.stringify(payload),
     }),

@@ -11,6 +11,7 @@ public class AppProperties {
   private Admin admin = new Admin();
   private Jwt jwt = new Jwt();
   private Upload upload = new Upload();
+  private Backup backup = new Backup();
   private Cors cors = new Cors();
   private Import importer = new Import();
 
@@ -31,6 +32,11 @@ public class AppProperties {
   public static class Upload {
     private String dir;
     private String publicBaseUrl;
+  }
+
+  @Data
+  public static class Backup {
+    private String dir;
   }
 
   @Data

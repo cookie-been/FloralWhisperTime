@@ -97,6 +97,7 @@ mvn spring-boot:run
 - `GET /api/health`
 - `POST /api/admin/login`
 - `GET /api/admin/me`
+- `GET /api/admin/system/status`
 - `GET /api/admin/contacts`
 - `PATCH /api/admin/contacts/{id}/read`
 - `POST /api/admin/ai/images/generate`
@@ -111,6 +112,8 @@ mvn spring-boot:run
 - `GET /api/categories`
 - `GET /api/site-config`
 - `PUT /api/site-config`
+- `GET /api/admin/system/ai-settings`
+- `PUT /api/admin/system/ai-settings`
 - `GET /api/about-page`
 - `GET /api/about-timeline`
 - `GET /api/admin/about-page`
@@ -180,6 +183,34 @@ mvn package
 - `enabled`
 - `provider`
 - `apiKey`
+
+安全说明：
+
+- 公开 `GET /api/site-config` 不再返回 AI 配置
+- AI 配置只能通过后台管理员接口读取和修改
+- 后台读取时返回脱敏后的 `apiKeyMasked` 与 `apiKeyConfigured`
+- 系统状态接口 `GET /api/admin/system/status` 也只返回是否配置密钥，不返回明文密钥
+
+## 系统状态说明
+
+后台新增：
+
+```text
+GET /api/admin/system/status
+```
+
+用途：
+
+- 检查部署版本
+- 检查数据库可用性
+- 检查上传目录状态
+- 检查 AI 是否启用及是否已配置密钥
+- 检查容器内最近备份目录
+
+部署建议：
+
+- 生产容器请显式设置 `BACKUP_DIR`
+- Docker Compose 默认已挂载仓库根目录 `./backups` 到容器内 `/app/backups`
 
 方舟文本建议默认路径：
 

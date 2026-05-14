@@ -13,6 +13,7 @@ export type {
   ShopInfo,
   SiteConfig,
   SiteStat,
+  SystemStatus,
   TeamMember,
   TimeRange,
 } from "@shared/types";

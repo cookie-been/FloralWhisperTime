@@ -4,7 +4,7 @@ import type { RcFile } from "antd/es/upload";
 import { ArrowUpRight, Building2, Image as ImageIcon, KeyRound, MapPin, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { AdminAbout } from "@/pages/AdminAbout/AdminAbout";
-import { getBrandStory, getShopInfo, getSiteConfig, updateSiteConfig, uploadFlowerImage } from "@/services/api";
+import { getAdminAiSettings, getBrandStory, getShopInfo, getSiteConfig, updateAdminAiSettings, updateSiteConfig, uploadFlowerImage } from "@/services/api";
 import type { AiSettings, BrandStory, ShopInfo, SiteConfig } from "@/types";
 
 type SettingsForm = SiteConfig & {
@@ -17,8 +17,9 @@ type SettingsForm = SiteConfig & {
   storySubtitle: string;
   storyContent: string;
   storyImages: string;
-  aiSettings?: AiSettings;
 };
+
+type AiSettingsForm = AiSettings;
 
 const joinText = (items: string[]) => items.join("，");
 const splitText = (value: string) =>
@@ -39,7 +40,9 @@ export function AdminSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<SettingsForm>();
+  const [aiForm] = Form.useForm<AiSettingsForm>();
   const [loading, setLoading] = useState(false);
+  const [savingAi, setSavingAi] = useState(false);
   const [booting, setBooting] = useState(true);
   const [uploadingHero, setUploadingHero] = useState(false);
   const activeTab = searchParams.get("tab") === "about" ? "about" : "site";
@@ -54,11 +57,13 @@ export function AdminSettings() {
   const storyTitle = Form.useWatch("storyTitle", form) ?? "";
   const storyContent = Form.useWatch("storyContent", form) ?? "";
   const storyImages = Form.useWatch("storyImages", form) ?? "";
-  const aiEnabled = Form.useWatch(["aiSettings", "enabled"], form) ?? false;
-  const aiProvider = Form.useWatch(["aiSettings", "provider"], form) ?? "";
-  const aiModel = Form.useWatch(["aiSettings", "model"], form) ?? "";
-  const aiSize = Form.useWatch(["aiSettings", "size"], form) ?? "";
-  const aiTextModel = Form.useWatch(["aiSettings", "textModel"], form) ?? "";
+  const aiEnabled = Form.useWatch("enabled", aiForm) ?? false;
+  const aiProvider = Form.useWatch("provider", aiForm) ?? "";
+  const aiModel = Form.useWatch("model", aiForm) ?? "";
+  const aiSize = Form.useWatch("size", aiForm) ?? "";
+  const aiTextModel = Form.useWatch("textModel", aiForm) ?? "";
+  const aiKeyConfigured = Form.useWatch("apiKeyConfigured", aiForm) ?? false;
+  const aiKeyMasked = Form.useWatch("apiKeyMasked", aiForm) ?? "";
 
   const sectionRefs = {
     brand: useRef<HTMLDivElement | null>(null),
@@ -71,8 +76,8 @@ export function AdminSettings() {
   const storyPreviewImages = useMemo(() => splitText(storyImages), [storyImages]);
 
   useEffect(() => {
-    Promise.all([getSiteConfig(), getShopInfo(), getBrandStory()])
-      .then(([siteConfig, shopInfo, story]) => {
+    Promise.all([getSiteConfig(), getShopInfo(), getBrandStory(), getAdminAiSettings()])
+      .then(([siteConfig, shopInfo, story, aiSettings]) => {
         form.setFieldsValue({
           ...siteConfig,
           phone: shopInfo.phone,
@@ -85,10 +90,11 @@ export function AdminSettings() {
           storyContent: story.content,
           storyImages: joinText(story.images),
         });
+        aiForm.setFieldsValue(aiSettings);
       })
       .catch((error) => message.error(error.message))
       .finally(() => setBooting(false));
-  }, [form]);
+  }, [aiForm, form]);
 
   const save = async () => {
     if (loading) return;
@@ -104,6 +110,21 @@ export function AdminSettings() {
       message.error(error instanceof Error ? error.message : "保存失败");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveAiSettings = async () => {
+    if (savingAi) return;
+    const values = await aiForm.validateFields();
+    setSavingAi(true);
+    try {
+      const result = await updateAdminAiSettings(values);
+      aiForm.setFieldsValue({ ...result, apiKey: "" });
+      message.success("AI 配置已保存");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "AI 配置保存失败");
+    } finally {
+      setSavingAi(false);
     }
   };
 
@@ -320,41 +341,46 @@ export function AdminSettings() {
             AI生图配置
           </div>
           <p className="mt-2 text-sm leading-6 text-muted">在这里统一维护 AI 生图和作品信息建议能力的开关、密钥、模型与接口地址。保存后后台作品管理中的 AI 工作台会立即使用最新配置。</p>
+          <Form form={aiForm} layout="vertical">
           <div className="mt-4 grid gap-x-4 md:grid-cols-2">
-            <Form.Item name={["aiSettings", "enabled"]} label="启用状态" valuePropName="checked">
+            <Form.Item name="enabled" label="启用状态" valuePropName="checked">
               <Switch checkedChildren="开启" unCheckedChildren="关闭" />
             </Form.Item>
-            <Form.Item name={["aiSettings", "provider"]} label="提供商">
+            <Form.Item name="provider" label="提供商">
               <Input placeholder="volcengine" />
             </Form.Item>
-            <Form.Item name={["aiSettings", "model"]} label="模型">
+            <Form.Item name="model" label="模型">
               <Input placeholder="Doubao-Seedream-5.0-lite" />
             </Form.Item>
-            <Form.Item name={["aiSettings", "generatePath"]} label="生成路径">
+            <Form.Item name="generatePath" label="生成路径">
               <Input placeholder="/images/generations" />
             </Form.Item>
-            <Form.Item name={["aiSettings", "size"]} label="图片尺寸">
+            <Form.Item name="size" label="图片尺寸">
               <Input placeholder="1920x1920" />
             </Form.Item>
-            <Form.Item name={["aiSettings", "textModel"]} label="文本模型">
+            <Form.Item name="textModel" label="文本模型">
               <Input placeholder="doubao-1-5-pro-32k-250115" />
             </Form.Item>
-            <Form.Item name={["aiSettings", "textGeneratePath"]} label="文本生成路径">
+            <Form.Item name="textGeneratePath" label="文本生成路径">
               <Input placeholder="/chat/completions" />
             </Form.Item>
-            <Form.Item name={["aiSettings", "textTemperature"]} label="文本温度">
+            <Form.Item name="textTemperature" label="文本温度">
               <InputNumber className="w-full" min={0} max={2} step={0.1} />
             </Form.Item>
-            <Form.Item name={["aiSettings", "textMaxTokens"]} label="文本最大输出">
+            <Form.Item name="textMaxTokens" label="文本最大输出">
               <InputNumber className="w-full" min={256} max={4096} step={64} />
             </Form.Item>
           </div>
-          <Form.Item name={["aiSettings", "apiKey"]} label="API Key">
-            <Input.Password placeholder="输入新的服务密钥后保存" visibilityToggle />
+          <Form.Item name="apiKey" label={aiKeyConfigured ? `API Key（已配置：${aiKeyMasked || "已脱敏"}）` : "API Key"}>
+            <Input.Password placeholder={aiKeyConfigured ? "留空则保持原密钥不变，输入新值将覆盖" : "输入新的服务密钥后保存"} visibilityToggle />
           </Form.Item>
-          <Form.Item name={["aiSettings", "baseUrl"]} label="服务地址">
+          <Form.Item name="baseUrl" label="服务地址">
             <Input placeholder="https://operator.las.cn-beijing.volces.com/api/v1" />
           </Form.Item>
+          <Button type="primary" loading={savingAi} onClick={() => void saveAiSettings()}>
+            保存 AI 配置
+          </Button>
+          </Form>
         </div>
 
         <div className="space-y-6">

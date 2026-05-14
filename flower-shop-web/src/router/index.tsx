@@ -7,6 +7,7 @@ import { AdminContacts } from "@/pages/AdminContacts/AdminContacts";
 import { AdminFlowers } from "@/pages/AdminFlowers/AdminFlowers";
 import { AdminLogin } from "@/pages/AdminLogin/AdminLogin";
 import { AdminSettings } from "@/pages/AdminSettings/AdminSettings";
+import { AdminSystemStatus } from "@/pages/AdminSystemStatus/AdminSystemStatus";
 import { About } from "@/pages/About/About";
 import { Contact } from "@/pages/Contact/Contact";
 import { FlowerDetail } from "@/pages/FlowerDetail/FlowerDetail";
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
           { index: true, element: <AdminDashboard /> },
           { path: "flowers", element: <AdminFlowers /> },
           { path: "settings", element: <AdminSettings /> },
+          { path: "system", element: <AdminSystemStatus /> },
           { path: "about", element: <Navigate to="/admin/settings?tab=about" replace /> },
           { path: "contacts", element: <AdminContacts /> },
         ],

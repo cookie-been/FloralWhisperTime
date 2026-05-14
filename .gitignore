@@ -15,6 +15,8 @@ project.private.config.json
 flower-shop-mini/project.private.config.json
 .env
 flower-shop-backend-java/uploads/
+backups/
+logs/
 
 *.zip
 *:Zone.Identifier

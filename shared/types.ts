@@ -87,7 +87,9 @@ export interface SiteStat {
 export interface AiSettings {
   enabled: boolean;
   provider: string;
-  apiKey: string;
+  apiKey?: string;
+  apiKeyConfigured?: boolean;
+  apiKeyMasked?: string;
   model: string;
   baseUrl: string;
   generatePath: string;
@@ -110,7 +112,6 @@ export interface SiteConfig {
   contactIntro: string;
   businessHoursText: string;
   footerDescription: string;
-  aiSettings?: AiSettings;
 }
 
 export interface TeamMember {
@@ -142,4 +143,21 @@ export interface ContactMessage {
   message: string;
   createdAt: string;
   readAt?: string | null;
+}
+
+export interface SystemStatus {
+  service: string;
+  version: string;
+  databaseConnected: boolean;
+  uploadDirectoryReady: boolean;
+  uploadDirectoryPath: string;
+  uploadFileCount: number;
+  aiEnabled: boolean;
+  aiKeyConfigured: boolean;
+  aiProvider: string;
+  aiImageModel: string;
+  aiTextModel: string;
+  latestBackupName: string;
+  latestBackupPath: string;
+  latestBackupPresent: boolean;
 }
