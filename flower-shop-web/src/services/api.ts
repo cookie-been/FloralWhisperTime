@@ -1,6 +1,7 @@
 import type {
   AboutPageContent,
   AboutTimelineEntry,
+  AiSettings,
   BrandStory,
   Category,
   ContactForm,
@@ -130,6 +131,7 @@ export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
   storySubtitle?: string;
   storyContent?: string;
   storyImages?: string[] | string;
+  aiSettings?: AiSettings;
 }) {
   return withMutationGuard("admin:site-config:update", () =>
     request<{ siteConfig: SiteConfig; shopInfo: ShopInfo; brandStory: BrandStory }>("/api/site-config", {

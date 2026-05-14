@@ -1,9 +1,9 @@
 package com.floralwhisper.controller;
 
 import com.floralwhisper.common.ApiException;
-import com.floralwhisper.config.AiImageProperties;
 import com.floralwhisper.dto.AiImageGenerateResponse;
 import com.floralwhisper.service.ai.AiGeneratedImageStorageService;
+import com.floralwhisper.service.ai.AiSettingsResolver;
 import com.floralwhisper.service.ai.GeneratedAiImageResult;
 import com.floralwhisper.service.ai.VolcengineImageGenerationService;
 import java.util.List;
@@ -19,15 +19,15 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/admin/ai")
 public class AdminAiController {
-  private final AiImageProperties aiImageProperties;
+  private final AiSettingsResolver aiSettingsResolver;
   private final VolcengineImageGenerationService volcengineImageGenerationService;
   private final AiGeneratedImageStorageService aiGeneratedImageStorageService;
 
   public AdminAiController(
-      AiImageProperties aiImageProperties,
+      AiSettingsResolver aiSettingsResolver,
       VolcengineImageGenerationService volcengineImageGenerationService,
       AiGeneratedImageStorageService aiGeneratedImageStorageService) {
-    this.aiImageProperties = aiImageProperties;
+    this.aiSettingsResolver = aiSettingsResolver;
     this.volcengineImageGenerationService = volcengineImageGenerationService;
     this.aiGeneratedImageStorageService = aiGeneratedImageStorageService;
   }
@@ -50,12 +50,14 @@ public class AdminAiController {
   }
 
   private void validateReferenceFiles(List<MultipartFile> files) {
-    if (files.size() > aiImageProperties.getMaxReferenceFiles()) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "参考图最多上传 " + aiImageProperties.getMaxReferenceFiles() + " 张");
+    int maxReferenceFiles = aiSettingsResolver.resolve().maxReferenceFiles();
+    long maxReferenceFileSizeBytes = aiSettingsResolver.resolve().maxReferenceFileSizeBytes();
+    if (files.size() > maxReferenceFiles) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "参考图最多上传 " + maxReferenceFiles + " 张");
     }
 
     for (MultipartFile file : files) {
-      if (file.getSize() > aiImageProperties.getMaxReferenceFileSizeBytes()) {
+      if (file.getSize() > maxReferenceFileSizeBytes) {
         throw new ApiException(HttpStatus.BAD_REQUEST, "参考图单张大小不能超过 20MB");
       }
       String contentType = file.getContentType();

@@ -1,6 +1,7 @@
 export type {
   AboutPageContent,
   AboutTimelineEntry,
+  AiSettings,
   BrandStory,
   BusinessHours,
   Category,

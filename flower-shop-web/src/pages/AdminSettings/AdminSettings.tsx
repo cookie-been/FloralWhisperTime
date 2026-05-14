@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Form, Grid, Input, InputNumber, Tabs, Upload, message } from "antd";
+import { Button, Form, Grid, Input, InputNumber, Switch, Tabs, Upload, message } from "antd";
 import type { RcFile } from "antd/es/upload";
-import { ArrowUpRight, Building2, Image as ImageIcon, MapPin, Sparkles } from "lucide-react";
+import { ArrowUpRight, Building2, Image as ImageIcon, KeyRound, MapPin, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { AdminAbout } from "@/pages/AdminAbout/AdminAbout";
 import { getBrandStory, getShopInfo, getSiteConfig, updateSiteConfig, uploadFlowerImage } from "@/services/api";
-import type { BrandStory, ShopInfo, SiteConfig } from "@/types";
+import type { AiSettings, BrandStory, ShopInfo, SiteConfig } from "@/types";
 
 type SettingsForm = SiteConfig & {
   phone: string;
@@ -17,6 +17,7 @@ type SettingsForm = SiteConfig & {
   storySubtitle: string;
   storyContent: string;
   storyImages: string;
+  aiSettings?: AiSettings;
 };
 
 const joinText = (items: string[]) => items.join("，");
@@ -31,6 +32,7 @@ const sectionItems = [
   { key: "stats", label: "首页统计" },
   { key: "contact", label: "门店与联系" },
   { key: "story", label: "品牌故事" },
+  { key: "ai", label: "AI生图配置" },
 ] as const;
 
 export function AdminSettings() {
@@ -52,12 +54,16 @@ export function AdminSettings() {
   const storyTitle = Form.useWatch("storyTitle", form) ?? "";
   const storyContent = Form.useWatch("storyContent", form) ?? "";
   const storyImages = Form.useWatch("storyImages", form) ?? "";
+  const aiEnabled = Form.useWatch(["aiSettings", "enabled"], form) ?? false;
+  const aiProvider = Form.useWatch(["aiSettings", "provider"], form) ?? "";
+  const aiModel = Form.useWatch(["aiSettings", "model"], form) ?? "";
 
   const sectionRefs = {
     brand: useRef<HTMLDivElement | null>(null),
     stats: useRef<HTMLDivElement | null>(null),
     contact: useRef<HTMLDivElement | null>(null),
     story: useRef<HTMLDivElement | null>(null),
+    ai: useRef<HTMLDivElement | null>(null),
   };
 
   const storyPreviewImages = useMemo(() => splitText(storyImages), [storyImages]);
@@ -301,6 +307,51 @@ export function AdminSettings() {
             ) : (
               <div className="admin-subpanel mt-4 px-4 py-8 text-sm text-muted">暂无故事图片预览</div>
             )}
+          </div>
+        </div>
+      </section>
+
+      <section ref={sectionRefs.ai} className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="admin-panel p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+            <KeyRound size={16} className="text-forest" />
+            AI生图配置
+          </div>
+          <p className="mt-2 text-sm leading-6 text-muted">在这里维护 AI 生图的开关、密钥、模型与接口地址。保存后后台作品管理中的 AI 生图工作台会立即使用最新配置。</p>
+          <div className="mt-4 grid gap-x-4 md:grid-cols-2">
+            <Form.Item name={["aiSettings", "enabled"]} label="启用状态" valuePropName="checked">
+              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+            </Form.Item>
+            <Form.Item name={["aiSettings", "provider"]} label="提供商">
+              <Input placeholder="volcengine" />
+            </Form.Item>
+            <Form.Item name={["aiSettings", "model"]} label="模型">
+              <Input placeholder="Doubao-Seedream-5.0-lite" />
+            </Form.Item>
+            <Form.Item name={["aiSettings", "generatePath"]} label="生成路径">
+              <Input placeholder="/images/generations" />
+            </Form.Item>
+          </div>
+          <Form.Item name={["aiSettings", "apiKey"]} label="API Key">
+            <Input.Password placeholder="输入新的服务密钥后保存" visibilityToggle />
+          </Form.Item>
+          <Form.Item name={["aiSettings", "baseUrl"]} label="服务地址">
+            <Input placeholder="https://operator.las.cn-beijing.volces.com/api/v1" />
+          </Form.Item>
+        </div>
+
+        <div className="space-y-6">
+          <div className="admin-panel p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">配置摘要</p>
+            <p className="mt-3 text-base font-semibold text-[#1b281e]">{aiEnabled ? "AI 生图已启用" : "AI 生图未启用"}</p>
+            <p className="mt-2 text-sm leading-6 text-muted">当前提供商：{aiProvider || "未配置"}；当前模型：{aiModel || "未配置"}。</p>
+          </div>
+          <div className="admin-panel p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">维护建议</p>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-muted">
+              <p>建议按环境使用独立密钥，避免把调试密钥长期用于正式内容生产。</p>
+              <p>模型与基础地址支持后台动态调整，方便后续切换新版本或接别的服务。</p>
+            </div>
           </div>
         </div>
       </section>

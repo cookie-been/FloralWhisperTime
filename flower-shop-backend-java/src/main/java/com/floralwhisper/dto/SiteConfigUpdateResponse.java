@@ -10,4 +10,3 @@ public class SiteConfigUpdateResponse {
   private ShopInfoResponse shopInfo;
   private BrandStoryResponse brandStory;
 }
-

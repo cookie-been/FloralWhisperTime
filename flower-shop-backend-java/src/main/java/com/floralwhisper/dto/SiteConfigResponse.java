@@ -16,5 +16,5 @@ public class SiteConfigResponse {
   private String contactIntro;
   private String businessHoursText;
   private String footerDescription;
+  private AiSettingsResponse aiSettings;
 }
-

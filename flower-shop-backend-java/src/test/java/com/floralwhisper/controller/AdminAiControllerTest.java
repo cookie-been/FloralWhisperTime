@@ -14,6 +14,7 @@ import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
+import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -30,7 +31,9 @@ import com.floralwhisper.mapper.TeamMemberMapper;
 import com.floralwhisper.security.JwtAuthenticationFilter;
 import com.floralwhisper.security.JwtService;
 import com.floralwhisper.service.ai.AiGeneratedImageStorageService;
+import com.floralwhisper.service.ai.AiSettingsResolver;
 import com.floralwhisper.service.ai.GeneratedAiImageResult;
+import com.floralwhisper.service.ai.ResolvedAiImageSettings;
 import com.floralwhisper.service.ai.VolcengineImageGenerationService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -86,8 +89,12 @@ class AdminAiControllerTest {
   @MockBean
   private AiImageProperties aiImageProperties;
 
+  @MockBean
+  private AiSettingsResolver aiSettingsResolver;
+
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
+  @MockBean private AiSettingsMapper aiSettingsMapper;
   @MockBean private BrandStoryImageMapper brandStoryImageMapper;
   @MockBean private BrandStoryMapper brandStoryMapper;
   @MockBean private CategoryMapper categoryMapper;
@@ -133,8 +140,7 @@ class AdminAiControllerTest {
 
   @Test
   void generateRejectsTooManyReferenceFiles() throws Exception {
-    when(aiImageProperties.getMaxReferenceFiles()).thenReturn(3);
-    when(aiImageProperties.getMaxReferenceFileSizeBytes()).thenReturn(20L * 1024L * 1024L);
+    when(aiSettingsResolver.resolve()).thenReturn(settings());
 
     mockMvc.perform(multipart("/api/admin/ai/images/generate")
             .file(image("referenceFiles", "a.png", 16))
@@ -153,8 +159,7 @@ class AdminAiControllerTest {
 
   @Test
   void generateRejectsOversizedReferenceFile() throws Exception {
-    when(aiImageProperties.getMaxReferenceFiles()).thenReturn(3);
-    when(aiImageProperties.getMaxReferenceFileSizeBytes()).thenReturn(20L * 1024L * 1024L);
+    when(aiSettingsResolver.resolve()).thenReturn(settings());
 
     byte[] bytes = new byte[(20 * 1024 * 1024) + 1];
     MockMultipartFile oversized = new MockMultipartFile("referenceFiles", "large.png", "image/png", bytes);
@@ -173,8 +178,7 @@ class AdminAiControllerTest {
 
   @Test
   void generateReturnsImageResultWhenTokenIsValid() throws Exception {
-    when(aiImageProperties.getMaxReferenceFiles()).thenReturn(3);
-    when(aiImageProperties.getMaxReferenceFileSizeBytes()).thenReturn(20L * 1024L * 1024L);
+    when(aiSettingsResolver.resolve()).thenReturn(settings());
     when(volcengineImageGenerationService.generate(eq("生成一束白绿色婚礼花束"), anyList()))
         .thenReturn(new GeneratedAiImageResult("https://example.com/generated.png", "text_to_image", "Doubao-Seedream-5.0-lite"));
     when(aiGeneratedImageStorageService.downloadToLocal("https://example.com/generated.png"))
@@ -192,6 +196,23 @@ class AdminAiControllerTest {
         .andExpect(jsonPath("$.imageUrl").value("/uploads/ai/generated.png"))
         .andExpect(jsonPath("$.source").value("Doubao-Seedream-5.0-lite"))
         .andExpect(jsonPath("$.mode").value("text_to_image"));
+  }
+
+  private ResolvedAiImageSettings settings() {
+    return new ResolvedAiImageSettings(
+        true,
+        "volcengine",
+        "test-key",
+        "Doubao-Seedream-5.0-lite",
+        "https://operator.las.cn-beijing.volces.com/api/v1",
+        "/images/generations",
+        3,
+        20L * 1024L * 1024L,
+        "ai",
+        120,
+        "1024x1280",
+        "url",
+        false);
   }
 
   private MockMultipartFile image(String name, String filename, int bytes) {

@@ -84,6 +84,15 @@ export interface SiteStat {
   label: string;
 }
 
+export interface AiSettings {
+  enabled: boolean;
+  provider: string;
+  apiKey: string;
+  model: string;
+  baseUrl: string;
+  generatePath: string;
+}
+
 export interface SiteConfig {
   brandName: string;
   heroEyebrow: string;
@@ -96,6 +105,7 @@ export interface SiteConfig {
   contactIntro: string;
   businessHoursText: string;
   footerDescription: string;
+  aiSettings?: AiSettings;
 }
 
 export interface TeamMember {

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Size;
+import java.util.Collections;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class SiteConfigUpdateRequest {
   private String primaryCtaText;
   @Size(max = 40, message = "副按钮文字不能超过 40 个字符")
   private String secondaryCtaText;
-  private List<@Valid SiteStatResponse> stats = new ArrayList<>();
+  private List<@Valid SiteStatResponse> stats;
   @Size(max = 240, message = "联系简介不能超过 240 个字符")
   private String contactIntro;
   @Size(max = 120, message = "营业时间文案不能超过 120 个字符")
@@ -50,5 +51,15 @@ public class SiteConfigUpdateRequest {
   private String storySubtitle;
   @Size(max = 3000, message = "故事正文不能超过 3000 个字符")
   private String storyContent;
-  private List<String> storyImages = new ArrayList<>();
+  private List<String> storyImages;
+  @Valid
+  private AiSettingsUpdateRequest aiSettings;
+
+  public List<SiteStatResponse> getStats() {
+    return stats == null ? null : Collections.unmodifiableList(stats);
+  }
+
+  public List<String> getStoryImages() {
+    return storyImages == null ? null : Collections.unmodifiableList(storyImages);
+  }
 }

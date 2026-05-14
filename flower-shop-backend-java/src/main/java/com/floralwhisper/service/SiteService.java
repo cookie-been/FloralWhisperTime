@@ -6,6 +6,8 @@ import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutPageUpdateRequest;
 import com.floralwhisper.dto.AboutTimelineEntryRequest;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
+import com.floralwhisper.dto.AiSettingsResponse;
+import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.BusinessHoursResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
@@ -17,6 +19,7 @@ import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.dto.TimeRangeResponse;
 import com.floralwhisper.entity.AboutPage;
 import com.floralwhisper.entity.AboutTimelineEntry;
+import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.entity.Category;
 import com.floralwhisper.entity.BrandStory;
 import com.floralwhisper.entity.BrandStoryImage;
@@ -27,6 +30,7 @@ import com.floralwhisper.entity.SiteConfigStat;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
+import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -52,6 +56,7 @@ public class SiteService {
   private final ShopHourMapper shopHourMapper;
   private final AboutPageMapper aboutPageMapper;
   private final AboutTimelineEntryMapper aboutTimelineEntryMapper;
+  private final AiSettingsMapper aiSettingsMapper;
   private final BrandStoryMapper brandStoryMapper;
   private final BrandStoryImageMapper brandStoryImageMapper;
   private final CategoryMapper categoryMapper;
@@ -64,6 +69,7 @@ public class SiteService {
       ShopHourMapper shopHourMapper,
       AboutPageMapper aboutPageMapper,
       AboutTimelineEntryMapper aboutTimelineEntryMapper,
+      AiSettingsMapper aiSettingsMapper,
       BrandStoryMapper brandStoryMapper,
       BrandStoryImageMapper brandStoryImageMapper,
       CategoryMapper categoryMapper,
@@ -74,6 +80,7 @@ public class SiteService {
     this.shopHourMapper = shopHourMapper;
     this.aboutPageMapper = aboutPageMapper;
     this.aboutTimelineEntryMapper = aboutTimelineEntryMapper;
+    this.aiSettingsMapper = aiSettingsMapper;
     this.brandStoryMapper = brandStoryMapper;
     this.brandStoryImageMapper = brandStoryImageMapper;
     this.categoryMapper = categoryMapper;
@@ -93,6 +100,7 @@ public class SiteService {
     response.setContactIntro(config.getContactIntro());
     response.setBusinessHoursText(config.getBusinessHoursText());
     response.setFooterDescription(config.getFooterDescription());
+    response.setAiSettings(toAiSettingsResponse(ensureAiSettings()));
     response.setStats(siteConfigStatMapper.selectList(new LambdaQueryWrapper<SiteConfigStat>().orderByAsc(SiteConfigStat::getSort))
         .stream().map(this::toStatResponse).toList());
     return response;
@@ -155,7 +163,9 @@ public class SiteService {
     config.setBusinessHoursText(text(request.getBusinessHoursText(), config.getBusinessHoursText()));
     config.setFooterDescription(text(request.getFooterDescription(), config.getFooterDescription()));
     siteConfigMapper.updateById(config);
-    replaceStats(request.getStats());
+    if (request.getStats() != null) {
+      replaceStats(request.getStats());
+    }
 
     ShopInfo shopInfo = ensureShopInfo();
     shopInfo.setName(config.getBrandName());
@@ -171,7 +181,10 @@ public class SiteService {
     story.setSubtitle(text(request.getStorySubtitle(), story.getSubtitle()));
     story.setContent(text(request.getStoryContent(), story.getContent()));
     brandStoryMapper.updateById(story);
-    replaceStoryImages(request.getStoryImages());
+    if (request.getStoryImages() != null) {
+      replaceStoryImages(request.getStoryImages());
+    }
+    updateAiSettings(request.getAiSettings());
 
     return new SiteConfigUpdateResponse(getSiteConfig(), getShopInfo(), getBrandStory());
   }
@@ -307,6 +320,31 @@ public class SiteService {
     return response;
   }
 
+  private void updateAiSettings(AiSettingsUpdateRequest request) {
+    if (request == null) {
+      return;
+    }
+    AiSettings current = ensureAiSettings();
+    current.setEnabled(request.getEnabled() == null ? current.getEnabled() : request.getEnabled());
+    current.setProvider(text(request.getProvider(), current.getProvider()));
+    current.setApiKey(text(request.getApiKey(), current.getApiKey()));
+    current.setModel(text(request.getModel(), current.getModel()));
+    current.setBaseUrl(text(request.getBaseUrl(), current.getBaseUrl()));
+    current.setGeneratePath(text(request.getGeneratePath(), current.getGeneratePath()));
+    aiSettingsMapper.updateById(current);
+  }
+
+  private AiSettingsResponse toAiSettingsResponse(AiSettings settings) {
+    AiSettingsResponse response = new AiSettingsResponse();
+    response.setEnabled(Boolean.TRUE.equals(settings.getEnabled()));
+    response.setProvider(settings.getProvider());
+    response.setApiKey(settings.getApiKey());
+    response.setModel(settings.getModel());
+    response.setBaseUrl(settings.getBaseUrl());
+    response.setGeneratePath(settings.getGeneratePath());
+    return response;
+  }
+
   private AboutPageResponse toAboutPageResponse(AboutPage page) {
     AboutPageResponse response = new AboutPageResponse();
     response.setHeroImage(page.getHeroImage());
@@ -362,6 +400,20 @@ public class SiteService {
     created.setFooterDescription("纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。");
     siteConfigMapper.insert(created);
     ensureDefaultStats();
+    return created;
+  }
+
+  private AiSettings ensureAiSettings() {
+    AiSettings current = aiSettingsMapper.selectById(SINGLETON_ID);
+    if (current != null) return current;
+    AiSettings created = new AiSettings();
+    created.setId(SINGLETON_ID);
+    created.setEnabled(false);
+    created.setProvider("volcengine");
+    created.setModel("Doubao-Seedream-5.0-lite");
+    created.setBaseUrl("https://operator.las.cn-beijing.volces.com/api/v1");
+    created.setGeneratePath("/images/generations");
+    aiSettingsMapper.insert(created);
     return created;
   }
 

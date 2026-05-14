@@ -3,7 +3,6 @@ package com.floralwhisper.service.ai;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.floralwhisper.common.ApiException;
-import com.floralwhisper.config.AiImageProperties;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,23 +20,24 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class VolcengineImageGenerationService {
-  private final AiImageProperties properties;
+  private final AiSettingsResolver aiSettingsResolver;
   private final ObjectMapper objectMapper;
   private final HttpClient httpClient;
 
-  public VolcengineImageGenerationService(AiImageProperties properties, ObjectMapper objectMapper) {
-    this.properties = properties;
+  public VolcengineImageGenerationService(AiSettingsResolver aiSettingsResolver, ObjectMapper objectMapper) {
+    this.aiSettingsResolver = aiSettingsResolver;
     this.objectMapper = objectMapper;
     this.httpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(Math.max(5, properties.getRequestTimeoutSeconds())))
+        .connectTimeout(Duration.ofSeconds(120))
         .build();
   }
 
   public GeneratedAiImageResult generate(String prompt, List<MultipartFile> referenceFiles) {
-    if (!properties.isEnabled()) {
+    ResolvedAiImageSettings settings = aiSettingsResolver.resolve();
+    if (!settings.enabled()) {
       throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI 图片生成功能未开启");
     }
-    if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
+    if (settings.apiKey() == null || settings.apiKey().isBlank()) {
       throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI 图片生成密钥未配置");
     }
 
@@ -45,12 +45,12 @@ public class VolcengineImageGenerationService {
     String mode = imageToImage ? "image_to_image" : "text_to_image";
 
     try {
-      String payload = objectMapper.writeValueAsString(buildRequestPayload(prompt, referenceFiles));
+      String payload = objectMapper.writeValueAsString(buildRequestPayload(settings, prompt, referenceFiles));
       HttpRequest request = HttpRequest.newBuilder()
-          .uri(URI.create(normalizeGenerateUrl()))
-          .timeout(Duration.ofSeconds(Math.max(5, properties.getRequestTimeoutSeconds())))
+          .uri(URI.create(normalizeGenerateUrl(settings)))
+          .timeout(Duration.ofSeconds(Math.max(5, settings.requestTimeoutSeconds())))
           .header("Content-Type", "application/json")
-          .header("Authorization", "Bearer " + properties.getApiKey().trim())
+          .header("Authorization", "Bearer " + settings.apiKey().trim())
           .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
           .build();
 
@@ -60,7 +60,7 @@ public class VolcengineImageGenerationService {
       }
 
       String imageSource = extractImageSource(response.body());
-      return new GeneratedAiImageResult(imageSource, mode, properties.getModel());
+      return new GeneratedAiImageResult(imageSource, mode, settings.model());
     } catch (IOException error) {
       throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "AI 图片生成请求构造失败");
     } catch (InterruptedException error) {
@@ -69,13 +69,13 @@ public class VolcengineImageGenerationService {
     }
   }
 
-  private Map<String, Object> buildRequestPayload(String prompt, List<MultipartFile> referenceFiles) throws IOException {
+  private Map<String, Object> buildRequestPayload(ResolvedAiImageSettings settings, String prompt, List<MultipartFile> referenceFiles) throws IOException {
     Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("model", properties.getModel());
+    payload.put("model", settings.model());
     payload.put("prompt", prompt);
-    payload.put("size", properties.getSize());
-    payload.put("response_format", properties.getResponseFormat());
-    payload.put("watermark", properties.isWatermark());
+    payload.put("size", settings.size());
+    payload.put("response_format", settings.responseFormat());
+    payload.put("watermark", settings.watermark());
 
     if (referenceFiles != null && !referenceFiles.isEmpty()) {
       payload.put("reference_images", referenceFiles.stream().map(this::toDataUrl).toList());
@@ -130,9 +130,9 @@ public class VolcengineImageGenerationService {
     return "AI 图片生成失败";
   }
 
-  private String normalizeGenerateUrl() {
-    String baseUrl = properties.getBaseUrl() == null ? "" : properties.getBaseUrl().trim();
-    String path = properties.getGeneratePath() == null ? "" : properties.getGeneratePath().trim();
+  private String normalizeGenerateUrl(ResolvedAiImageSettings settings) {
+    String baseUrl = settings.baseUrl() == null ? "" : settings.baseUrl().trim();
+    String path = settings.generatePath() == null ? "" : settings.generatePath().trim();
     if (baseUrl.endsWith("/") && path.startsWith("/")) {
       return baseUrl.substring(0, baseUrl.length() - 1) + path;
     }
