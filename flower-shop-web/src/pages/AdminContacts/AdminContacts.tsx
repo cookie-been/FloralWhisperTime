@@ -24,6 +24,11 @@ function truncateText(value: string, maxLength: number) {
   return `${value.slice(0, maxLength).trim()}...`;
 }
 
+function shouldIgnoreRowClick(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("button, .ant-btn, .ant-popover, .ant-popconfirm"));
+}
+
 export function AdminContacts() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<PaginatedResult<ContactMessage> | null>(null);
@@ -181,13 +186,27 @@ export function AdminContacts() {
       render: (_: unknown, record) =>
         (
           <Space>
-            <Button size="small" className="admin-action-button" onClick={() => openDetail(record)}>
+            <Button
+              size="small"
+              className="admin-action-button"
+              onClick={(event) => {
+                event.stopPropagation();
+                openDetail(record);
+              }}
+            >
               查看详情
             </Button>
             {record.readAt ? (
               <span className="text-sm text-muted">已处理</span>
             ) : (
-              <Button size="small" className="admin-action-button" onClick={() => handleMarkRead(record.id)}>
+              <Button
+                size="small"
+                className="admin-action-button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void handleMarkRead(record.id);
+                }}
+              >
                 标记已读
               </Button>
             )}
@@ -319,7 +338,12 @@ export function AdminContacts() {
             },
           }}
           rowClassName={(record) => (!record.readAt ? "admin-row-unread" : "")}
-          onRow={(record) => ({ onClick: () => openDetail(record) })}
+          onRow={(record) => ({
+            onClick: (event) => {
+              if (shouldIgnoreRowClick(event.target)) return;
+              openDetail(record);
+            },
+          })}
           scroll={{ x: 1080 }}
         />
       </section>

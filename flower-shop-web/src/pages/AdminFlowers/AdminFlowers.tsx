@@ -80,6 +80,11 @@ function truncateText(value: string, maxLength: number) {
   return `${value.slice(0, maxLength).trim()}...`;
 }
 
+function shouldIgnoreRowClick(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("button, .ant-btn, .ant-checkbox-wrapper, .ant-checkbox, .ant-popover, .ant-popconfirm"));
+}
+
 type FeaturedFilter = "all" | "featured" | "normal";
 
 export function AdminFlowers() {
@@ -409,7 +414,14 @@ export function AdminFlowers() {
               编辑
             </Button>
             <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
-              <Button size="small" danger className="admin-action-button">
+              <Button
+                size="small"
+                danger
+                className="admin-action-button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
                 删除
               </Button>
             </Popconfirm>
@@ -525,7 +537,12 @@ export function AdminFlowers() {
             }}
             pagination={{ pageSize: 8, showSizeChanger: false }}
             rowClassName={() => "cursor-pointer"}
-            onRow={(record) => ({ onClick: () => startEdit(record) })}
+            onRow={(record) => ({
+              onClick: (event) => {
+                if (shouldIgnoreRowClick(event.target)) return;
+                startEdit(record);
+              },
+            })}
             scroll={{ x: 1120 }}
           />
         ) : (
