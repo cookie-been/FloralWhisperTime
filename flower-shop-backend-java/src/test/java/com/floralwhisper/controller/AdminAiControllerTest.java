@@ -206,11 +206,11 @@ class AdminAiControllerTest {
         "Doubao-Seedream-5.0-lite",
         "https://operator.las.cn-beijing.volces.com/api/v1",
         "/images/generations",
+        "1024x1280",
         3,
         20L * 1024L * 1024L,
         "ai",
         120,
-        "1024x1280",
         "url",
         false);
   }

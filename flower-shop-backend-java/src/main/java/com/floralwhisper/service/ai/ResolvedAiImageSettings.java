@@ -7,10 +7,10 @@ public record ResolvedAiImageSettings(
     String model,
     String baseUrl,
     String generatePath,
+    String size,
     int maxReferenceFiles,
     long maxReferenceFileSizeBytes,
     String downloadSubdir,
     int requestTimeoutSeconds,
-    String size,
     String responseFormat,
     boolean watermark) {}

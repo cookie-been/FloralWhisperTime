@@ -10,4 +10,5 @@ public class AiSettingsResponse {
   private String model;
   private String baseUrl;
   private String generatePath;
+  private String size;
 }

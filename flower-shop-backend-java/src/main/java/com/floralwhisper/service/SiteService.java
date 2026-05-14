@@ -331,6 +331,7 @@ public class SiteService {
     current.setModel(text(request.getModel(), current.getModel()));
     current.setBaseUrl(text(request.getBaseUrl(), current.getBaseUrl()));
     current.setGeneratePath(text(request.getGeneratePath(), current.getGeneratePath()));
+    current.setSize(text(request.getSize(), current.getSize()));
     aiSettingsMapper.updateById(current);
   }
 
@@ -342,6 +343,7 @@ public class SiteService {
     response.setModel(settings.getModel());
     response.setBaseUrl(settings.getBaseUrl());
     response.setGeneratePath(settings.getGeneratePath());
+    response.setSize(settings.getSize());
     return response;
   }
 
@@ -413,6 +415,7 @@ public class SiteService {
     created.setModel("Doubao-Seedream-5.0-lite");
     created.setBaseUrl("https://operator.las.cn-beijing.volces.com/api/v1");
     created.setGeneratePath("/images/generations");
+    created.setSize("1920x1920");
     aiSettingsMapper.insert(created);
     return created;
   }

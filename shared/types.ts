@@ -91,6 +91,7 @@ export interface AiSettings {
   model: string;
   baseUrl: string;
   generatePath: string;
+  size: string;
 }
 
 export interface SiteConfig {

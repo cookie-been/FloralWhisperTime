@@ -57,6 +57,7 @@ export function AdminSettings() {
   const aiEnabled = Form.useWatch(["aiSettings", "enabled"], form) ?? false;
   const aiProvider = Form.useWatch(["aiSettings", "provider"], form) ?? "";
   const aiModel = Form.useWatch(["aiSettings", "model"], form) ?? "";
+  const aiSize = Form.useWatch(["aiSettings", "size"], form) ?? "";
 
   const sectionRefs = {
     brand: useRef<HTMLDivElement | null>(null),
@@ -317,7 +318,7 @@ export function AdminSettings() {
             <KeyRound size={16} className="text-forest" />
             AI生图配置
           </div>
-          <p className="mt-2 text-sm leading-6 text-muted">在这里维护 AI 生图的开关、密钥、模型与接口地址。保存后后台作品管理中的 AI 生图工作台会立即使用最新配置。</p>
+          <p className="mt-2 text-sm leading-6 text-muted">在这里维护 AI 生图的开关、密钥、模型、接口地址与图片尺寸。保存后后台作品管理中的 AI 生图工作台会立即使用最新配置。</p>
           <div className="mt-4 grid gap-x-4 md:grid-cols-2">
             <Form.Item name={["aiSettings", "enabled"]} label="启用状态" valuePropName="checked">
               <Switch checkedChildren="开启" unCheckedChildren="关闭" />
@@ -330,6 +331,9 @@ export function AdminSettings() {
             </Form.Item>
             <Form.Item name={["aiSettings", "generatePath"]} label="生成路径">
               <Input placeholder="/images/generations" />
+            </Form.Item>
+            <Form.Item name={["aiSettings", "size"]} label="图片尺寸">
+              <Input placeholder="1920x1920" />
             </Form.Item>
           </div>
           <Form.Item name={["aiSettings", "apiKey"]} label="API Key">
@@ -344,13 +348,13 @@ export function AdminSettings() {
           <div className="admin-panel p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">配置摘要</p>
             <p className="mt-3 text-base font-semibold text-[#1b281e]">{aiEnabled ? "AI 生图已启用" : "AI 生图未启用"}</p>
-            <p className="mt-2 text-sm leading-6 text-muted">当前提供商：{aiProvider || "未配置"}；当前模型：{aiModel || "未配置"}。</p>
+            <p className="mt-2 text-sm leading-6 text-muted">当前提供商：{aiProvider || "未配置"}；当前模型：{aiModel || "未配置"}；当前尺寸：{aiSize || "未配置"}。</p>
           </div>
           <div className="admin-panel p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">维护建议</p>
             <div className="mt-4 space-y-3 text-sm leading-6 text-muted">
               <p>建议按环境使用独立密钥，避免把调试密钥长期用于正式内容生产。</p>
-              <p>模型与基础地址支持后台动态调整，方便后续切换新版本或接别的服务。</p>
+              <p>模型、接口地址和尺寸都支持后台动态调整，方便后续切换新版本或适配不同模型限制。</p>
             </div>
           </div>
         </div>

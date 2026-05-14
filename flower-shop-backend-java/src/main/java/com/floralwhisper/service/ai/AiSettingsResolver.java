@@ -26,11 +26,11 @@ public class AiSettingsResolver {
         pick(current == null ? null : current.getModel(), properties.getModel()),
         pick(current == null ? null : current.getBaseUrl(), properties.getBaseUrl()),
         pick(current == null ? null : current.getGeneratePath(), properties.getGeneratePath()),
+        pick(current == null ? null : current.getSize(), properties.getSize()),
         properties.getMaxReferenceFiles(),
         properties.getMaxReferenceFileSizeBytes(),
         properties.getDownloadSubdir(),
         properties.getRequestTimeoutSeconds(),
-        properties.getSize(),
         properties.getResponseFormat(),
         properties.isWatermark());
   }

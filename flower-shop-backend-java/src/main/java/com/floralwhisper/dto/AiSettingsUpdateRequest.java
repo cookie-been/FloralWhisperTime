@@ -21,4 +21,7 @@ public class AiSettingsUpdateRequest {
 
   @Size(max = 120, message = "AI 生成路径不能超过 120 个字符")
   private String generatePath;
+
+  @Size(max = 40, message = "图片尺寸不能超过 40 个字符")
+  private String size;
 }
