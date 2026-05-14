@@ -101,7 +101,7 @@ export function AdminContacts() {
       dataIndex: "readAt",
       width: 120,
       render: (readAt?: string | null) =>
-        readAt ? <Tag color="default">已读</Tag> : <Tag color="processing">未读</Tag>,
+        readAt ? <Tag color="default">已读</Tag> : <Tag color="green">未读</Tag>,
     },
     {
       title: "留言内容",
@@ -122,7 +122,7 @@ export function AdminContacts() {
         record.readAt ? (
           <span className="text-sm text-muted">已处理</span>
         ) : (
-          <Button type="link" className="px-0" onClick={() => handleMarkRead(record.id)}>
+          <Button size="small" className="admin-action-button" onClick={() => handleMarkRead(record.id)}>
             标记已读
           </Button>
         ),
@@ -193,7 +193,15 @@ export function AdminContacts() {
           columns={columns}
           dataSource={data?.list ?? []}
           loading={loading}
-          locale={{ emptyText: <Empty description="暂时还没有用户留言" /> }}
+          locale={{
+            emptyText: (
+              <div className="admin-empty-state min-h-[220px]">
+                <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                <h4>暂时还没有用户留言</h4>
+                <p>当前还没有访客提交咨询或预约内容，后续会在这里集中查看。</p>
+              </div>
+            ),
+          }}
           pagination={{
             current: page,
             pageSize,

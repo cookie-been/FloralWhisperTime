@@ -262,7 +262,7 @@ export function AdminFlowers() {
     {
       title: "状态",
       width: 120,
-      render: (_: unknown, record) => (record.featured ? <Tag color="gold">精选</Tag> : <Tag>普通</Tag>),
+      render: (_: unknown, record) => (record.featured ? <Tag color="gold">精选</Tag> : <Tag color="default">普通</Tag>),
     },
     {
       title: "排序",
@@ -271,14 +271,14 @@ export function AdminFlowers() {
     },
     {
       title: "操作",
-      width: 164,
+      width: 200,
       render: (_: unknown, record) => (
         <Space>
-          <Button size="small" onClick={() => startEdit(record)}>
+          <Button size="small" className="admin-action-button" onClick={() => startEdit(record)}>
             编辑
           </Button>
           <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
-            <Button size="small" danger>
+            <Button size="small" danger className="admin-action-button">
               删除
             </Button>
           </Popconfirm>
@@ -349,14 +349,22 @@ export function AdminFlowers() {
             scroll={{ x: 1120 }}
           />
         ) : (
-          <div className="px-6 py-16">
-            <Empty description="当前筛选条件下没有作品" />
+          <div className="admin-empty-state">
+            <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <h4>当前筛选条件下没有作品</h4>
+            <p>可以调整关键词、分类或精选状态，也可以直接新增一条作品内容。</p>
           </div>
         )}
       </section>
 
       <Drawer
-        title={editing ? `编辑作品 · ${editing.name}` : "新增作品"}
+        title={
+          <div className="admin-drawer-title">
+            <p>{editing ? "Editing Flower" : "Create Flower"}</p>
+            <h3>{editing ? `编辑作品 · ${editing.name}` : "新增作品"}</h3>
+            <span>{editing ? "在右侧抽屉中集中修改作品信息、图片与展示状态。" : "填写基础资料后即可创建新的前台展示作品。"}</span>
+          </div>
+        }
         open={drawerOpen}
         onClose={closeDrawer}
         width={screens.lg ? 720 : "100%"}

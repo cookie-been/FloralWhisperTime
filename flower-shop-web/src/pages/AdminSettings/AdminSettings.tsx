@@ -314,7 +314,7 @@ export function AdminSettings() {
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 rounded-lg border border-dashed border-black/10 bg-[#fbfaf8] px-4 py-8 text-sm text-muted">暂无故事图片预览</div>
+                <div className="admin-subpanel mt-4 px-4 py-8 text-sm text-muted">暂无故事图片预览</div>
               )}
             </div>
           </div>

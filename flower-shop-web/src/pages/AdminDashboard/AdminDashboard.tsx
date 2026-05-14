@@ -76,8 +76,12 @@ export function AdminDashboard() {
 
   if (!data || !summary) {
     return (
-      <div className="rounded-lg bg-white px-6 py-14 shadow-soft">
-        <Empty description="暂时无法加载后台概览" />
+      <div className="admin-panel">
+        <div className="admin-empty-state min-h-[280px]">
+          <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          <h4>暂时无法加载后台概览</h4>
+          <p>请稍后刷新页面，或检查后端服务与接口数据是否正常。</p>
+        </div>
       </div>
     );
   }
