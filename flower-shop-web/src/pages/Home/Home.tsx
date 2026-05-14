@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, Sparkles } from "lucide-react";
 import { Button } from "antd";
 import { FlowerCard } from "@/components/common/FlowerCard";
 import { getBrandStory, getFlowers, getShopInfo, getSiteConfig } from "@/services/api";
 import type { BrandStory, Flower, ShopInfo, SiteConfig } from "@/types";
 
-const fallbackHeroImages = [
-  "/home-hero/hero-1.jpg",
-  "/home-hero/hero-2.jpg",
-  "/home-hero/hero-3.jpg",
-  "/home-hero/hero-4.jpg",
+const fallbackHeroSlides = [
+  { image: "/home-hero/hero-1.jpg", label: "花艺陈列", note: "适合礼赠与门店展示的花束陈列空间" },
+  { image: "/home-hero/hero-2.jpg", label: "门店氛围", note: "更贴近日常选购与预约咨询的现场环境" },
+  { image: "/home-hero/hero-3.jpg", label: "工作台面", note: "体现花材处理、组合与细节把控的制作状态" },
+  { image: "/home-hero/hero-4.jpg", label: "空间花艺", note: "适合品牌陈设、活动与空间布置的整体表达" },
 ];
 
 export function Home() {
@@ -20,9 +20,21 @@ export function Home() {
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [activeHero, setActiveHero] = useState(0);
 
-  const heroImages = useMemo(
-    () => [siteConfig?.heroImage, ...fallbackHeroImages].filter((value, index, array): value is string => Boolean(value) && array.indexOf(value as string) === index),
-    [siteConfig?.heroImage],
+  const heroSlides = useMemo(
+    () =>
+      [
+        siteConfig?.heroImage
+          ? {
+              image: siteConfig.heroImage,
+              label: siteConfig.heroEyebrow || "品牌主视觉",
+              note: siteConfig.heroDescription || "以花艺空间、礼赠氛围和门店陈列表达品牌第一印象。",
+            }
+          : null,
+        ...fallbackHeroSlides,
+      ].filter((value, index, array): value is { image: string; label: string; note: string } =>
+        Boolean(value) && array.findIndex((item) => item?.image === value?.image) === index,
+      ),
+    [siteConfig?.heroDescription, siteConfig?.heroEyebrow, siteConfig?.heroImage],
   );
 
   useEffect(() => {
@@ -33,26 +45,33 @@ export function Home() {
   }, []);
 
   useEffect(() => {
-    if (heroImages.length <= 1) return undefined;
+    if (heroSlides.length <= 1) return undefined;
     const timer = window.setInterval(() => {
-      setActiveHero((current) => (current + 1) % heroImages.length);
-    }, 5200);
+      setActiveHero((current) => (current + 1) % heroSlides.length);
+    }, 5600);
     return () => window.clearInterval(timer);
-  }, [heroImages.length]);
+  }, [heroSlides.length]);
+
+  const changeHero = (direction: "prev" | "next") => {
+    setActiveHero((current) => {
+      if (!heroSlides.length) return current;
+      return direction === "prev" ? (current - 1 + heroSlides.length) % heroSlides.length : (current + 1) % heroSlides.length;
+    });
+  };
 
   return (
     <>
       <section className="relative flex min-h-[calc(100vh-64px)] items-center overflow-hidden bg-[#132018]">
         <div className="absolute inset-0">
-          {heroImages.map((image, index) => (
+          {heroSlides.map((slide, index) => (
             <div
-              key={image}
+              key={slide.image}
               className={[
                 "absolute inset-0 bg-cover bg-center transition-opacity duration-[1600ms]",
                 index === activeHero ? "opacity-100" : "opacity-0",
               ].join(" ")}
               style={{
-                backgroundImage: `linear-gradient(90deg, rgba(13, 26, 18, 0.72), rgba(13, 26, 18, 0.2)), url("${image}")`,
+                backgroundImage: `linear-gradient(90deg, rgba(13, 26, 18, 0.72), rgba(13, 26, 18, 0.2)), url("${slide.image}")`,
               }}
             />
           ))}
@@ -81,20 +100,51 @@ export function Home() {
                 </Button>
               </Link>
             </div>
-            {heroImages.length > 1 ? (
-              <div className="mt-10 flex items-center gap-3">
-                {heroImages.map((image, index) => (
+            {heroSlides.length > 1 ? (
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
                   <button
-                    key={image}
                     type="button"
-                    className={[
-                      "h-2 rounded-full transition-all",
-                      index === activeHero ? "w-12 bg-white" : "w-7 bg-white/38 hover:bg-white/62",
-                    ].join(" ")}
-                    onClick={() => setActiveHero(index)}
-                    aria-label={`切换到第 ${index + 1} 张背景图`}
-                  />
-                ))}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/22 bg-white/12 text-white backdrop-blur transition hover:bg-white/18"
+                    onClick={() => changeHero("prev")}
+                    aria-label="上一张背景图"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/22 bg-white/12 text-white backdrop-blur transition hover:bg-white/18"
+                    onClick={() => changeHero("next")}
+                    aria-label="下一张背景图"
+                  >
+                    <ArrowRight size={18} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-3">
+                  {heroSlides.map((slide, index) => (
+                    <button
+                      key={slide.image}
+                      type="button"
+                      className={[
+                        "h-2 rounded-full transition-all",
+                        index === activeHero ? "w-12 bg-white" : "w-7 bg-white/38 hover:bg-white/62",
+                      ].join(" ")}
+                      onClick={() => setActiveHero(index)}
+                      aria-label={`切换到第 ${index + 1} 张背景图`}
+                    />
+                  ))}
+                </div>
+                <div className="min-w-0 text-sm text-white/82">
+                  <p className="font-semibold">{heroSlides[activeHero]?.label}</p>
+                  <p className="mt-1 max-w-md text-white/70">{heroSlides[activeHero]?.note}</p>
+                </div>
+              </div>
+            ) : null}
+            {heroSlides.length > 1 ? (
+              <div className="mt-6 flex items-center gap-3 text-sm text-white/68">
+                <span>{String(activeHero + 1).padStart(2, "0")}</span>
+                <span className="h-px w-12 bg-white/24" />
+                <span>{String(heroSlides.length).padStart(2, "0")}</span>
               </div>
             ) : null}
           </div>
