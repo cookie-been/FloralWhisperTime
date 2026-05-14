@@ -158,7 +158,27 @@ a {
 .admin-panel {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(41, 57, 46, 0.06);
   box-shadow: 0 18px 40px rgba(88, 69, 48, 0.08);
+}
+
+.admin-toolbar {
+  border: 1px solid rgba(41, 57, 46, 0.08);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(251, 248, 242, 0.94), rgba(247, 242, 233, 0.94));
+}
+
+.admin-subpanel {
+  border: 1px solid rgba(41, 57, 46, 0.08);
+  border-radius: 8px;
+  background: #fbfaf8;
+}
+
+.admin-stat-card {
+  border: 1px solid rgba(41, 57, 46, 0.08);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(249, 245, 238, 0.96));
+  box-shadow: 0 14px 34px rgba(88, 69, 48, 0.06);
 }
 
 .admin-action-card {

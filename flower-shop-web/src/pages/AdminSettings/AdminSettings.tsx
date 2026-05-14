@@ -119,7 +119,7 @@ export function AdminSettings() {
 
   return (
     <div className="space-y-6">
-      <section className="admin-panel p-5">
+      <section className="admin-toolbar p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">Editing Surface</p>
@@ -212,7 +212,7 @@ export function AdminSettings() {
             {(fields, { add, remove }) => (
               <div className="mt-5 space-y-3">
                 {fields.map((field) => (
-                  <div key={field.key} className="grid gap-3 rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4 md:grid-cols-[1fr_1fr_auto]">
+                  <div key={field.key} className="admin-subpanel grid gap-3 px-4 py-4 md:grid-cols-[1fr_1fr_auto]">
                     <Form.Item {...field} name={[field.name, "value"]} label="数值" className="mb-0" rules={[{ required: true, message: "请输入数值" }]}>
                       <Input placeholder="860+" />
                     </Form.Item>
@@ -269,7 +269,7 @@ export function AdminSettings() {
           <div className="admin-panel p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">Preview</p>
             <p className="mt-3 text-base font-semibold text-[#1b281e]">门店信息预览</p>
-            <div className="mt-4 rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <div className="admin-subpanel mt-4 px-4 py-4">
               <p className="text-sm font-semibold text-[#1b281e]">{brandName || "花语时光"}</p>
               <p className="mt-3 text-sm text-muted">{phone || "联系电话将在这里显示"}</p>
               <p className="mt-2 text-sm leading-6 text-muted">{address || "门店地址将在这里显示"}</p>
@@ -308,7 +308,7 @@ export function AdminSettings() {
               {storyPreviewImages.length ? (
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   {storyPreviewImages.slice(0, 4).map((url) => (
-                    <div key={url} className="overflow-hidden rounded-lg border border-black/6 bg-[#f3efe9]">
+                    <div key={url} className="admin-subpanel overflow-hidden bg-[#f3efe9]">
                       <img src={url} alt="" className="h-28 w-full object-cover" />
                     </div>
                   ))}

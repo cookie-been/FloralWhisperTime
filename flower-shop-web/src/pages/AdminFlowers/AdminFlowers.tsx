@@ -291,7 +291,7 @@ export function AdminFlowers() {
     <div className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-4">
         {metrics.map((item) => (
-          <div key={item.label} className="admin-panel p-5">
+            <div key={item.label} className="admin-stat-card p-5">
             <p className="text-sm font-medium text-muted">{item.label}</p>
             <p className="mt-3 text-3xl font-semibold text-[#1b281e]">{item.value}</p>
             <p className="mt-2 text-sm leading-6 text-muted">{item.note}</p>
@@ -299,7 +299,7 @@ export function AdminFlowers() {
         ))}
       </section>
 
-      <section className="admin-panel p-5">
+      <section className="admin-toolbar p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">Workspace</p>
@@ -371,7 +371,7 @@ export function AdminFlowers() {
         }
       >
         <Form form={form} layout="vertical" className="space-y-6">
-          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+          <div className="admin-subpanel px-4 py-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
               <Sparkles size={16} className="text-forest" />
               基本信息
@@ -392,7 +392,7 @@ export function AdminFlowers() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+          <div className="admin-subpanel px-4 py-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
               <SlidersHorizontal size={16} className="text-forest" />
               展示状态
@@ -407,7 +407,7 @@ export function AdminFlowers() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+          <div className="admin-subpanel px-4 py-4">
             <p className="text-sm font-semibold text-[#1b281e]">文案内容</p>
             <div className="mt-4 space-y-1">
               <Form.Item name="description" label="设计描述">
@@ -425,7 +425,7 @@ export function AdminFlowers() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+          <div className="admin-subpanel px-4 py-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
               <ImagePlus size={16} className="text-forest" />
               图片管理

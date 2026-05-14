@@ -95,7 +95,7 @@ export function AdminDashboard() {
         {stats.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className="admin-panel p-5">
+            <div key={item.label} className="admin-stat-card p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted">{item.label}</p>

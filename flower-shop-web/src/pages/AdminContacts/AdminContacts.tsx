@@ -143,7 +143,7 @@ export function AdminContacts() {
         {metrics.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className="admin-panel p-5">
+            <div key={item.label} className="admin-stat-card p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted">{item.label}</p>
@@ -159,7 +159,7 @@ export function AdminContacts() {
         })}
       </section>
 
-      <section className="admin-panel p-5">
+      <section className="admin-toolbar p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_140px]">
           <Input
             allowClear
