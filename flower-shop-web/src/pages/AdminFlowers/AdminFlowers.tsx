@@ -21,6 +21,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { RcFile } from "antd/es/upload";
 import { ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, Star } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { createFlower, deleteFlower, getCategories, getFlowers, updateFlower, uploadFlowerImage } from "@/services/api";
 import type { Category, Flower } from "@/types";
 
@@ -82,6 +83,7 @@ function truncateText(value: string, maxLength: number) {
 type FeaturedFilter = "all" | "featured" | "normal";
 
 export function AdminFlowers() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<FlowerForm>();
   const [flowers, setFlowers] = useState<Flower[]>([]);
@@ -91,9 +93,12 @@ export function AdminFlowers() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>("all");
+  const [search, setSearch] = useState(searchParams.get("keyword") ?? "");
+  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get("category") ?? "all");
+  const initialFeatured = searchParams.get("featured");
+  const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>(
+    initialFeatured === "featured" || initialFeatured === "normal" ? initialFeatured : "all",
+  );
 
   const watchedImages = Form.useWatch("images", form) ?? "";
 
@@ -165,6 +170,14 @@ export function AdminFlowers() {
   useEffect(() => {
     load().catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (search.trim()) next.set("keyword", search.trim());
+    if (selectedCategory !== "all") next.set("category", selectedCategory);
+    if (featuredFilter !== "all") next.set("featured", featuredFilter);
+    setSearchParams(next, { replace: true });
+  }, [featuredFilter, search, selectedCategory, setSearchParams]);
 
   const startCreate = () => {
     setEditing(null);

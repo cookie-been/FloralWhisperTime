@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Empty, Input, Select, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { getAdminContacts, markAdminContactRead } from "@/services/api";
 import type { ContactMessage, PaginatedResult } from "@/types";
 
@@ -24,12 +25,16 @@ function truncateText(value: string, maxLength: number) {
 }
 
 export function AdminContacts() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<PaginatedResult<ContactMessage> | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<"all" | "read" | "unread">("all");
+  const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
+  const initialStatus = searchParams.get("status");
+  const [status, setStatus] = useState<"all" | "read" | "unread">(
+    initialStatus === "read" || initialStatus === "unread" ? initialStatus : "all",
+  );
   const hasActiveFilters = Boolean(keyword.trim()) || status !== "all";
 
   const load = async (
@@ -57,8 +62,15 @@ export function AdminContacts() {
   };
 
   useEffect(() => {
-    load(1, 10, "", "all").catch(() => undefined);
+    load(1, 10, keyword, status).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (keyword.trim()) next.set("keyword", keyword.trim());
+    if (status !== "all") next.set("status", status);
+    setSearchParams(next, { replace: true });
+  }, [keyword, setSearchParams, status]);
 
   const metrics = useMemo(() => {
     const list = data?.list ?? [];

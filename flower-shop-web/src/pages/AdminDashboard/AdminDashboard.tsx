@@ -232,6 +232,13 @@ export function AdminDashboard() {
               </div>
               <ArrowRight size={18} className="text-forest" />
             </Link>
+            <Link to="/admin/contacts?status=unread" className="admin-action-card flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[#1b281e]">查看未读留言</p>
+                <p className="mt-1 text-sm text-muted">直接进入待处理访客消息列表</p>
+              </div>
+              <ArrowRight size={18} className="text-forest" />
+            </Link>
             <div className="surface-card px-4 py-4">
               <p className="text-sm font-semibold text-[#1b281e]">{data.siteConfig.brandName}</p>
               <p className="mt-1 text-sm text-muted">{data.shopInfo.phone} · {data.shopInfo.address}</p>
@@ -278,6 +285,10 @@ export function AdminDashboard() {
                   </div>
                 ))}
               </div>
+              <Link to="/admin/flowers?featured=normal" className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-forest">
+                查看全部普通作品
+                <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
         </div>
