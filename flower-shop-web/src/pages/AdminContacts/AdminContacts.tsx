@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Empty, Input, Select, Spin, Table, Tag, message } from "antd";
+import { Button, Drawer, Empty, Input, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -35,6 +35,8 @@ export function AdminContacts() {
   const [status, setStatus] = useState<"all" | "read" | "unread">(
     initialStatus === "read" || initialStatus === "unread" ? initialStatus : "all",
   );
+  const [activeContact, setActiveContact] = useState<ContactMessage | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const hasActiveFilters = Boolean(keyword.trim()) || status !== "all";
 
   const load = async (
@@ -106,9 +108,20 @@ export function AdminContacts() {
       await markAdminContactRead(id);
       message.success("已标记为已读");
       await load(page, pageSize, keyword, status);
+      setActiveContact((current) => (current?.id === id ? { ...current, readAt: new Date().toISOString() } : current));
     } catch (error) {
       message.error(error instanceof Error ? error.message : "操作失败");
     }
+  };
+
+  const openDetail = (record: ContactMessage) => {
+    setActiveContact(record);
+    setDrawerOpen(true);
+  };
+
+  const closeDetail = () => {
+    setDrawerOpen(false);
+    setActiveContact(null);
   };
 
   const resetFilters = () => {
@@ -164,14 +177,21 @@ export function AdminContacts() {
     {
       title: "操作",
       key: "actions",
-      width: 140,
+      width: 220,
       render: (_: unknown, record) =>
-        record.readAt ? (
-          <span className="text-sm text-muted">已处理</span>
-        ) : (
-          <Button size="small" className="admin-action-button" onClick={() => handleMarkRead(record.id)}>
-            标记已读
-          </Button>
+        (
+          <Space>
+            <Button size="small" className="admin-action-button" onClick={() => openDetail(record)}>
+              查看详情
+            </Button>
+            {record.readAt ? (
+              <span className="text-sm text-muted">已处理</span>
+            ) : (
+              <Button size="small" className="admin-action-button" onClick={() => handleMarkRead(record.id)}>
+                标记已读
+              </Button>
+            )}
+          </Space>
         ),
     },
   ];
@@ -299,9 +319,73 @@ export function AdminContacts() {
             },
           }}
           rowClassName={(record) => (!record.readAt ? "admin-row-unread" : "")}
+          onRow={(record) => ({ onClick: () => openDetail(record) })}
           scroll={{ x: 1080 }}
         />
       </section>
+
+      <Drawer
+        title={
+          <div className="admin-drawer-title">
+            <p>Message Detail</p>
+            <h3>{activeContact?.name ?? "留言详情"}</h3>
+            <span>集中查看访客联系方式、提交时间与完整留言内容。</span>
+          </div>
+        }
+        open={drawerOpen}
+        onClose={closeDetail}
+        width={520}
+        extra={
+          activeContact && !activeContact.readAt ? (
+            <Button type="primary" onClick={() => handleMarkRead(activeContact.id)}>
+              标记已读
+            </Button>
+          ) : null
+        }
+      >
+        {activeContact ? (
+          <div className="space-y-4">
+            <div className="admin-subpanel px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">访客信息</p>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-muted">姓名</p>
+                  <p className="mt-1 text-base font-semibold text-[#1b281e]">{activeContact.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted">电话</p>
+                  <p className="mt-1 text-base font-semibold text-[#1b281e]">{activeContact.phone}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted">状态</p>
+                  <div className="mt-2">
+                    {activeContact.readAt ? <Tag color="default">已读</Tag> : <Tag color="green">未读</Tag>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-subpanel px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">提交记录</p>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-muted">提交时间</p>
+                  <p className="mt-1 text-base font-semibold text-[#1b281e]">{formatDateTime(activeContact.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted">留言编号</p>
+                  <p className="mt-1 break-all text-sm text-[#33463a]">{activeContact.id}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-subpanel px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">完整留言</p>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#33463a]">{activeContact.message}</p>
+            </div>
+          </div>
+        ) : null}
+      </Drawer>
     </div>
   );
 }
