@@ -22,16 +22,17 @@ export function Gallery() {
   return (
     <section className="min-h-screen bg-[#f4f1eb]">
       <div className="border-b border-black/6 bg-[#f8f5ef]">
-        <div className="mx-auto w-full max-w-[1680px] px-4 py-10 sm:px-6 lg:px-10">
+        <div className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr] xl:items-end">
             <div>
               <p className="section-eyebrow">Gallery</p>
-              <h1 className="section-title section-title-accent mt-2 text-4xl text-ink sm:text-5xl">作品画廊</h1>
+              <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">作品画廊</h1>
               <p className="mt-3 max-w-2xl leading-7 text-muted">按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。</p>
             </div>
             <div className="grid gap-4 rounded-lg border border-black/6 bg-white/72 p-4 backdrop-blur md:grid-cols-[1fr_220px]">
               <div className="overflow-x-auto">
                 <Segmented
+                  block
                   options={categoryOptions}
                   value={query.categoryId}
                   onChange={(value) => setQuery((prev) => ({ ...prev, categoryId: String(value), page: 1 }))}
@@ -59,13 +60,13 @@ export function Gallery() {
       </div>
 
       <div className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 lg:px-10">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
           <p className="text-sm font-medium text-muted">共展示 {flowers.length} 件作品</p>
           <p className="text-sm text-muted">当前排序：{query.sortBy === "featured" ? "精选优先" : query.sortBy === "latest" ? "最新作品" : query.sortBy === "price_asc" ? "价格从低到高" : "价格从高到低"}</p>
         </div>
 
         {flowers.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {flowers.map((flower) => (
               <FlowerCard key={flower.id} flower={flower} />
             ))}

@@ -78,30 +78,30 @@ export function Home() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,18,12,0.18),rgba(8,18,12,0.52))]" />
         </div>
 
-        <div className="relative mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
           <div className="max-w-2xl text-white">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/16 px-4 py-2 text-sm backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/16 px-3 py-2 text-xs backdrop-blur sm:px-4 sm:text-sm">
               <Sparkles size={16} />
               {siteConfig?.heroEyebrow ?? "清新文艺 · 自然温暖"}
             </div>
-            <h1 className="section-title mt-6 text-5xl font-semibold leading-tight text-white sm:text-6xl">{siteConfig?.heroTitle ?? "花语时光"}</h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-white/88">
+            <h1 className="section-title mt-6 text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">{siteConfig?.heroTitle ?? "花语时光"}</h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-white/88 sm:mt-5 sm:text-lg sm:leading-8">
               {siteConfig?.heroDescription ?? "用季节花材和克制色彩，制作适合婚礼、日常赠礼与空间陈列的鲜花作品。"}
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/gallery">
-                <Button size="large" type="primary">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+              <Link to="/gallery" className="w-full sm:w-auto">
+                <Button size="large" type="primary" block className="w-full sm:w-auto">
                   {siteConfig?.primaryCtaText ?? "浏览作品"} <ArrowRight size={16} />
                 </Button>
               </Link>
-              <Link to="/contact">
-                <Button size="large" ghost>
+              <Link to="/contact" className="w-full sm:w-auto">
+                <Button size="large" ghost block className="w-full sm:w-auto">
                   {siteConfig?.secondaryCtaText ?? "联系门店"}
                 </Button>
               </Link>
             </div>
             {heroSlides.length > 1 ? (
-              <div className="mt-10 flex flex-wrap items-center gap-4">
+              <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -136,7 +136,7 @@ export function Home() {
                 </div>
                 <div className="min-w-0 text-sm text-white/82">
                   <p className="font-semibold">{heroSlides[activeHero]?.label}</p>
-                  <p className="mt-1 max-w-md text-white/70">{heroSlides[activeHero]?.note}</p>
+                  <p className="mt-1 max-w-md leading-6 text-white/70">{heroSlides[activeHero]?.note}</p>
                 </div>
               </div>
             ) : null}
@@ -168,7 +168,7 @@ export function Home() {
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="section-eyebrow">Featured Works</p>
-            <h2 className="section-title section-title-accent mt-2 text-3xl">精选作品</h2>
+            <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">精选作品</h2>
           </div>
           <Link to="/gallery" className="inline-flex items-center gap-2 text-sm font-semibold text-forest">
             查看全部 <ArrowRight size={16} />
@@ -189,8 +189,8 @@ export function Home() {
             </div>
             <div className="flex flex-col justify-center">
               <p className="section-eyebrow">Brand Story</p>
-              <h2 className="section-title section-title-accent mt-3 text-3xl leading-tight">{story.title}</h2>
-              <p className="mt-4 text-lg leading-8 text-muted">{story.subtitle}</p>
+              <h2 className="section-title section-title-accent mt-3 text-2xl leading-tight sm:text-3xl">{story.title}</h2>
+              <p className="mt-4 text-base leading-7 text-muted sm:text-lg sm:leading-8">{story.subtitle}</p>
               <p className="mt-4 leading-8 text-muted">{story.content}</p>
               <p className="mt-6 inline-flex items-center gap-2 text-sm text-forest">
                 <MapPin size={16} />

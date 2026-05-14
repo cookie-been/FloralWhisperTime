@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Form, Input, InputNumber, Tabs, Upload, message } from "antd";
+import { Button, Form, Grid, Input, InputNumber, Tabs, Upload, message } from "antd";
 import type { RcFile } from "antd/es/upload";
 import { ArrowUpRight, Building2, Image as ImageIcon, MapPin, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -35,6 +35,7 @@ const sectionItems = [
 
 export function AdminSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<SettingsForm>();
   const [loading, setLoading] = useState(false);
   const [booting, setBooting] = useState(true);
@@ -316,7 +317,7 @@ export function AdminSettings() {
             <p className="mt-2 text-sm leading-6 text-muted">将站点配置和关于我们配置统一放在一个菜单里维护，减少切换路径，所有动态内容在同一处完成管理。</p>
           </div>
           {activeTab === "site" ? (
-            <Button type="primary" size="large" loading={loading} onClick={save}>
+            <Button type="primary" size="large" loading={loading} onClick={save} block={!screens.sm}>
               保存站点配置
             </Button>
           ) : null}
@@ -336,6 +337,7 @@ export function AdminSettings() {
       <Tabs
         activeKey={activeTab}
         onChange={(nextTab) => setSearchParams(nextTab === "about" ? { tab: "about" } : {}, { replace: true })}
+        tabBarGutter={screens.sm ? 32 : 12}
         items={[
           {
             key: "site",

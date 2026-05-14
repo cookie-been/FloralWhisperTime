@@ -72,7 +72,7 @@ export function AdminShell() {
 
   return (
     <div className="min-h-screen bg-[#f6f3ee] text-ink">
-      <div className="grid min-h-screen w-full lg:grid-cols-[288px_minmax(0,1fr)] 2xl:px-5">
+      <div className="grid min-h-screen w-full lg:grid-cols-[288px_minmax(0,1fr)]">
         <aside className="admin-sidebar hidden min-h-full flex-col border-r border-white/10 px-5 py-6 lg:flex">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">Floral Whisper</p>
@@ -86,10 +86,10 @@ export function AdminShell() {
 
         <div className="min-w-0">
           <header className="sticky top-0 z-20 border-b border-black/5 bg-[#f6f3ee]/92 backdrop-blur">
-            <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4 sm:px-8 sm:py-5">
+            <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4 sm:px-8 sm:py-5">
               <div>
                 <p className="section-eyebrow">{meta.eyebrow}</p>
-                <h2 className="admin-section-title mt-2 text-3xl">{meta.title}</h2>
+                <h2 className="admin-section-title mt-2 text-2xl sm:text-3xl">{meta.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted">{meta.description}</p>
               </div>
               <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ export function AdminShell() {
             </div>
           </header>
 
-          <main className="px-5 py-6 sm:px-8 sm:py-8">
+          <main className="px-4 py-6 sm:px-8 sm:py-8">
             <Outlet />
           </main>
         </div>
@@ -123,7 +123,7 @@ export function AdminShell() {
         placement="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={320}
+        width={screens.sm ? 320 : "100%"}
         title={
           <div className="admin-drawer-title">
             <p>Navigation</p>

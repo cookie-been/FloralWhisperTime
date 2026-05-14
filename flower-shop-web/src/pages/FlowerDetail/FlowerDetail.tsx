@@ -44,8 +44,8 @@ export function FlowerDetail() {
         <ImageGallery images={flower.images} name={flower.name} />
         <div>
           <p className="section-eyebrow">Flower Detail</p>
-          <h1 className="section-title section-title-accent mt-2 text-4xl text-ink">{flower.name}</h1>
-          <p className="mt-4 text-2xl font-semibold text-forest">参考价 ¥{flower.price}</p>
+          <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl">{flower.name}</h1>
+          <p className="mt-4 text-xl font-semibold text-forest sm:text-2xl">参考价 ¥{flower.price}</p>
           <p className="mt-5 leading-8 text-muted">{flower.description}</p>
           <p className="mt-4 leading-8 text-muted">{flower.meaning}</p>
           <div className="mt-5 flex flex-wrap gap-2">

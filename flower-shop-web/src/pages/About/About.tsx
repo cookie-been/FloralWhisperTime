@@ -53,13 +53,13 @@ export function About() {
 
   return (
     <section>
-      <div className="relative min-h-[520px] bg-cover bg-center" style={{ backgroundImage: `url(${aboutPage.heroImage})` }}>
+      <div className="relative min-h-[460px] bg-cover bg-center sm:min-h-[520px]" style={{ backgroundImage: `url(${aboutPage.heroImage})` }}>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,26,18,0.72),rgba(15,26,18,0.12))]" />
-        <div className="relative mx-auto flex min-h-[520px] max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto flex min-h-[460px] max-w-7xl items-center px-4 sm:min-h-[520px] sm:px-6 lg:px-8">
           <div className="max-w-3xl text-white">
             <p className="section-eyebrow text-white">{aboutPage.heroEyebrow}</p>
-            <h1 className="section-title mt-3 text-4xl text-white sm:text-5xl">{aboutPage.heroTitle}</h1>
-            <p className="mt-5 text-lg leading-8 text-white/88">{aboutPage.heroSubtitle}</p>
+            <h1 className="section-title mt-3 text-3xl text-white sm:text-4xl lg:text-5xl">{aboutPage.heroTitle}</h1>
+            <p className="mt-4 text-base leading-7 text-white/88 sm:mt-5 sm:text-lg sm:leading-8">{aboutPage.heroSubtitle}</p>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@ export function About() {
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 xl:grid-cols-[0.96fr_1.04fr] lg:px-8">
         <div>
           <p className="section-eyebrow">Story</p>
-          <h2 className="section-title section-title-accent mt-2 text-3xl">{aboutPage.storyTitle}</h2>
+          <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">{aboutPage.storyTitle}</h2>
           <p className="mt-5 whitespace-pre-line leading-8 text-muted">{aboutPage.storyContent}</p>
 
           <div className="surface-card mt-8 p-6 text-sm leading-7 text-muted">
@@ -80,7 +80,7 @@ export function About() {
 
         <div className="surface-card p-6 sm:p-8">
           <p className="section-eyebrow">Timeline</p>
-          <h2 className="section-title section-title-accent mt-2 text-3xl">发展历程</h2>
+          <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">发展历程</h2>
           <div className="mt-8">
             {timelineItems.length ? (
               <Timeline mode="left" items={timelineItems} />
@@ -94,13 +94,13 @@ export function About() {
       <div className="bg-[#f2f6f1]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="max-w-2xl text-white">
+            <div className="max-w-2xl">
               <p className="section-eyebrow !text-[#456451]">Team</p>
-              <h2 className="section-title section-title-accent mt-2 text-3xl !text-[#1f2d24]">花艺师团队</h2>
+              <h2 className="section-title section-title-accent mt-2 text-2xl !text-[#1f2d24] sm:text-3xl">花艺师团队</h2>
               <p className="mt-3 text-sm leading-7 text-muted">团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。</p>
             </div>
           </div>
-          <div className="mt-8 grid gap-6 xl:grid-cols-3 md:grid-cols-2">
+          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {team.map((member) => (
               <article key={member.id} className="surface-card overflow-hidden">
                 <img src={member.avatar} alt={member.name} className="aspect-[4/4.2] w-full object-cover" />

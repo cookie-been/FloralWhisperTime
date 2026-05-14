@@ -25,6 +25,7 @@ a {
 
 #root {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .ant-btn {
@@ -360,4 +361,28 @@ a {
 .admin-mobile-drawer .ant-drawer-body {
   padding: 20px;
   background: #f6f3ee;
+}
+
+@media (max-width: 767px) {
+  .admin-filter-summary {
+    align-items: flex-start;
+  }
+
+  .admin-filter-summary-copy {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ant-tabs-top > .ant-tabs-nav {
+    margin-bottom: 16px;
+  }
+
+  .ant-tabs-top > .ant-tabs-nav .ant-tabs-nav-wrap {
+    overflow: auto;
+  }
+
+  .ant-tabs-tab {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }

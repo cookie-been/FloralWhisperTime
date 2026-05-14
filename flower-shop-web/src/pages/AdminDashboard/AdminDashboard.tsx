@@ -192,14 +192,14 @@ export function AdminDashboard() {
                 <h3 className="admin-section-title mt-3 text-3xl leading-tight">{data.siteConfig.heroTitle}</h3>
                 <p className="mt-3 text-sm leading-7 text-muted">{data.siteConfig.heroDescription}</p>
               </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link to="/admin/flowers">
-                  <Button type="primary" size="large">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Link to="/admin/flowers" className="w-full sm:w-auto">
+                  <Button type="primary" size="large" block className="w-full sm:w-auto">
                     新增作品
                   </Button>
                 </Link>
-                <Link to="/admin/settings">
-                  <Button size="large">编辑首页内容</Button>
+                <Link to="/admin/settings" className="w-full sm:w-auto">
+                  <Button size="large" block className="w-full sm:w-auto">编辑首页内容</Button>
                 </Link>
               </div>
             </div>

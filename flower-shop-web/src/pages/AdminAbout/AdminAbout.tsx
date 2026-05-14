@@ -4,6 +4,7 @@ import {
   Drawer,
   Empty,
   Form,
+  Grid,
   Image,
   Input,
   InputNumber,
@@ -66,6 +67,7 @@ const emptyMember: TeamMemberForm = {
 };
 
 export function AdminAbout({ embedded = false }: AdminAboutProps) {
+  const screens = Grid.useBreakpoint();
   const [aboutForm] = Form.useForm<AboutPageContent>();
   const [timelineForm] = Form.useForm<TimelineForm>();
   const [memberForm] = Form.useForm<TeamMemberForm>();
@@ -408,7 +410,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
               <h3 className="admin-section-title mt-2 text-xl">关于页内容工作台</h3>
               <p className="mt-2 text-sm leading-6 text-muted">统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。</p>
             </div>
-            <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()}>
+            <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()} block={!screens.sm}>
               保存页首与故事
             </Button>
           </div>
@@ -536,7 +538,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
 
       <Drawer
         title={editingTimeline ? "编辑时间轴节点" : "新增时间轴节点"}
-        width={520}
+        width={screens.md ? 520 : "100%"}
         open={timelineDrawerOpen}
         onClose={closeTimelineDrawer}
         destroyOnClose
@@ -567,7 +569,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
 
       <Drawer
         title={editingMember ? "编辑团队成员" : "新增团队成员"}
-        width={560}
+        width={screens.md ? 560 : "100%"}
         open={memberDrawerOpen}
         onClose={closeMemberDrawer}
         destroyOnClose

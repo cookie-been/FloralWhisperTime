@@ -9,7 +9,7 @@ interface FlowerCardProps {
 
 export function FlowerCard({ flower, compact = false }: FlowerCardProps) {
   return (
-    <Link to={`/gallery/${flower.id}`} className="surface-card group block overflow-hidden transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(88,69,48,0.12)]">
+    <Link to={`/gallery/${flower.id}`} className="surface-card group block h-full overflow-hidden transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(88,69,48,0.12)]">
       <div className={compact ? "aspect-square overflow-hidden bg-mint" : "aspect-[4/4.6] overflow-hidden bg-mint"}>
         <img
           src={flower.images[0]}
@@ -18,7 +18,7 @@ export function FlowerCard({ flower, compact = false }: FlowerCardProps) {
           loading="lazy"
         />
       </div>
-      <div className={compact ? "p-4" : "p-5"}>
+      <div className={compact ? "flex h-full flex-col p-4" : "flex h-full flex-col p-5"}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className={compact ? "text-base font-semibold text-ink" : "text-lg font-semibold text-ink"}>{flower.name}</h3>

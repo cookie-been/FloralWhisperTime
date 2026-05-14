@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Drawer, Empty, Input, Select, Space, Spin, Table, Tag, message } from "antd";
+import { Button, Drawer, Empty, Grid, Input, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -30,6 +30,7 @@ function shouldIgnoreRowClick(target: EventTarget | null) {
 }
 
 export function AdminContacts() {
+  const screens = Grid.useBreakpoint();
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<PaginatedResult<ContactMessage> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -396,7 +397,7 @@ export function AdminContacts() {
         }
         open={drawerOpen}
         onClose={closeDetail}
-        width={520}
+        width={screens.md ? 520 : "100%"}
         extra={
           activeContact && !activeContact.readAt ? (
             <Button type="primary" onClick={() => handleMarkRead(activeContact.id)}>

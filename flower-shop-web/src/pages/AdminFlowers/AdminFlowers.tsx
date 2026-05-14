@@ -450,7 +450,7 @@ export function AdminFlowers() {
             <h3 className="admin-section-title mt-2 text-xl">作品工作台</h3>
             <p className="mt-2 text-sm leading-6 text-muted">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
           </div>
-          <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate}>
+          <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate} block={!screens.sm}>
             新增作品
           </Button>
         </div>

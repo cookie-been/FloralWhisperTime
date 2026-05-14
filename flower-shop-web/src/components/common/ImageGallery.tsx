@@ -10,10 +10,10 @@ export function ImageGallery({ images, name }: ImageGalleryProps) {
 
   return (
     <div className="grid gap-3 md:grid-cols-[1fr_96px]">
-      <div className="aspect-[4/5] overflow-hidden rounded-lg bg-mint">
+      <div className="aspect-[4/4.8] overflow-hidden rounded-lg bg-mint sm:aspect-[4/5]">
         <img src={current} alt={name} className="h-full w-full object-cover" />
       </div>
-      <div className="grid grid-cols-4 gap-3 md:grid-cols-1">
+      <div className="grid grid-cols-4 gap-2 sm:gap-3 md:grid-cols-1">
         {images.map((src) => (
           <button
             type="button"
