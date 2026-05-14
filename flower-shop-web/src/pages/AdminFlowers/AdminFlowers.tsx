@@ -20,7 +20,7 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { RcFile } from "antd/es/upload";
-import { ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, Star } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { createFlower, deleteFlower, getCategories, getFlowers, updateFlower, uploadFlowerImage } from "@/services/api";
 import type { Category, Flower } from "@/types";
@@ -154,6 +154,10 @@ export function AdminFlowers() {
   }, [categoryMap, featuredFilter, search, selectedCategory]);
 
   const featuredCount = useMemo(() => filteredFlowers.filter((item) => item.featured).length, [filteredFlowers]);
+  const sortedFlowers = useMemo(
+    () => [...filteredFlowers].sort((left, right) => right.sort - left.sort || left.name.localeCompare(right.name, "zh-CN")),
+    [filteredFlowers],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -283,6 +287,28 @@ export function AdminFlowers() {
     }
   };
 
+  const moveFlower = async (record: Flower, direction: "up" | "down") => {
+    if (saving) return;
+    const index = sortedFlowers.findIndex((item) => item.id === record.id);
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    const target = sortedFlowers[swapIndex];
+    if (index < 0 || !target) return;
+
+    setSaving(true);
+    try {
+      await Promise.all([
+        updateFlower(record.id, { ...record, sort: target.sort }),
+        updateFlower(target.id, { ...target, sort: record.sort }),
+      ]);
+      message.success(direction === "up" ? "作品已上移" : "作品已下移");
+      await load();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "排序更新失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const columns: ColumnsType<Flower> = [
     {
       title: "封面",
@@ -340,19 +366,56 @@ export function AdminFlowers() {
     },
     {
       title: "操作",
-      width: 200,
-      render: (_: unknown, record) => (
-        <Space>
-          <Button size="small" className="admin-action-button" onClick={() => startEdit(record)}>
-            编辑
-          </Button>
-          <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
-            <Button size="small" danger className="admin-action-button">
-              删除
+      width: 280,
+      render: (_: unknown, record) => {
+        const index = sortedFlowers.findIndex((item) => item.id === record.id);
+        const isFirst = index <= 0;
+        const isLast = index === sortedFlowers.length - 1;
+
+        return (
+          <Space>
+            <Button
+              size="small"
+              className="admin-action-button"
+              icon={<ArrowUp size={14} />}
+              disabled={isFirst || saving}
+              onClick={(event) => {
+                event.stopPropagation();
+                void moveFlower(record, "up");
+              }}
+            >
+              上移
             </Button>
-          </Popconfirm>
-        </Space>
-      ),
+            <Button
+              size="small"
+              className="admin-action-button"
+              icon={<ArrowDown size={14} />}
+              disabled={isLast || saving}
+              onClick={(event) => {
+                event.stopPropagation();
+                void moveFlower(record, "down");
+              }}
+            >
+              下移
+            </Button>
+            <Button
+              size="small"
+              className="admin-action-button"
+              onClick={(event) => {
+                event.stopPropagation();
+                startEdit(record);
+              }}
+            >
+              编辑
+            </Button>
+            <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
+              <Button size="small" danger className="admin-action-button">
+                删除
+              </Button>
+            </Popconfirm>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -454,7 +517,7 @@ export function AdminFlowers() {
         ) : filteredFlowers.length ? (
           <Table
             rowKey="id"
-            dataSource={filteredFlowers}
+            dataSource={sortedFlowers}
             columns={columns}
             rowSelection={{
               selectedRowKeys,
