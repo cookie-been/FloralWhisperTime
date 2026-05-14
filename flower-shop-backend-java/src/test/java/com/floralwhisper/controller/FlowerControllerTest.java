@@ -14,6 +14,8 @@ import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
 import com.floralwhisper.dto.FlowerResponse;
 import com.floralwhisper.dto.PaginatedResult;
+import com.floralwhisper.mapper.AboutPageMapper;
+import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -62,6 +64,8 @@ class FlowerControllerTest {
 
   @MockBean
   private FlowerService flowerService;
+  @MockBean private AboutPageMapper aboutPageMapper;
+  @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private BrandStoryImageMapper brandStoryImageMapper;
   @MockBean private BrandStoryMapper brandStoryMapper;
   @MockBean private CategoryMapper categoryMapper;

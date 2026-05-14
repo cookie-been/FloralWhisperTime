@@ -1,4 +1,17 @@
-import type { BrandStory, Category, ContactForm, ContactMessage, Flower, FlowerQuery, PaginatedResult, ShopInfo, SiteConfig, TeamMember } from "@/types";
+import type {
+  AboutPageContent,
+  AboutTimelineEntry,
+  BrandStory,
+  Category,
+  ContactForm,
+  ContactMessage,
+  Flower,
+  FlowerQuery,
+  PaginatedResult,
+  ShopInfo,
+  SiteConfig,
+  TeamMember,
+} from "@/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_TOKEN_KEY = "flower_shop_admin_token";
@@ -104,6 +117,14 @@ export function getSiteConfig() {
   return request<SiteConfig>("/api/site-config");
 }
 
+export function getAboutPage() {
+  return request<AboutPageContent>("/api/about-page");
+}
+
+export function getAboutTimeline() {
+  return request<AboutTimelineEntry[]>("/api/about-timeline");
+}
+
 export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
   storyTitle?: string;
   storySubtitle?: string;
@@ -185,6 +206,79 @@ export async function getDashboardData() {
 
 export function getTeamMembers() {
   return request<TeamMember[]>("/api/team");
+}
+
+export function getAdminAboutPage() {
+  return request<AboutPageContent>("/api/admin/about-page");
+}
+
+export function updateAdminAboutPage(payload: AboutPageContent) {
+  return withMutationGuard("admin:about-page:update", () =>
+    request<AboutPageContent>("/api/admin/about-page", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  );
+}
+
+export function getAdminAboutTimeline() {
+  return request<AboutTimelineEntry[]>("/api/admin/about-timeline");
+}
+
+export function createAdminAboutTimeline(entry: Omit<AboutTimelineEntry, "id"> & { id?: string }) {
+  return withMutationGuard(`admin:about-timeline:create:${entry.id ?? entry.yearLabel}`, () =>
+    request<AboutTimelineEntry>("/api/admin/about-timeline", {
+      method: "POST",
+      body: JSON.stringify(entry),
+    }),
+  );
+}
+
+export function updateAdminAboutTimeline(id: string, entry: Omit<AboutTimelineEntry, "id">) {
+  return withMutationGuard(`admin:about-timeline:update:${id}`, () =>
+    request<AboutTimelineEntry>(`/api/admin/about-timeline/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(entry),
+    }),
+  );
+}
+
+export function deleteAdminAboutTimeline(id: string) {
+  return withMutationGuard(`admin:about-timeline:delete:${id}`, () =>
+    request<void>(`/api/admin/about-timeline/${id}`, {
+      method: "DELETE",
+    }),
+  );
+}
+
+export function getAdminTeamMembers() {
+  return request<TeamMember[]>("/api/admin/team");
+}
+
+export function createAdminTeamMember(member: TeamMember) {
+  return withMutationGuard(`admin:team:create:${member.id}`, () =>
+    request<TeamMember>("/api/admin/team", {
+      method: "POST",
+      body: JSON.stringify(member),
+    }),
+  );
+}
+
+export function updateAdminTeamMember(id: string, member: TeamMember) {
+  return withMutationGuard(`admin:team:update:${id}`, () =>
+    request<TeamMember>(`/api/admin/team/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(member),
+    }),
+  );
+}
+
+export function deleteAdminTeamMember(id: string) {
+  return withMutationGuard(`admin:team:delete:${id}`, () =>
+    request<void>(`/api/admin/team/${id}`, {
+      method: "DELETE",
+    }),
+  );
 }
 
 export function submitContact(form: ContactForm) {

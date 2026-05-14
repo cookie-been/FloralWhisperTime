@@ -143,6 +143,13 @@ a {
   overflow: hidden;
 }
 
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
 .hero-image {
   background-image:
     linear-gradient(90deg, rgba(16, 38, 22, 0.62), rgba(16, 38, 22, 0.1)),

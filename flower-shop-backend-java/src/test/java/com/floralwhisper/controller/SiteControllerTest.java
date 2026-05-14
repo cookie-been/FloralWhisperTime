@@ -17,6 +17,8 @@ import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SiteConfigUpdateResponse;
 import com.floralwhisper.dto.SiteStatResponse;
+import com.floralwhisper.mapper.AboutPageMapper;
+import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -70,6 +72,8 @@ class SiteControllerTest {
 
   @MockBean
   private TeamMemberMapper teamMemberMapper;
+  @MockBean private AboutPageMapper aboutPageMapper;
+  @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private BrandStoryImageMapper brandStoryImageMapper;
   @MockBean private BrandStoryMapper brandStoryMapper;
   @MockBean private ContactMapper contactMapper;

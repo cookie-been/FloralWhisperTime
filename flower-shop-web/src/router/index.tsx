@@ -5,6 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import { AdminDashboard } from "@/pages/AdminDashboard/AdminDashboard";
 import { AdminContacts } from "@/pages/AdminContacts/AdminContacts";
 import { AdminFlowers } from "@/pages/AdminFlowers/AdminFlowers";
+import { AdminAbout } from "@/pages/AdminAbout/AdminAbout";
 import { AdminLogin } from "@/pages/AdminLogin/AdminLogin";
 import { AdminSettings } from "@/pages/AdminSettings/AdminSettings";
 import { About } from "@/pages/About/About";
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
           { index: true, element: <AdminDashboard /> },
           { path: "flowers", element: <AdminFlowers /> },
           { path: "settings", element: <AdminSettings /> },
+          { path: "about", element: <AdminAbout /> },
           { path: "contacts", element: <AdminContacts /> },
         ],
       },

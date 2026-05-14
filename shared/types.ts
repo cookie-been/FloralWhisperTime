@@ -63,6 +63,22 @@ export interface BrandStory {
   images: string[];
 }
 
+export interface AboutPageContent {
+  heroImage: string;
+  heroEyebrow: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  storyTitle: string;
+  storyContent: string;
+}
+
+export interface AboutTimelineEntry {
+  id: string;
+  yearLabel: string;
+  content: string;
+  sort: number;
+}
+
 export interface SiteStat {
   value: string;
   label: string;
@@ -88,6 +104,7 @@ export interface TeamMember {
   title: string;
   avatar: string;
   bio?: string;
+  sort: number;
 }
 
 export interface PaginatedResult<T> {

@@ -161,6 +161,7 @@ export const teamMembers: TeamMember[] = [
     title: "主理人 / 花艺设计师",
     avatar: image("florist-tang", 600, 600),
     bio: "擅长自然系婚礼花艺和空间花艺，偏爱低饱和配色。",
+    sort: 1,
   },
   {
     id: "lin",
@@ -168,5 +169,6 @@ export const teamMembers: TeamMember[] = [
     title: "花束设计师",
     avatar: image("florist-lin", 600, 600),
     bio: "负责日常花礼与节气花束，让小束花也拥有完整的故事。",
+    sort: 0,
   },
 ];

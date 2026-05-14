@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,9 +15,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
+import com.floralwhisper.dto.AboutPageResponse;
+import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.dto.PaginatedResult;
+import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.entity.Contact;
+import com.floralwhisper.mapper.AboutPageMapper;
+import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -33,6 +40,7 @@ import com.floralwhisper.security.JwtAuthenticationFilter;
 import com.floralwhisper.security.JwtService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
+import com.floralwhisper.service.SiteService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +87,10 @@ class AdminControllerTest {
   private AuthService authService;
   @MockBean
   private ContactService contactService;
+  @MockBean
+  private SiteService siteService;
+  @MockBean private AboutPageMapper aboutPageMapper;
+  @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private BrandStoryImageMapper brandStoryImageMapper;
   @MockBean private BrandStoryMapper brandStoryMapper;
   @MockBean private CategoryMapper categoryMapper;
@@ -203,6 +215,126 @@ class AdminControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value("contact_001"))
         .andExpect(jsonPath("$.readAt").value("2026-05-14T12:10:00"));
+  }
+
+  @Test
+  void updateAboutPageReturnsUpdatedConfigWhenTokenIsValid() throws Exception {
+    AboutPageResponse response = new AboutPageResponse();
+    response.setHeroTitle("让花束像一封慢慢抵达的信");
+    response.setStoryTitle("品牌故事");
+
+    when(siteService.updateAboutPage(any())).thenReturn(response);
+
+    mockMvc.perform(put("/api/admin/about-page")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"heroTitle":"让花束像一封慢慢抵达的信","storyTitle":"品牌故事"}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.heroTitle").value("让花束像一封慢慢抵达的信"))
+        .andExpect(jsonPath("$.storyTitle").value("品牌故事"));
+  }
+
+  @Test
+  void createAboutTimelineReturnsCreatedWhenTokenIsValid() throws Exception {
+    AboutTimelineEntryResponse response = new AboutTimelineEntryResponse();
+    response.setId("timeline_2028");
+    response.setYearLabel("2028");
+    response.setContent("门店升级新空间。");
+    response.setSort(3);
+
+    when(siteService.createAboutTimelineEntry(any())).thenReturn(response);
+
+    mockMvc.perform(post("/api/admin/about-timeline")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"yearLabel":"2028","content":"门店升级新空间。","sort":3}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value("timeline_2028"))
+        .andExpect(jsonPath("$.yearLabel").value("2028"));
+  }
+
+  @Test
+  void updateAboutTimelineReturnsUpdatedWhenTokenIsValid() throws Exception {
+    AboutTimelineEntryResponse response = new AboutTimelineEntryResponse();
+    response.setId("timeline_2026");
+    response.setYearLabel("2026");
+    response.setContent("升级双端展示系统。");
+    response.setSort(2);
+
+    when(siteService.updateAboutTimelineEntry(eq("timeline_2026"), any())).thenReturn(response);
+
+    mockMvc.perform(put("/api/admin/about-timeline/timeline_2026")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"yearLabel":"2026","content":"升级双端展示系统。","sort":2}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value("timeline_2026"))
+        .andExpect(jsonPath("$.content").value("升级双端展示系统。"));
+  }
+
+  @Test
+  void deleteAboutTimelineReturnsNoContentWhenTokenIsValid() throws Exception {
+    mockMvc.perform(delete("/api/admin/about-timeline/timeline_2026")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void createTeamMemberReturnsCreatedWhenTokenIsValid() throws Exception {
+    TeamMember member = new TeamMember();
+    member.setId("team_001");
+    member.setName("林汐");
+    member.setTitle("主理花艺师");
+    member.setAvatar("/uploads/team-001.jpg");
+    member.setBio("负责品牌花艺方向。");
+    member.setSort(2);
+
+    when(siteService.createTeamMember(any())).thenReturn(member);
+
+    mockMvc.perform(post("/api/admin/team")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"name":"林汐","title":"主理花艺师","avatar":"/uploads/team-001.jpg","bio":"负责品牌花艺方向。","sort":2}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value("team_001"))
+        .andExpect(jsonPath("$.name").value("林汐"));
+  }
+
+  @Test
+  void updateTeamMemberReturnsUpdatedWhenTokenIsValid() throws Exception {
+    TeamMember member = new TeamMember();
+    member.setId("team_001");
+    member.setName("林汐");
+    member.setTitle("主理花艺师");
+    member.setAvatar("/uploads/team-001.jpg");
+    member.setBio("负责品牌花艺方向。");
+    member.setSort(3);
+
+    when(siteService.updateTeamMember(eq("team_001"), any())).thenReturn(member);
+
+    mockMvc.perform(put("/api/admin/team/team_001")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"name":"林汐","title":"主理花艺师","avatar":"/uploads/team-001.jpg","bio":"负责品牌花艺方向。","sort":3}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sort").value(3));
+  }
+
+  @Test
+  void deleteTeamMemberReturnsNoContentWhenTokenIsValid() throws Exception {
+    mockMvc.perform(delete("/api/admin/team/team_001")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isNoContent());
   }
 
   private String expiredToken() {

@@ -1,6 +1,8 @@
 package com.floralwhisper.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.floralwhisper.dto.AboutPageResponse;
+import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.ContactRequest;
 import com.floralwhisper.dto.ShopInfoResponse;
@@ -9,8 +11,6 @@ import com.floralwhisper.dto.SiteConfigUpdateRequest;
 import com.floralwhisper.dto.SiteConfigUpdateResponse;
 import com.floralwhisper.entity.Category;
 import com.floralwhisper.entity.TeamMember;
-import com.floralwhisper.mapper.CategoryMapper;
-import com.floralwhisper.mapper.TeamMemberMapper;
 import com.floralwhisper.service.ContactService;
 import com.floralwhisper.service.SiteService;
 import com.floralwhisper.storage.FileStorageService;
@@ -31,20 +31,14 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api")
 public class SiteController {
-  private final CategoryMapper categoryMapper;
-  private final TeamMemberMapper teamMemberMapper;
   private final SiteService siteService;
   private final ContactService contactService;
   private final FileStorageService fileStorageService;
 
   public SiteController(
-      CategoryMapper categoryMapper,
-      TeamMemberMapper teamMemberMapper,
       SiteService siteService,
       ContactService contactService,
       FileStorageService fileStorageService) {
-    this.categoryMapper = categoryMapper;
-    this.teamMemberMapper = teamMemberMapper;
     this.siteService = siteService;
     this.contactService = contactService;
     this.fileStorageService = fileStorageService;
@@ -57,7 +51,7 @@ public class SiteController {
 
   @GetMapping("/categories")
   public List<Category> categories() {
-    return categoryMapper.selectList(new LambdaQueryWrapper<Category>().orderByDesc(Category::getSort));
+    return siteService.getCategories();
   }
 
   @GetMapping("/site-config")
@@ -80,9 +74,19 @@ public class SiteController {
     return siteService.getBrandStory();
   }
 
+  @GetMapping("/about-page")
+  public AboutPageResponse aboutPage() {
+    return siteService.getAboutPage();
+  }
+
+  @GetMapping("/about-timeline")
+  public List<AboutTimelineEntryResponse> aboutTimeline() {
+    return siteService.getAboutTimeline();
+  }
+
   @GetMapping("/team")
   public List<TeamMember> team() {
-    return teamMemberMapper.selectList(new LambdaQueryWrapper<TeamMember>().orderByDesc(TeamMember::getSort));
+    return siteService.getAdminTeamMembers();
   }
 
   @PostMapping("/contact")
