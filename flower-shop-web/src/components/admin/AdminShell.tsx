@@ -88,8 +88,8 @@ export function AdminShell() {
           <header className="sticky top-0 z-20 border-b border-black/5 bg-[#f6f3ee]/92 backdrop-blur">
             <div className="flex flex-wrap items-end justify-between gap-4 px-5 py-4 sm:px-8 sm:py-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">{meta.eyebrow}</p>
-                <h2 className="mt-2 text-3xl font-semibold text-[#1b281e]">{meta.title}</h2>
+                <p className="section-eyebrow">{meta.eyebrow}</p>
+                <h2 className="admin-section-title mt-2 text-3xl">{meta.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted">{meta.description}</p>
               </div>
               <div className="flex items-center gap-2">

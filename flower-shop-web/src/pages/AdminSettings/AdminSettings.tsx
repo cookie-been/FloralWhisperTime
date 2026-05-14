@@ -122,8 +122,8 @@ export function AdminSettings() {
       <section className="admin-panel p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Editing Surface</p>
-            <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">站点配置工作区</h3>
+            <p className="section-eyebrow">Editing Surface</p>
+            <h3 className="admin-section-title mt-2 text-xl">站点配置工作区</h3>
             <p className="mt-2 text-sm leading-6 text-muted">按分区维护首页表达、统计信息、门店联系方式与品牌故事，不再在长表单里反复滚动查找字段。</p>
           </div>
           <Button type="primary" size="large" loading={loading} onClick={save}>

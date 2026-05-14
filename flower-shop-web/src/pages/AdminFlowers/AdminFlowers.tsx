@@ -302,8 +302,8 @@ export function AdminFlowers() {
       <section className="admin-panel p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Workspace</p>
-            <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">作品工作台</h3>
+            <p className="section-eyebrow">Workspace</p>
+            <h3 className="admin-section-title mt-2 text-xl">作品工作台</h3>
             <p className="mt-2 text-sm leading-6 text-muted">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
           </div>
           <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate}>

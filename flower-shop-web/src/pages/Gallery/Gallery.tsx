@@ -22,8 +22,8 @@ export function Gallery() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <p className="text-sm font-semibold text-forest">Gallery</p>
-        <h1 className="mt-2 text-4xl font-semibold text-ink">作品画廊</h1>
+        <p className="section-eyebrow">Gallery</p>
+        <h1 className="section-title section-title-accent mt-2 text-4xl text-ink">作品画廊</h1>
         <p className="mt-3 max-w-2xl leading-7 text-muted">按分类、关键词和排序浏览花语时光的花束与空间花艺作品。</p>
       </div>
 

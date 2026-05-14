@@ -33,7 +33,7 @@ export function Home() {
               <Sparkles size={16} />
               {siteConfig?.heroEyebrow ?? "清新文艺 · 自然温暖"}
             </div>
-            <h1 className="mt-6 text-5xl font-semibold leading-tight sm:text-6xl">{siteConfig?.heroTitle ?? "花语时光"}</h1>
+            <h1 className="section-title mt-6 text-5xl font-semibold leading-tight text-white sm:text-6xl">{siteConfig?.heroTitle ?? "花语时光"}</h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-white/88">
               {siteConfig?.heroDescription ?? "用季节花材和克制色彩，制作适合婚礼、日常赠礼与空间陈列的鲜花作品。"}
             </p>
@@ -69,8 +69,8 @@ export function Home() {
       <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-forest">Featured Works</p>
-            <h2 className="mt-2 text-3xl font-semibold text-ink">精选作品</h2>
+            <p className="section-eyebrow">Featured Works</p>
+            <h2 className="section-title section-title-accent mt-2 text-3xl">精选作品</h2>
           </div>
           <Link to="/gallery" className="inline-flex items-center gap-2 text-sm font-semibold text-forest">
             查看全部 <ArrowRight size={16} />
@@ -90,8 +90,8 @@ export function Home() {
               <img src={story.images[0]} alt={story.title} className="h-full min-h-80 w-full object-cover" />
             </div>
             <div className="flex flex-col justify-center">
-              <p className="text-sm font-semibold text-forest">Brand Story</p>
-              <h2 className="mt-3 text-3xl font-semibold leading-tight">{story.title}</h2>
+              <p className="section-eyebrow">Brand Story</p>
+              <h2 className="section-title section-title-accent mt-3 text-3xl leading-tight">{story.title}</h2>
               <p className="mt-4 text-lg leading-8 text-muted">{story.subtitle}</p>
               <p className="mt-4 leading-8 text-muted">{story.content}</p>
               <p className="mt-6 inline-flex items-center gap-2 text-sm text-forest">

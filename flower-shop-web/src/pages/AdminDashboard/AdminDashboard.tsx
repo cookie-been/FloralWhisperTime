@@ -180,8 +180,8 @@ export function AdminDashboard() {
           <div className="grid min-h-[320px] md:grid-cols-[1.05fr_0.95fr]">
             <div className="flex flex-col justify-between px-6 py-6">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Hero Preview</p>
-                <h3 className="mt-3 text-3xl font-semibold leading-tight text-[#1b281e]">{data.siteConfig.heroTitle}</h3>
+                <p className="section-eyebrow">Hero Preview</p>
+                <h3 className="admin-section-title mt-3 text-3xl leading-tight">{data.siteConfig.heroTitle}</h3>
                 <p className="mt-3 text-sm leading-7 text-muted">{data.siteConfig.heroDescription}</p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
@@ -208,8 +208,8 @@ export function AdminDashboard() {
         <div className="admin-panel p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Quick Access</p>
-              <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">快速入口</h3>
+              <p className="section-eyebrow">Quick Access</p>
+              <h3 className="admin-section-title mt-2 text-xl">快速入口</h3>
             </div>
             <ArrowRight size={18} className="text-forest" />
           </div>

@@ -14,11 +14,61 @@
 body {
   margin: 0;
   font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: #f6f3ee;
+  color: #243127;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.ant-btn {
+  font-weight: 600;
+}
+
+.ant-btn.ant-btn-primary {
+  border-color: #2e7d32;
+  background:
+    linear-gradient(180deg, rgba(82, 147, 86, 0.96), rgba(46, 125, 50, 1));
+}
+
+.ant-btn.ant-btn-primary:not(:disabled):hover {
+  border-color: #3b8f42;
+  background:
+    linear-gradient(180deg, rgba(97, 160, 101, 0.98), rgba(59, 143, 66, 1));
+}
+
+.section-eyebrow {
+  color: #456451;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.section-title {
+  color: #1f2d24;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.section-title-accent {
+  background: linear-gradient(180deg, #314637 0%, #1b281e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.admin-section-title {
+  color: #1b281e;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .line-clamp-2 {

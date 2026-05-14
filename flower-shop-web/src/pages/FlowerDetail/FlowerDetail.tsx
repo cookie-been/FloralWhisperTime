@@ -43,8 +43,8 @@ export function FlowerDetail() {
       <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr]">
         <ImageGallery images={flower.images} name={flower.name} />
         <div>
-          <p className="text-sm font-semibold text-forest">Flower Detail</p>
-          <h1 className="mt-2 text-4xl font-semibold text-ink">{flower.name}</h1>
+          <p className="section-eyebrow">Flower Detail</p>
+          <h1 className="section-title section-title-accent mt-2 text-4xl text-ink">{flower.name}</h1>
           <p className="mt-4 text-2xl font-semibold text-forest">参考价 ¥{flower.price}</p>
           <p className="mt-5 leading-8 text-muted">{flower.description}</p>
           <p className="mt-4 leading-8 text-muted">{flower.meaning}</p>
@@ -64,7 +64,7 @@ export function FlowerDetail() {
       </div>
 
       <div className="mt-16">
-        <h2 className="text-2xl font-semibold">相关推荐</h2>
+        <h2 className="section-title text-2xl">相关推荐</h2>
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {related.map((item) => (
             <FlowerCard key={item.id} flower={item} compact />
