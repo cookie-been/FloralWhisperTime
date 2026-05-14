@@ -1,0 +1,16 @@
+FROM stellarixmatrix-backend:latest
+
+WORKDIR /app
+
+USER root
+
+COPY flower-shop-backend-java/target/flower-shop-backend-java-1.0.0.jar ./app.jar
+
+RUN chown appuser:appgroup /app/app.jar
+
+USER appuser
+
+ENV JAVA_OPTS=""
+EXPOSE 3001
+
+CMD ["sh", "-c", "exec \"$JAVA_HOME/bin/java\" $JAVA_OPTS -jar app.jar"]

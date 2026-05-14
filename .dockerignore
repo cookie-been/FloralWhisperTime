@@ -2,10 +2,11 @@
 .tools
 **/node_modules
 **/dist
+!flower-shop-web/dist
+!flower-shop-web/dist/**
 **/*.log
 **/*.err
 **/.DS_Store
 **/tsconfig.tsbuildinfo
 *.zip
 *.zip:Zone.Identifier
-

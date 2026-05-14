@@ -1,33 +1,59 @@
 services:
+  mysql:
+    image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-floral_whisper_time}
+      MYSQL_USER: ${MYSQL_USER:-floral_whisper}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-root-password}
+    volumes:
+      - floral_whisper_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
   backend:
     build:
       context: .
-      dockerfile: flower-shop-backend/Dockerfile
+      dockerfile: flower-shop-backend-java/Dockerfile.runtime
+    depends_on:
+      mysql:
+        condition: service_healthy
     environment:
       PORT: 3001
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-floral_whisper_time}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: ${MYSQL_USER:-floral_whisper}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-change-me}
       PUBLIC_BASE_URL: ""
+      UPLOAD_DIR: /app/uploads
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Floral@2026}
-      ADMIN_AUTH_SECRET: ${ADMIN_AUTH_SECRET:-floral-whisper-time-docker-secret}
+      ADMIN_AUTH_SECRET: ${ADMIN_AUTH_SECRET:-replace-with-a-long-random-secret}
+      JWT_ISSUER: ${JWT_ISSUER:-flower-shop-backend-java}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-*}
     volumes:
-      - ./flower-shop-backend/data:/app/data
-      - ./flower-shop-backend/uploads:/app/uploads
+      - ./flower-shop-backend-java/uploads:/app/uploads
     expose:
       - "3001"
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3001/api/health"]
       interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
 
   web:
     build:
       context: .
-      dockerfile: flower-shop-web/Dockerfile
-      args:
-        VITE_API_BASE_URL: ""
+      dockerfile: flower-shop-web/Dockerfile.runtime
     depends_on:
       backend:
         condition: service_healthy
@@ -35,3 +61,5 @@ services:
       - "${WEB_PORT:-8080}:80"
     restart: unless-stopped
 
+volumes:
+  floral_whisper_mysql:

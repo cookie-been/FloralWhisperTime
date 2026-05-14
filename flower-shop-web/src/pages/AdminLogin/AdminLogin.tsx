@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Form, Input, message } from "antd";
 import { ArrowRight, Flower2, Lock, Sparkles, User } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -15,11 +15,33 @@ export function AdminLogin() {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
   const from = (location.state as { from?: string } | null)?.from ?? "/admin";
+
+  const backgroundSlides = useMemo(
+    () =>
+      [
+        siteConfig?.heroImage,
+        "/admin-login/florist-counter.jpg",
+        "/admin-login/floral-arrangement.jpg",
+        "/admin-login/bouquet-display.jpg",
+      ].filter((item): item is string => Boolean(item)),
+    [siteConfig?.heroImage],
+  );
 
   useEffect(() => {
     getSiteConfig().then(setSiteConfig).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (backgroundSlides.length <= 1) return;
+
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % backgroundSlides.length);
+    }, 4800);
+
+    return () => window.clearInterval(timer);
+  }, [backgroundSlides]);
 
   if (getAdminToken()) {
     return <Navigate to={from} replace />;
@@ -40,62 +62,42 @@ export function AdminLogin() {
   };
 
   return (
-    <section className="min-h-screen bg-[#f2ede6] p-4 md:p-6">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-[1480px] overflow-hidden rounded-2xl bg-white shadow-[0_30px_80px_rgba(72,50,34,0.12)] md:min-h-[calc(100vh-3rem)] lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative overflow-hidden bg-[#203227] px-6 py-8 text-white sm:px-10 sm:py-10">
-          <div className="absolute inset-0">
-            {siteConfig?.heroImage ? (
-              <img src={siteConfig.heroImage} alt="" className="h-full w-full object-cover opacity-28" />
-            ) : null}
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(17,31,22,0.92),rgba(40,64,47,0.75))]" />
-          </div>
+    <section className="relative min-h-screen w-full overflow-hidden bg-[#233229]">
+      <div className="absolute inset-0">
+        {backgroundSlides.map((image, index) => (
+          <img
+            key={image}
+            src={image}
+            alt=""
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1600ms] ${
+              index === activeSlide ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(23,35,28,0.78),rgba(72,58,44,0.48),rgba(23,35,28,0.82))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,235,223,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(133,160,138,0.14),transparent_28%)]" />
+      </div>
 
-          <div className="relative z-10 flex h-full flex-col">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/12 backdrop-blur">
-                <Flower2 size={20} />
-              </span>
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">Floral Whisper</p>
-                <p className="mt-1 text-lg font-semibold">{siteConfig?.brandName ?? "花语时光"}</p>
-              </div>
-            </div>
-
-            <div className="mt-16 max-w-xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">Admin Console</p>
-              <h1 className="mt-4 text-4xl font-semibold leading-tight sm:text-5xl">
-                管理作品、首页叙事与门店展示。
-              </h1>
-              <p className="mt-5 max-w-lg text-base leading-8 text-white/74">
-                进入后台后，你会先看到站点当前状态，再进入作品管理与内容编辑。这一层专门服务于日常运营，不是营销页。
-              </p>
-            </div>
-
-            <div className="mt-auto grid gap-3 pt-12 sm:grid-cols-3">
-              {[
-                { label: "运营总览", note: "先看状态再编辑" },
-                { label: "作品工作台", note: "列表与抽屉并行操作" },
-                { label: "站点配置", note: "首页与品牌内容统一维护" },
-              ].map((item) => (
-                <div key={item.label} className="rounded-xl border border-white/10 bg-white/8 px-4 py-4 backdrop-blur">
-                  <div className="flex items-center gap-2 text-white">
-                    <Sparkles size={15} />
-                    <p className="text-sm font-semibold">{item.label}</p>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-white/66">{item.note}</p>
-                </div>
-              ))}
-            </div>
+      <div className="relative z-10 flex min-h-screen flex-col px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+        <div className="flex items-center gap-3 text-white">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/14 bg-[#f4ede3]/12 backdrop-blur">
+            <Flower2 size={20} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">Floral Whisper</p>
+            <p className="mt-1 text-lg font-semibold">{siteConfig?.brandName ?? "花语时光"}</p>
           </div>
         </div>
 
-        <div className="flex items-center px-5 py-8 sm:px-10 lg:px-14">
-          <div className="mx-auto w-full max-w-md">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-forest/70">Sign In</p>
-            <h2 className="mt-3 text-3xl font-semibold text-[#1b281e]">管理者登录</h2>
-            <p className="mt-3 text-sm leading-7 text-muted">登录后可维护作品、上传图片，并更新首页与品牌故事内容。</p>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-md rounded-2xl border border-[#efe2d3]/56 bg-[#f8f3eb]/88 px-7 py-8 shadow-[0_32px_90px_rgba(20,30,24,0.24)] backdrop-blur-md sm:px-9 sm:py-10">
+            <div className="mb-8 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#536b59]">Sign In</p>
+              <h2 className="mt-3 text-3xl font-semibold text-[#243127]">管理者登录</h2>
+              <p className="mt-3 text-sm leading-7 text-[#66756a]">登录后可维护作品、上传图片，并更新首页与品牌故事内容。</p>
+            </div>
 
-            <Form<LoginForm> layout="vertical" className="mt-10" onFinish={onFinish} initialValues={{ username: "admin" }}>
+            <Form<LoginForm> layout="vertical" onFinish={onFinish} initialValues={{ username: "admin" }}>
               <Form.Item name="username" label="账号" rules={[{ required: true, message: "请输入账号" }]}>
                 <Input size="large" prefix={<User size={16} />} placeholder="admin" />
               </Form.Item>
@@ -109,7 +111,36 @@ export function AdminLogin() {
                 </span>
               </Button>
             </Form>
+
+            {backgroundSlides.length > 1 ? (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                {backgroundSlides.map((image, index) => (
+                  <span
+                    key={`${image}-dot`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      index === activeSlide ? "w-8 bg-[#456451]" : "w-2 bg-[#cdbba7]"
+                    }`}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
+        </div>
+
+        <div className="hidden gap-3 text-white/88 lg:grid lg:max-w-3xl lg:grid-cols-3">
+          {[
+            { label: "运营总览", note: "先看状态再编辑" },
+            { label: "作品工作台", note: "列表与抽屉并行操作" },
+            { label: "站点配置", note: "首页与品牌内容统一维护" },
+          ].map((item) => (
+            <div key={item.label} className="rounded-xl border border-[#efe2d3]/18 bg-[#f4ede3]/10 px-4 py-4 backdrop-blur">
+              <div className="flex items-center gap-2 text-white">
+                <Sparkles size={15} />
+                <p className="text-sm font-semibold">{item.label}</p>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-white/66">{item.note}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

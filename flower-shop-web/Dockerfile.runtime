@@ -1,0 +1,6 @@
+FROM stellarixmatrix-frontend:latest
+
+COPY flower-shop-web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY flower-shop-web/dist /usr/share/nginx/html
+
+EXPOSE 80

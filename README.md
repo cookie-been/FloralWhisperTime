@@ -2,6 +2,12 @@
 
 根据 `鲜花店展示方案.zip` 实现的纯展示型双端应用，包含 PC Web 和微信小程序。
 
+当前默认部署基线为企业级三层结构：
+
+- `mysql`：MySQL 8.4，持久化存储
+- `flower-shop-backend-java`：Spring Boot 3 + MyBatis-Plus + Flyway
+- `flower-shop-web`：Nginx 托管静态站点并反向代理 `/api` 与 `/uploads`
+
 ## 目录
 
 - `shared/`：双端共享的 TypeScript 类型、Mock 数据和 API 封装。
@@ -9,7 +15,7 @@
 - `flower-shop-web/`：React + TypeScript + Vite + Tailwind CSS + Ant Design PC Web。
 - `flower-shop-mini/`：微信小程序原生框架 + TypeScript + WXSS。
 
-## 后端运行
+## 旧版 Node 后端运行（兼容保留）
 
 ```bash
 cd flower-shop-backend
@@ -17,7 +23,7 @@ npm install
 npm run dev
 ```
 
-默认服务地址为 `http://localhost:3001`，数据保存在 `flower-shop-backend/data/db.json`，上传图片保存在 `flower-shop-backend/uploads/`。
+这是历史兼容实现，不再作为默认部署主线。数据保存在 `flower-shop-backend/data/db.json`，上传图片保存在 `flower-shop-backend/uploads/`。
 
 ## Java + MySQL 后端
 
@@ -53,7 +59,7 @@ npm run build
 
 ## Docker 部署
 
-项目提供 `docker-compose.yml`，会构建后端 Node 服务和 Web Nginx 静态站点。Web 容器会把 `/api` 和 `/uploads` 反向代理到后端，因此浏览器只需要访问 Web 端口。
+项目根目录的 `docker-compose.yml` 现在以 Java + MySQL 为默认部署主线，符合当前企业级架构设计。Flyway 会在后端启动时自动迁移企业级表结构。
 
 ```bash
 cp .env.example .env
@@ -65,14 +71,24 @@ docker compose up -d --build
 可在 `.env` 中调整：
 
 - `WEB_PORT`：Web 对外端口，默认 `8080`
+- `MYSQL_DATABASE`：数据库名，默认 `floral_whisper_time`
+- `MYSQL_USER`：业务库用户名
+- `MYSQL_PASSWORD`：业务库密码
+- `MYSQL_ROOT_PASSWORD`：MySQL root 密码
 - `ADMIN_USERNAME`：管理账号，默认 `admin`
 - `ADMIN_PASSWORD`：管理密码，默认 `Floral@2026`
 - `ADMIN_AUTH_SECRET`：登录 token 签名密钥，生产环境必须改成随机长字符串
+- `JWT_ISSUER`：JWT 签发者
+- `CORS_ALLOWED_ORIGIN_PATTERNS`：允许的来源模式
 
-后端数据和上传图片通过宿主机目录持久化：
+持久化策略：
 
-- `flower-shop-backend/data:/app/data`
-- `flower-shop-backend/uploads:/app/uploads`
+- MySQL 数据：Docker volume `floral_whisper_mysql`
+- 上传文件：`flower-shop-backend-java/uploads:/app/uploads`
+
+浏览器只需要访问 Web 端口。Web 容器会把 `/api` 和 `/uploads` 反向代理到 Java 后端容器。
+
+完整容器验收手册见 [docs/superpowers/migration-checklists/2026-05-13-docker-cutover-runbook.md](/workspace/FloralWhisperTime/docs/superpowers/migration-checklists/2026-05-13-docker-cutover-runbook.md)。
 
 ## 小程序预览
 
