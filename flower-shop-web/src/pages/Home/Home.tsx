@@ -55,15 +55,25 @@ export function Home() {
   );
 
   useEffect(() => {
-    Promise.all([getCategories(), getFlowers({ sortBy: "featured", limit: 5 }), getBrandStory(), getSiteConfig(), getShopInfo()])
-      .then(([categoryList, flowerResult, brandStory, config, shopInfo]) => {
-        setCategories(categoryList);
-        setFeatured(flowerResult.list);
-        setStory(brandStory);
-        setSiteConfig(config);
-        setShop(shopInfo);
+    let active = true;
+
+    Promise.allSettled([getCategories(), getFlowers({ sortBy: "featured", limit: 5 }), getBrandStory(), getSiteConfig(), getShopInfo()])
+      .then(([categoryResult, flowerResult, storyResult, siteConfigResult, shopResult]) => {
+        if (!active) return;
+
+        if (categoryResult.status === "fulfilled") setCategories(categoryResult.value);
+        if (flowerResult.status === "fulfilled") setFeatured(flowerResult.value.list);
+        if (storyResult.status === "fulfilled") setStory(storyResult.value);
+        if (siteConfigResult.status === "fulfilled") setSiteConfig(siteConfigResult.value);
+        if (shopResult.status === "fulfilled") setShop(shopResult.value);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {

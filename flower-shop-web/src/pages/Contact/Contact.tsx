@@ -9,10 +9,15 @@ export function Contact() {
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const phone = shop?.phone ?? "待补充";
+  const wechat = shop?.wechat ?? "待补充";
+  const address = shop?.address ?? "地址信息待完善";
 
   useEffect(() => {
-    getShopInfo().then(setShop);
-    getSiteConfig().then(setSiteConfig);
+    Promise.allSettled([getShopInfo(), getSiteConfig()]).then(([shopResult, siteConfigResult]) => {
+      if (shopResult.status === "fulfilled") setShop(shopResult.value);
+      if (siteConfigResult.status === "fulfilled") setSiteConfig(siteConfigResult.value);
+    });
   }, []);
 
   const onFinish = async (values: ContactForm) => {
@@ -44,15 +49,15 @@ export function Contact() {
           <div className="mt-6 space-y-5 text-muted">
             <p className="flex gap-3">
               <Phone className="shrink-0 text-forest" size={20} />
-              {shop?.phone}
+              {phone}
             </p>
             <p className="flex gap-3">
               <MessageCircle className="shrink-0 text-forest" size={20} />
-              {shop?.wechat}
+              {wechat}
             </p>
             <p className="flex gap-3">
               <MapPin className="shrink-0 text-forest" size={20} />
-              {shop?.address}
+              {address}
             </p>
             <p className="flex gap-3">
               <Clock className="shrink-0 text-forest" size={20} />

@@ -11,13 +11,15 @@ export function Gallery() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState<FlowerQuery>({ categoryId: initialCategory, sortBy: "featured", page: 1, limit: 24 });
   const currentPage = query.page ?? 1;
   const pageSize = query.limit ?? 24;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   useEffect(() => {
-    getCategories().then(setCategories);
+    getCategories().then(setCategories).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -26,13 +28,35 @@ export function Gallery() {
   }, [searchParams]);
 
   useEffect(() => {
-    getFlowers(query).then((result) => {
-      setFlowers(result.list);
-      setTotal(result.total);
-    });
+    let active = true;
+    setLoading(true);
+    setLoadError(false);
+
+    getFlowers(query)
+      .then((result) => {
+        if (!active) return;
+        setFlowers(result.list);
+        setTotal(result.total);
+      })
+      .catch(() => {
+        if (!active) return;
+        setFlowers([]);
+        setTotal(0);
+        setLoadError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [query]);
 
-  const categoryOptions = useMemo(() => categories.map((item) => ({ label: item.name, value: item.id })), [categories]);
+  const categoryOptions = useMemo(
+    () => (categories.length ? categories.map((item) => ({ label: item.name, value: item.id })) : [{ label: "全部分类", value: "all" }]),
+    [categories],
+  );
   const updateCategory = (value: string) => {
     setQuery((prev) => ({ ...prev, categoryId: value, page: 1 }));
     const next = new URLSearchParams(searchParams);
@@ -93,7 +117,13 @@ export function Gallery() {
           <p className="text-sm text-muted">当前排序：{query.sortBy === "featured" ? "精选优先" : query.sortBy === "latest" ? "最新作品" : query.sortBy === "price_asc" ? "价格从低到高" : "价格从高到低"}</p>
         </div>
 
-        {flowers.length > 0 ? (
+        {loading ? (
+          <div className="rounded-lg border border-black/6 bg-white/72 py-20 text-center text-muted">正在加载作品...</div>
+        ) : loadError ? (
+          <div className="rounded-lg border border-black/6 bg-white/72 py-20">
+            <Empty description="作品列表加载失败，请稍后刷新重试" />
+          </div>
+        ) : flowers.length > 0 ? (
           <>
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {flowers.map((flower) => (

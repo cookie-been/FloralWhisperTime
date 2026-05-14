@@ -10,14 +10,45 @@ export function FlowerDetail() {
   const { id } = useParams();
   const [flower, setFlower] = useState<Flower | null | undefined>();
   const [related, setRelated] = useState<Flower[]>([]);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    getFlowerById(id).then((detail) => {
-      setFlower(detail);
-      if (detail) getRelatedFlowers(detail).then(setRelated);
-    });
+    let active = true;
+    setLoadError(false);
+
+    getFlowerById(id)
+      .then((detail) => {
+        if (!active) return;
+        setFlower(detail);
+        if (!detail) return;
+        return getRelatedFlowers(detail)
+          .then((items) => {
+            if (active) setRelated(items);
+          })
+          .catch(() => {
+            if (active) setRelated([]);
+          });
+      })
+      .catch(() => {
+        if (!active) return;
+        setFlower(undefined);
+        setRelated([]);
+        setLoadError(true);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [id]);
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-20">
+        <Empty description="作品加载失败，请稍后刷新重试" />
+      </div>
+    );
+  }
 
   if (flower === null) {
     return (
@@ -65,11 +96,17 @@ export function FlowerDetail() {
 
       <div className="mt-16">
         <h2 className="section-title text-2xl">相关推荐</h2>
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {related.map((item) => (
-            <FlowerCard key={item.id} flower={item} compact />
-          ))}
-        </div>
+        {related.length ? (
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {related.map((item) => (
+              <FlowerCard key={item.id} flower={item} compact />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 rounded-lg border border-black/6 bg-[#faf7f2] px-6 py-10 text-center text-sm text-muted">
+            暂无更多相关作品
+          </div>
+        )}
       </div>
     </section>
   );

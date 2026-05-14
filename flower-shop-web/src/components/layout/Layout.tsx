@@ -18,8 +18,10 @@ export function Layout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    getShopInfo().then(setShop).catch(() => undefined);
-    getSiteConfig().then(setSiteConfig).catch(() => undefined);
+    Promise.allSettled([getShopInfo(), getSiteConfig()]).then(([shopResult, siteConfigResult]) => {
+      if (shopResult.status === "fulfilled") setShop(shopResult.value);
+      if (siteConfigResult.status === "fulfilled") setSiteConfig(siteConfigResult.value);
+    });
   }, []);
 
   return (

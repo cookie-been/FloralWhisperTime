@@ -11,15 +11,33 @@ export function About() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getAboutPage(), getAboutTimeline(), getTeamMembers(), getShopInfo()])
-      .then(([page, timelineEntries, members, shopInfo]) => {
-        setAboutPage(page);
-        setTimeline(timelineEntries);
-        setTeam(members);
-        setShop(shopInfo);
+    let active = true;
+
+    Promise.allSettled([getAboutPage(), getAboutTimeline(), getTeamMembers(), getShopInfo()])
+      .then(([pageResult, timelineResult, teamResult, shopResult]) => {
+        if (!active) return;
+
+        if (pageResult.status === "fulfilled") setAboutPage(pageResult.value);
+        if (timelineResult.status === "fulfilled") setTimeline(timelineResult.value);
+        if (teamResult.status === "fulfilled") setTeam(teamResult.value);
+        if (shopResult.status === "fulfilled") setShop(shopResult.value);
+
+        if (
+          pageResult.status === "rejected" &&
+          timelineResult.status === "rejected" &&
+          teamResult.status === "rejected" &&
+          shopResult.status === "rejected"
+        ) {
+          message.error("关于页加载失败");
+        }
       })
-      .catch((error) => message.error(error instanceof Error ? error.message : "关于页加载失败"))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const timelineItems = useMemo(
