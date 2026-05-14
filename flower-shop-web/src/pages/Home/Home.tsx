@@ -231,19 +231,69 @@ export function Home() {
 
       {story && (
         <section className="bg-[#f7fbf7]">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[0.95fr_1.05fr] lg:px-8">
-            <div className="overflow-hidden rounded-lg">
-              <img src={story.images[0]} alt={story.title} className="h-full min-h-80 w-full object-cover" />
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+              <div className="max-w-2xl">
+                <p className="section-eyebrow">Brand Story</p>
+                <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">品牌故事</h2>
+                <p className="mt-3 text-sm leading-7 text-muted sm:text-base">
+                  把品牌气质、服务方式和到店感受压缩进首页一屏，让访问者在浏览作品之外，也能快速理解这家店的表达方式。
+                </p>
+              </div>
+              <Link to="/about" className="inline-flex items-center gap-2 text-sm font-semibold text-forest">
+                查看完整介绍 <ArrowRight size={16} />
+              </Link>
             </div>
-            <div className="flex flex-col justify-center">
-              <p className="section-eyebrow">Brand Story</p>
-              <h2 className="section-title section-title-accent mt-3 text-2xl leading-tight sm:text-3xl">{story.title}</h2>
-              <p className="mt-4 text-base leading-7 text-muted sm:text-lg sm:leading-8">{story.subtitle}</p>
-              <p className="mt-4 leading-8 text-muted">{story.content}</p>
-              <p className="mt-6 inline-flex items-center gap-2 text-sm text-forest">
-                <MapPin size={16} />
-                {shop?.address}
-              </p>
+
+            <div className="surface-card overflow-hidden">
+              <div className="grid lg:grid-cols-[1.02fr_0.98fr]">
+                <div className="grid gap-3 bg-[#eef4ed] p-3 sm:p-4">
+                  <div className="overflow-hidden rounded-lg">
+                    <img src={story.images[0]} alt={story.title} className="aspect-[4/4.6] w-full object-cover sm:aspect-[4/4.2] lg:min-h-[520px]" />
+                  </div>
+                  {story.images[1] ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="overflow-hidden rounded-lg">
+                        <img src={story.images[1]} alt={`${story.title} 场景图`} className="aspect-[4/3] w-full object-cover" />
+                      </div>
+                      <div className="rounded-lg border border-black/6 bg-white/78 p-4 sm:p-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">品牌气质</p>
+                        <p className="mt-3 text-lg font-semibold text-ink">自然、克制、适合长期被记住</p>
+                        <p className="mt-3 text-sm leading-7 text-muted">
+                          以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+                  <div>
+                    <p className="section-eyebrow">Narrative</p>
+                    <h3 className="section-title section-title-accent mt-3 text-2xl leading-tight sm:text-3xl">{story.title}</h3>
+                    {story.subtitle ? <p className="mt-4 text-base leading-7 text-muted sm:text-lg sm:leading-8">{story.subtitle}</p> : null}
+                    <p className="mt-5 leading-8 text-muted">{story.content}</p>
+                  </div>
+
+                  <div className="mt-10 grid gap-4 border-t border-black/6 pt-6 sm:grid-cols-3">
+                    <div className="rounded-lg bg-[#f8fbf7] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">服务方式</p>
+                      <p className="mt-3 text-sm leading-7 text-muted">门店零售、场景花礼、婚礼与空间陈设同步提供。</p>
+                    </div>
+                    <div className="rounded-lg bg-[#f8fbf7] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">到店体验</p>
+                      <p className="mt-3 text-sm leading-7 text-muted">更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。</p>
+                    </div>
+                    <div className="rounded-lg bg-[#f8fbf7] p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">门店信息</p>
+                      <p className="mt-3 inline-flex items-start gap-2 text-sm leading-7 text-muted">
+                        <MapPin size={16} className="mt-1 shrink-0 text-forest" />
+                        <span>{shop?.address}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
