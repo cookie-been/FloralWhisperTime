@@ -19,6 +19,8 @@ export function Home() {
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [activeHero, setActiveHero] = useState(0);
+  const featuredPrimary = featured[0] ?? null;
+  const featuredSecondary = featured.slice(1, 5);
 
   const heroSlides = useMemo(
     () =>
@@ -38,7 +40,7 @@ export function Home() {
   );
 
   useEffect(() => {
-    getFlowers({ sortBy: "featured", limit: 4 }).then((result) => setFeatured(result.list));
+    getFlowers({ sortBy: "featured", limit: 5 }).then((result) => setFeatured(result.list));
     getBrandStory().then(setStory);
     getSiteConfig().then(setSiteConfig);
     getShopInfo().then(setShop);
@@ -169,16 +171,62 @@ export function Home() {
           <div>
             <p className="section-eyebrow">Featured Works</p>
             <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">精选作品</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted sm:text-base">
+              首页保留一组更完整的精选作品视图，覆盖礼赠、婚礼、空间陈设等主要场景，方便快速判断整体风格。
+            </p>
           </div>
           <Link to="/gallery" className="inline-flex items-center gap-2 text-sm font-semibold text-forest">
             查看全部 <ArrowRight size={16} />
           </Link>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((flower) => (
-            <FlowerCard key={flower.id} flower={flower} compact />
-          ))}
-        </div>
+        {featuredPrimary ? (
+          <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+            <Link
+              to={`/gallery/${featuredPrimary.id}`}
+              className="surface-card group overflow-hidden transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(88,69,48,0.12)]"
+            >
+              <div className="grid min-h-full lg:grid-cols-[1.02fr_0.98fr]">
+                <div className="aspect-[4/4.2] overflow-hidden bg-mint lg:aspect-auto lg:min-h-[420px]">
+                  <img
+                    src={featuredPrimary.images[0]}
+                    alt={featuredPrimary.name}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="flex flex-col justify-between p-6 sm:p-8">
+                  <div>
+                    <p className="section-eyebrow">Featured Highlight</p>
+                    <h3 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">{featuredPrimary.name}</h3>
+                    <p className="mt-4 text-base leading-8 text-muted">{featuredPrimary.description}</p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {featuredPrimary.tags.slice(0, 4).map((tag) => (
+                        <span key={tag} className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-forest">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-8 flex items-end justify-between gap-4 border-t border-black/6 pt-5">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#58725f]">精选推荐</p>
+                      <p className="mt-2 text-2xl font-semibold text-forest">¥{featuredPrimary.price}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-forest">
+                      查看详情 <ArrowRight size={16} />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              {featuredSecondary.map((flower) => (
+                <FlowerCard key={flower.id} flower={flower} compact />
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {story && (
