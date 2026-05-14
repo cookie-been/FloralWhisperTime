@@ -82,6 +82,13 @@ export function AdminContacts() {
     return parts;
   }, [keyword, status]);
 
+  const pageStats = useMemo(() => {
+    const list = data?.list ?? [];
+    const unreadCount = list.filter((item) => !item.readAt).length;
+    const readCount = list.length - unreadCount;
+    return { unreadCount, readCount };
+  }, [data]);
+
   const handleMarkRead = async (id: string) => {
     try {
       await markAdminContactRead(id);
@@ -105,7 +112,10 @@ export function AdminContacts() {
       width: 180,
       render: (name: string, record) => (
         <div>
-          <p className="font-semibold text-[#1b281e]">{name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-[#1b281e]">{name}</p>
+            {!record.readAt ? <Tag color="green">待处理</Tag> : null}
+          </div>
           <p className="mt-1 text-xs text-muted">{record.id}</p>
         </div>
       ),
@@ -193,6 +203,23 @@ export function AdminContacts() {
         <div className="mt-5">
           <p className="admin-filter-caption">Filter Controls</p>
         </div>
+        <div className="admin-quick-filters">
+          <Button type={status === "unread" ? "primary" : "default"} onClick={() => {
+            setStatus("unread");
+            load(1, pageSize, keyword, "unread").catch(() => undefined);
+          }}>
+            未读优先
+          </Button>
+          <Button type={status === "read" ? "primary" : "default"} onClick={() => {
+            setStatus("read");
+            load(1, pageSize, keyword, "read").catch(() => undefined);
+          }}>
+            只看已读
+          </Button>
+          <Button type={!keyword.trim() && status === "all" ? "primary" : "default"} onClick={resetFilters}>
+            查看全部
+          </Button>
+        </div>
         <div className="admin-filter-grid lg:grid-cols-[minmax(0,1fr)_220px_140px]">
           <Input
             allowClear
@@ -221,7 +248,11 @@ export function AdminContacts() {
         <div className="admin-filter-summary">
           <div className="admin-filter-summary-copy">
             <p>当前结果 {data?.list.length ?? 0} 条</p>
-            <span>{hasActiveFilters ? `已应用 ${filterSummary.join(" · ")}` : "当前显示全部留言，可直接翻页或处理未读消息。"}</span>
+            <span>
+              {hasActiveFilters
+                ? `已应用 ${filterSummary.join(" · ")}`
+                : `当前页未读 ${pageStats.unreadCount} 条，已读 ${pageStats.readCount} 条。`}
+            </span>
           </div>
           {hasActiveFilters ? (
             <Button onClick={resetFilters}>清空筛选</Button>
@@ -255,6 +286,7 @@ export function AdminContacts() {
               load(nextPage, nextPageSize, keyword, status).catch(() => undefined);
             },
           }}
+          rowClassName={(record) => (!record.readAt ? "admin-row-unread" : "")}
           scroll={{ x: 1080 }}
         />
       </section>

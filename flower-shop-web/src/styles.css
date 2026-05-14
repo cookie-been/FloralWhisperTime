@@ -226,6 +226,21 @@ a {
   line-height: 1.7;
 }
 
+.admin-quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.admin-row-unread td {
+  background: rgba(237, 244, 235, 0.55) !important;
+}
+
+.admin-row-unread:hover td {
+  background: rgba(231, 241, 227, 0.88) !important;
+}
+
 .admin-cell-note {
   margin: 6px 0 0;
   color: #6d7e72;

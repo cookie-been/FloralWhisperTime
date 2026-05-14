@@ -147,6 +147,8 @@ export function AdminFlowers() {
     return parts;
   }, [categoryMap, featuredFilter, search, selectedCategory]);
 
+  const featuredCount = useMemo(() => filteredFlowers.filter((item) => item.featured).length, [filteredFlowers]);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -337,6 +339,17 @@ export function AdminFlowers() {
         <div className="mt-5">
           <p className="admin-filter-caption">Filter Controls</p>
         </div>
+        <div className="admin-quick-filters">
+          <Button type={featuredFilter === "featured" ? "primary" : "default"} onClick={() => setFeaturedFilter("featured")}>
+            精选优先
+          </Button>
+          <Button type={featuredFilter === "normal" ? "primary" : "default"} onClick={() => setFeaturedFilter("normal")}>
+            只看普通
+          </Button>
+          <Button type={selectedCategory === "all" ? "primary" : "default"} onClick={resetFilters}>
+            查看全部
+          </Button>
+        </div>
         <div className="admin-filter-grid lg:grid-cols-[minmax(0,1.3fr)_220px_220px]">
           <Input
             size="large"
@@ -360,7 +373,11 @@ export function AdminFlowers() {
         <div className="admin-filter-summary">
           <div className="admin-filter-summary-copy">
             <p>当前结果 {filteredFlowers.length} 条</p>
-            <span>{hasActiveFilters ? `已应用 ${filterSummary.join(" · ")}` : "当前显示全部作品，可直接进入编辑。"}</span>
+            <span>
+              {hasActiveFilters
+                ? `已应用 ${filterSummary.join(" · ")}`
+                : `当前结果中精选 ${featuredCount} 条，普通 ${filteredFlowers.length - featuredCount} 条。`}
+            </span>
           </div>
           {hasActiveFilters ? (
             <Button onClick={resetFilters}>清空筛选</Button>
