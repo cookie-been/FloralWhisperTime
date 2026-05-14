@@ -35,6 +35,7 @@ export function AdminContacts() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
   const initialStatus = searchParams.get("status");
   const [status, setStatus] = useState<"all" | "read" | "unread">(
@@ -108,6 +109,11 @@ export function AdminContacts() {
     return { unreadCount, readCount };
   }, [data]);
 
+  const selectedContacts = useMemo(
+    () => (data?.list ?? []).filter((item) => selectedRowKeys.includes(item.id)),
+    [data, selectedRowKeys],
+  );
+
   const handleMarkRead = async (id: string) => {
     try {
       await markAdminContactRead(id);
@@ -116,6 +122,20 @@ export function AdminContacts() {
       setActiveContact((current) => (current?.id === id ? { ...current, readAt: new Date().toISOString() } : current));
     } catch (error) {
       message.error(error instanceof Error ? error.message : "操作失败");
+    }
+  };
+
+  const handleMarkReadBatch = async () => {
+    const unreadContacts = selectedContacts.filter((item) => !item.readAt);
+    if (!unreadContacts.length) return;
+
+    try {
+      await Promise.all(unreadContacts.map((item) => markAdminContactRead(item.id)));
+      message.success("已批量标记为已读");
+      setSelectedRowKeys([]);
+      await load(page, pageSize, keyword, status);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "批量操作失败");
     }
   };
 
@@ -309,6 +329,20 @@ export function AdminContacts() {
             <Button onClick={resetFilters}>清空筛选</Button>
           ) : null}
         </div>
+        {selectedContacts.length ? (
+          <div className="admin-filter-summary">
+            <div className="admin-filter-summary-copy">
+              <p>已选中 {selectedContacts.length} 条</p>
+              <span>可批量标记已读，适合处理同一批已确认的访客留言。</span>
+            </div>
+            <Space wrap>
+              <Button type="primary" onClick={() => void handleMarkReadBatch()}>
+                批量标记已读
+              </Button>
+              <Button onClick={() => setSelectedRowKeys([])}>取消选择</Button>
+            </Space>
+          </div>
+        ) : null}
       </section>
 
       <section className="admin-panel overflow-hidden p-0">
@@ -316,6 +350,10 @@ export function AdminContacts() {
           rowKey="id"
           columns={columns}
           dataSource={data?.list ?? []}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys) => setSelectedRowKeys(keys as string[]),
+          }}
           loading={loading}
           locale={{
             emptyText: (
