@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flower2, MapPin, Sparkles, Store } from "lucide-react";
 import { Button } from "antd";
 import { FlowerCard } from "@/components/common/FlowerCard";
 import { getBrandStory, getFlowers, getShopInfo, getSiteConfig } from "@/services/api";
@@ -21,6 +21,28 @@ export function Home() {
   const [activeHero, setActiveHero] = useState(0);
   const featuredPrimary = featured[0] ?? null;
   const featuredSecondary = featured.slice(1, 5);
+  const stats = siteConfig?.stats ?? [
+    { value: "860+", label: "已服务客户" },
+    { value: "320+", label: "花艺作品" },
+    { value: "6", label: "主题分类" },
+  ];
+  const statCards = [
+    {
+      ...stats[0],
+      icon: Sparkles,
+      note: "覆盖日常赠礼、节庆表达、活动布置与到店预约等常见场景。",
+    },
+    {
+      ...stats[1],
+      icon: Flower2,
+      note: "围绕花束、空间陈设和品牌场景持续更新，形成稳定作品库。",
+    },
+    {
+      ...stats[2],
+      icon: Store,
+      note: shop?.address ? `门店服务范围已覆盖到店咨询与现场选花，地址：${shop.address}` : "门店支持到店咨询、预约定制与线下花材沟通。",
+    },
+  ];
 
   const heroSlides = useMemo(
     () =>
@@ -153,20 +175,29 @@ export function Home() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
-        {(siteConfig?.stats ?? [
-          { value: "860+", label: "已服务客户" },
-          { value: "320+", label: "花艺作品" },
-          { value: "6", label: "主题分类" },
-        ]).map((stat) => (
-          <div key={stat.label} className="border-l-4 border-forest bg-mint/60 px-6 py-5">
-            <p className="text-3xl font-semibold text-forest">{stat.value}</p>
-            <p className="mt-1 text-sm text-muted">{stat.label}</p>
-          </div>
-        ))}
+      <section className="relative z-10 -mt-8 mx-auto max-w-7xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
+        <div className="grid gap-4 md:grid-cols-3 lg:gap-6">
+          {statCards.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <article key={stat.label} className="surface-card border-none bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,243,236,0.96))] p-5 shadow-[0_18px_40px_rgba(29,44,33,0.08)] sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">{stat.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-forest">{stat.value}</p>
+                  </div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-mint text-forest">
+                    <Icon size={18} />
+                  </div>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-muted">{stat.note}</p>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 sm:pt-16 lg:px-8">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="section-eyebrow">Featured Works</p>
