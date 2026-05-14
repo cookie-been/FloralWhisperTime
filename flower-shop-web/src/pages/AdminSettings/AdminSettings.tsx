@@ -58,6 +58,7 @@ export function AdminSettings() {
   const aiProvider = Form.useWatch(["aiSettings", "provider"], form) ?? "";
   const aiModel = Form.useWatch(["aiSettings", "model"], form) ?? "";
   const aiSize = Form.useWatch(["aiSettings", "size"], form) ?? "";
+  const aiTextModel = Form.useWatch(["aiSettings", "textModel"], form) ?? "";
 
   const sectionRefs = {
     brand: useRef<HTMLDivElement | null>(null),
@@ -318,7 +319,7 @@ export function AdminSettings() {
             <KeyRound size={16} className="text-forest" />
             AI生图配置
           </div>
-          <p className="mt-2 text-sm leading-6 text-muted">在这里维护 AI 生图的开关、密钥、模型、接口地址与图片尺寸。保存后后台作品管理中的 AI 生图工作台会立即使用最新配置。</p>
+          <p className="mt-2 text-sm leading-6 text-muted">在这里统一维护 AI 生图和作品信息建议能力的开关、密钥、模型与接口地址。保存后后台作品管理中的 AI 工作台会立即使用最新配置。</p>
           <div className="mt-4 grid gap-x-4 md:grid-cols-2">
             <Form.Item name={["aiSettings", "enabled"]} label="启用状态" valuePropName="checked">
               <Switch checkedChildren="开启" unCheckedChildren="关闭" />
@@ -335,6 +336,18 @@ export function AdminSettings() {
             <Form.Item name={["aiSettings", "size"]} label="图片尺寸">
               <Input placeholder="1920x1920" />
             </Form.Item>
+            <Form.Item name={["aiSettings", "textModel"]} label="文本模型">
+              <Input placeholder="doubao-1-5-pro-32k-250115" />
+            </Form.Item>
+            <Form.Item name={["aiSettings", "textGeneratePath"]} label="文本生成路径">
+              <Input placeholder="/chat/completions" />
+            </Form.Item>
+            <Form.Item name={["aiSettings", "textTemperature"]} label="文本温度">
+              <InputNumber className="w-full" min={0} max={2} step={0.1} />
+            </Form.Item>
+            <Form.Item name={["aiSettings", "textMaxTokens"]} label="文本最大输出">
+              <InputNumber className="w-full" min={256} max={4096} step={64} />
+            </Form.Item>
           </div>
           <Form.Item name={["aiSettings", "apiKey"]} label="API Key">
             <Input.Password placeholder="输入新的服务密钥后保存" visibilityToggle />
@@ -348,7 +361,7 @@ export function AdminSettings() {
           <div className="admin-panel p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">配置摘要</p>
             <p className="mt-3 text-base font-semibold text-[#1b281e]">{aiEnabled ? "AI 生图已启用" : "AI 生图未启用"}</p>
-            <p className="mt-2 text-sm leading-6 text-muted">当前提供商：{aiProvider || "未配置"}；当前模型：{aiModel || "未配置"}；当前尺寸：{aiSize || "未配置"}。</p>
+            <p className="mt-2 text-sm leading-6 text-muted">当前提供商：{aiProvider || "未配置"}；生图模型：{aiModel || "未配置"}；文本模型：{aiTextModel || "未配置"}；当前尺寸：{aiSize || "未配置"}。</p>
           </div>
           <div className="admin-panel p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">维护建议</p>

@@ -24,4 +24,14 @@ public class AiSettingsUpdateRequest {
 
   @Size(max = 40, message = "图片尺寸不能超过 40 个字符")
   private String size;
+
+  @Size(max = 120, message = "AI 文本模型名称不能超过 120 个字符")
+  private String textModel;
+
+  @Size(max = 120, message = "AI 文本生成路径不能超过 120 个字符")
+  private String textGeneratePath;
+
+  private Double textTemperature;
+
+  private Integer textMaxTokens;
 }

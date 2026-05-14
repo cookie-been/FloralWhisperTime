@@ -188,6 +188,30 @@ export async function generateAdminAiImage(prompt: string, files: File[]) {
   );
 }
 
+export interface AdminAiFlowerSuggestion {
+  name: string;
+  categoryId: string;
+  description: string;
+  materials: string[];
+  tags: string[];
+  meaning: string;
+}
+
+export function generateAdminAiFlowerSuggestion(payload: {
+  prompt: string;
+  imageUrl?: string;
+  mode?: string;
+}) {
+  return withMutationGuard(
+    `admin:ai-flower-suggestion:${payload.prompt}:${payload.imageUrl ?? ""}:${payload.mode ?? ""}`,
+    () =>
+      request<AdminAiFlowerSuggestion>("/api/admin/ai/flowers/suggestions", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  );
+}
+
 export function getCategories() {
   return request<Category[]>("/api/categories");
 }

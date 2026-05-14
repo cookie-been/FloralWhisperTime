@@ -99,6 +99,8 @@ mvn spring-boot:run
 - `GET /api/admin/me`
 - `GET /api/admin/contacts`
 - `PATCH /api/admin/contacts/{id}/read`
+- `POST /api/admin/ai/images/generate`
+- `POST /api/admin/ai/flowers/suggestions`
 - `GET /api/flowers`
 - `GET /api/flowers/{id}`
 - `GET /api/flowers/{id}/related`
@@ -156,4 +158,31 @@ mvn spring-boot:run
 ```bash
 mvn test
 mvn package
+```
+
+## AI 配置说明
+
+后台“内容配置”里的 AI 配置现在统一覆盖两类能力：
+
+- 图片生成
+  - `model`
+  - `baseUrl`
+  - `generatePath`
+  - `size`
+- 作品信息建议
+  - `textModel`
+  - `textGeneratePath`
+  - `textTemperature`
+  - `textMaxTokens`
+
+两类能力共享：
+
+- `enabled`
+- `provider`
+- `apiKey`
+
+方舟文本建议默认路径：
+
+```text
+/chat/completions
 ```

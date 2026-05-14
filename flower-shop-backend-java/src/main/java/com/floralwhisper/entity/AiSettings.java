@@ -16,4 +16,8 @@ public class AiSettings {
   private String baseUrl;
   private String generatePath;
   private String size;
+  private String textModel;
+  private String textGeneratePath;
+  private Double textTemperature;
+  private Integer textMaxTokens;
 }

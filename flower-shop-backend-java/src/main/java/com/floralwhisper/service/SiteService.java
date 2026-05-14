@@ -332,6 +332,10 @@ public class SiteService {
     current.setBaseUrl(text(request.getBaseUrl(), current.getBaseUrl()));
     current.setGeneratePath(text(request.getGeneratePath(), current.getGeneratePath()));
     current.setSize(text(request.getSize(), current.getSize()));
+    current.setTextModel(text(request.getTextModel(), current.getTextModel()));
+    current.setTextGeneratePath(text(request.getTextGeneratePath(), current.getTextGeneratePath()));
+    current.setTextTemperature(request.getTextTemperature() == null ? current.getTextTemperature() : request.getTextTemperature());
+    current.setTextMaxTokens(request.getTextMaxTokens() == null ? current.getTextMaxTokens() : request.getTextMaxTokens());
     aiSettingsMapper.updateById(current);
   }
 
@@ -344,6 +348,10 @@ public class SiteService {
     response.setBaseUrl(settings.getBaseUrl());
     response.setGeneratePath(settings.getGeneratePath());
     response.setSize(settings.getSize());
+    response.setTextModel(settings.getTextModel());
+    response.setTextGeneratePath(settings.getTextGeneratePath());
+    response.setTextTemperature(settings.getTextTemperature());
+    response.setTextMaxTokens(settings.getTextMaxTokens());
     return response;
   }
 
@@ -416,6 +424,10 @@ public class SiteService {
     created.setBaseUrl("https://operator.las.cn-beijing.volces.com/api/v1");
     created.setGeneratePath("/images/generations");
     created.setSize("1920x1920");
+    created.setTextModel("doubao-1-5-pro-32k-250115");
+    created.setTextGeneratePath("/chat/completions");
+    created.setTextTemperature(0.4D);
+    created.setTextMaxTokens(1200);
     aiSettingsMapper.insert(created);
     return created;
   }

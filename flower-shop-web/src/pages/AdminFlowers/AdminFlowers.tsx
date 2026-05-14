@@ -22,8 +22,19 @@ import type { ColumnsType } from "antd/es/table";
 import type { RcFile } from "antd/es/upload";
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { createFlower, deleteFlower, generateAdminAiImage, getCategories, getFlowers, updateFlower, uploadFlowerImage } from "@/services/api";
-import type { Category, Flower } from "@/types";
+import {
+  createFlower,
+  deleteFlower,
+  generateAdminAiFlowerSuggestion,
+  generateAdminAiImage,
+  getCategories,
+  getFlowers,
+  getSiteConfig,
+  updateFlower,
+  uploadFlowerImage,
+  type AdminAiFlowerSuggestion,
+} from "@/services/api";
+import type { AiSettings, Category, Flower } from "@/types";
 
 type FlowerForm = Omit<Flower, "materials" | "tags" | "images"> & {
   images: string;
@@ -94,10 +105,40 @@ interface GeneratedAiImageResult {
   mode: string;
 }
 
+interface AiSuggestionForm {
+  name: string;
+  categoryId: string;
+  description: string;
+  materials: string;
+  tags: string;
+  meaning: string;
+}
+
+const emptyAiSuggestion: AiSuggestionForm = {
+  name: "",
+  categoryId: "",
+  description: "",
+  materials: "",
+  tags: "",
+  meaning: "",
+};
+
+function toAiSuggestionForm(value: AdminAiFlowerSuggestion): AiSuggestionForm {
+  return {
+    name: value.name,
+    categoryId: value.categoryId,
+    description: value.description,
+    materials: joinText(value.materials),
+    tags: joinText(value.tags),
+    meaning: value.meaning,
+  };
+}
+
 export function AdminFlowers() {
   const [searchParams, setSearchParams] = useSearchParams();
   const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<FlowerForm>();
+  const [aiSuggestionForm] = Form.useForm<AiSuggestionForm>();
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editing, setEditing] = useState<Flower | null>(null);
@@ -112,7 +153,9 @@ export function AdminFlowers() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiReferenceFiles, setAiReferenceFiles] = useState<RcFile[]>([]);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiSuggesting, setAiSuggesting] = useState(false);
   const [generatedAiImage, setGeneratedAiImage] = useState<GeneratedAiImageResult | null>(null);
+  const [aiSettings, setAiSettings] = useState<AiSettings | null>(null);
   const initialFeatured = searchParams.get("featured");
   const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>(
     initialFeatured === "featured" || initialFeatured === "normal" ? initialFeatured : "all",
@@ -179,9 +222,10 @@ export function AdminFlowers() {
   const load = async () => {
     setLoading(true);
     try {
-      const [categoryList, flowerResult] = await Promise.all([getCategories(), getFlowers({ limit: 200 })]);
+      const [categoryList, flowerResult, siteConfig] = await Promise.all([getCategories(), getFlowers({ limit: 200 }), getSiteConfig()]);
       setCategories(categoryList);
       setFlowers(flowerResult.list);
+      setAiSettings(siteConfig.aiSettings ?? null);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "加载失败");
     } finally {
@@ -225,6 +269,8 @@ export function AdminFlowers() {
     setAiReferenceFiles([]);
     setGeneratedAiImage(null);
     setAiGenerating(false);
+    setAiSuggesting(false);
+    aiSuggestionForm.setFieldsValue(emptyAiSuggestion);
   };
 
   const clearSelection = () => setSelectedRowKeys([]);
@@ -289,6 +335,7 @@ export function AdminFlowers() {
     try {
       const result = await generateAdminAiImage(prompt, aiReferenceFiles);
       setGeneratedAiImage(result);
+      aiSuggestionForm.setFieldsValue(emptyAiSuggestion);
       message.success(result.mode === "image_to_image" ? "参考图生成完成" : "图片生成完成");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "AI 生成失败");
@@ -297,10 +344,49 @@ export function AdminFlowers() {
     }
   };
 
-  const useGeneratedImageForCreate = () => {
+  const runAiSuggestion = async () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt) {
+      message.error("请输入生成提示词");
+      return;
+    }
+    if (!generatedAiImage) {
+      message.error("请先生成图片");
+      return;
+    }
+    if (aiSuggesting) return;
+
+    setAiSuggesting(true);
+    try {
+      const result = await generateAdminAiFlowerSuggestion({
+        prompt,
+        imageUrl: generatedAiImage.imageUrl,
+        mode: generatedAiImage.mode,
+      });
+      aiSuggestionForm.setFieldsValue(toAiSuggestionForm(result));
+      message.success("作品信息建议已生成");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "作品信息建议生成失败");
+    } finally {
+      setAiSuggesting(false);
+    }
+  };
+
+  const useGeneratedImageForCreate = async () => {
     if (!generatedAiImage) return;
+    const suggestion = await aiSuggestionForm.validateFields().catch(() => aiSuggestionForm.getFieldsValue());
     setEditing(null);
-    form.setFieldsValue({ ...emptyFlower, id: `daily_${Date.now()}`, images: generatedAiImage.imageUrl });
+    form.setFieldsValue({
+      ...emptyFlower,
+      id: `daily_${Date.now()}`,
+      name: suggestion.name || "",
+      categoryId: suggestion.categoryId || emptyFlower.categoryId,
+      images: generatedAiImage.imageUrl,
+      description: suggestion.description || "",
+      materials: suggestion.materials || "",
+      meaning: suggestion.meaning || "",
+      tags: suggestion.tags || "",
+    });
     setDrawerOpen(true);
     setAiDialogOpen(false);
   };
@@ -712,6 +798,13 @@ export function AdminFlowers() {
                   <Button loading={aiGenerating} onClick={() => void runAiGeneration()}>
                     重新生成
                   </Button>
+                  <Button
+                    loading={aiSuggesting}
+                    disabled={!generatedAiImage || !aiPrompt.trim() || aiSettings?.enabled === false}
+                    onClick={() => void runAiSuggestion()}
+                  >
+                    生成作品信息
+                  </Button>
                   <Button type="primary" onClick={useGeneratedImageForCreate}>
                     用于新建作品
                   </Button>
@@ -722,6 +815,49 @@ export function AdminFlowers() {
                 {aiGenerating ? "正在生成图片，请稍候..." : "生成完成后会在这里显示图片结果。"}
               </div>
             )}
+          </div>
+
+          <div className="admin-subpanel px-4 py-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+              <Sparkles size={16} className="text-forest" />
+              作品信息建议
+            </div>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              先生成图片，再生成作品信息建议。这里的内容可直接修改，点“用于新建作品”时会一并带入新增表单。
+            </p>
+            <Form form={aiSuggestionForm} layout="vertical" className="mt-4">
+              <div className="grid gap-x-4 md:grid-cols-2">
+                <Form.Item name="name" label="作品名称">
+                  <Input placeholder="例如：晨雾誓约" />
+                </Form.Item>
+                <Form.Item name="categoryId" label="分类建议">
+                  <Select
+                    allowClear
+                    placeholder="请选择分类"
+                    options={categoryOptions}
+                  />
+                </Form.Item>
+              </div>
+              <Form.Item name="description" label="设计描述">
+                <Input.TextArea rows={3} placeholder="AI 建议的作品描述会显示在这里" />
+              </Form.Item>
+              <Form.Item name="meaning" label="花语寓意">
+                <Input.TextArea rows={2} placeholder="AI 建议的寓意会显示在这里" />
+              </Form.Item>
+              <div className="grid gap-x-4 md:grid-cols-2">
+                <Form.Item name="materials" label="主要花材">
+                  <Input placeholder="多个花材用逗号分隔" />
+                </Form.Item>
+                <Form.Item name="tags" label="标签">
+                  <Input placeholder="多个标签用逗号分隔" />
+                </Form.Item>
+              </div>
+            </Form>
+            {!generatedAiImage ? (
+              <div className="rounded-lg border border-dashed border-black/10 bg-white px-4 py-4 text-sm text-muted">
+                生成图片后可在这里生成并调整作品信息建议。
+              </div>
+            ) : null}
           </div>
         </div>
       </Drawer>

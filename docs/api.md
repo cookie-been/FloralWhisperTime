@@ -170,6 +170,21 @@ Authorization: Bearer <token>
 - `contactIntro`
 - `businessHoursText`
 - `footerDescription`
+- `aiSettings`
+
+其中 `aiSettings` 当前支持：
+
+- `enabled`
+- `provider`
+- `apiKey`
+- `model`
+- `baseUrl`
+- `generatePath`
+- `size`
+- `textModel`
+- `textGeneratePath`
+- `textTemperature`
+- `textMaxTokens`
 
 ### 4.7 门店信息
 
@@ -388,7 +403,41 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.6 创建作品
+## 5.6 AI 作品信息建议
+
+#### `POST /api/admin/ai/flowers/suggestions`
+
+请求体：
+
+```json
+{
+  "prompt": "生成一束白绿色婚礼花束",
+  "imageUrl": "/uploads/ai/ai-1747220000000-xxxx.png",
+  "mode": "text_to_image"
+}
+```
+
+成功返回：
+
+```json
+{
+  "name": "晨雾誓约",
+  "categoryId": "wedding",
+  "description": "以奶油白玫瑰和轻盈绿植构成干净克制的婚礼手捧花。",
+  "materials": ["白玫瑰", "洋牡丹", "尤加利"],
+  "tags": ["婚礼", "白绿色", "现代感"],
+  "meaning": "象征纯净承诺与温柔陪伴"
+}
+```
+
+说明：
+
+- `prompt` 必填
+- 该接口只返回建议内容，不会自动创建作品
+- 返回的 `categoryId` 会被服务端限制在现有分类内
+- 建议失败时不影响继续使用图片
+
+## 5.7 创建作品
 
 #### `POST /api/flowers`
 
@@ -417,13 +466,13 @@ Authorization: Bearer <token>
 - `categoryId` 必填
 - `id` 可传，也可由服务端生成
 
-## 5.7 更新作品
+## 5.8 更新作品
 
 #### `PUT /api/flowers/{id}`
 
 请求体与创建作品相同。
 
-## 5.8 删除作品
+## 5.9 删除作品
 
 #### `DELETE /api/flowers/{id}`
 
@@ -433,7 +482,7 @@ Authorization: Bearer <token>
 204 No Content
 ```
 
-## 5.9 更新站点配置
+## 5.10 更新站点配置
 
 #### `PUT /api/site-config`
 
@@ -461,14 +510,25 @@ Authorization: Bearer <token>
 - `storySubtitle`
 - `storyContent`
 - `storyImages`
+- `aiSettings.enabled`
+- `aiSettings.provider`
+- `aiSettings.apiKey`
+- `aiSettings.model`
+- `aiSettings.baseUrl`
+- `aiSettings.generatePath`
+- `aiSettings.size`
+- `aiSettings.textModel`
+- `aiSettings.textGeneratePath`
+- `aiSettings.textTemperature`
+- `aiSettings.textMaxTokens`
 
-## 5.10 获取关于我们页配置
+## 5.11 获取关于我们页配置
 
 #### `GET /api/admin/about-page`
 
 返回关于我们页可编辑内容。
 
-## 5.11 更新关于我们页配置
+## 5.12 更新关于我们页配置
 
 #### `PUT /api/admin/about-page`
 
@@ -485,13 +545,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.12 获取关于我们时间轴
+## 5.13 获取关于我们时间轴
 
 #### `GET /api/admin/about-timeline`
 
 返回时间轴数组。
 
-## 5.13 新增时间轴条目
+## 5.14 新增时间轴条目
 
 #### `POST /api/admin/about-timeline`
 
@@ -506,13 +566,13 @@ Authorization: Bearer <token>
 }
 ```
 
-## 5.14 更新时间轴条目
+## 5.15 更新时间轴条目
 
 #### `PUT /api/admin/about-timeline/{id}`
 
 请求体与新增相同。
 
-## 5.15 删除时间轴条目
+## 5.16 删除时间轴条目
 
 #### `DELETE /api/admin/about-timeline/{id}`
 

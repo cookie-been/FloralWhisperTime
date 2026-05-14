@@ -92,6 +92,10 @@ export interface AiSettings {
   baseUrl: string;
   generatePath: string;
   size: string;
+  textModel?: string;
+  textGeneratePath?: string;
+  textTemperature?: number;
+  textMaxTokens?: number;
 }
 
 export interface SiteConfig {
