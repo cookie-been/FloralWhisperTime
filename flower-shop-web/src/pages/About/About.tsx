@@ -34,7 +34,7 @@ export function About() {
           <p className="section-eyebrow">Story</p>
           <h2 className="section-title section-title-accent mt-2 text-3xl">品牌故事</h2>
           <p className="mt-4 leading-8 text-muted">{story?.content}</p>
-          <div className="mt-8 rounded-lg bg-mint p-6 text-sm leading-7 text-muted">
+          <div className="surface-card mt-8 p-6 text-sm leading-7 text-muted">
             <p className="font-semibold text-ink">{shop?.name}</p>
             <p className="mt-2">{shop?.address}</p>
             <p>电话：{shop?.phone}</p>
@@ -57,7 +57,7 @@ export function About() {
           <h2 className="section-title section-title-accent mt-2 text-3xl">花艺师团队</h2>
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             {team.map((member) => (
-              <article key={member.id} className="grid gap-5 rounded-lg bg-white p-5 shadow-soft sm:grid-cols-[140px_1fr]">
+              <article key={member.id} className="surface-card grid gap-5 p-5 sm:grid-cols-[140px_1fr]">
                 <img src={member.avatar} alt={member.name} className="aspect-square w-full rounded-md object-cover" />
                 <div>
                   <h3 className="text-xl font-semibold">{member.name}</h3>

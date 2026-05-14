@@ -31,6 +31,37 @@ createRoot(document.getElementById("root")!).render(
             defaultHoverBorderColor: "#cfc4b4",
             defaultHoverColor: "#243127",
           },
+          Input: {
+            activeBorderColor: "#6a8f73",
+            hoverBorderColor: "#96ae99",
+            colorBorder: "#d9d0c2",
+            colorBgContainer: "#fcfaf7",
+          },
+          InputNumber: {
+            activeBorderColor: "#6a8f73",
+            hoverBorderColor: "#96ae99",
+            colorBorder: "#d9d0c2",
+            colorBgContainer: "#fcfaf7",
+          },
+          Select: {
+            activeBorderColor: "#6a8f73",
+            hoverBorderColor: "#96ae99",
+            colorBorder: "#d9d0c2",
+            colorBgContainer: "#fcfaf7",
+            optionSelectedBg: "#edf4eb",
+          },
+          Table: {
+            headerBg: "#f4efe7",
+            headerColor: "#2b3b30",
+            headerSplitColor: "#e5ddd1",
+            borderColor: "#ece3d7",
+            rowHoverBg: "#faf6f0",
+          },
+          Segmented: {
+            trackBg: "#efe8dd",
+            itemSelectedBg: "#ffffff",
+            itemSelectedColor: "#243127",
+          },
         },
       }}
     >

@@ -39,7 +39,7 @@ export function Contact() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-        <div className="rounded-lg bg-[#f7fbf7] p-6">
+        <div className="surface-card p-6">
           <h2 className="section-title text-xl">门店信息</h2>
           <div className="mt-6 space-y-5 text-muted">
             <p className="flex gap-3">
@@ -68,7 +68,7 @@ export function Contact() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-black/5 p-6 shadow-soft">
+        <div className="surface-card p-6">
           <h2 className="section-title text-xl">预约咨询</h2>
           <Form form={form} layout="vertical" className="mt-6" onFinish={onFinish}>
             <Form.Item name="name" label="姓名" rules={[{ required: true, message: "请输入姓名" }]}>

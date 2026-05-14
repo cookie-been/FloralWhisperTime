@@ -9,7 +9,7 @@ interface FlowerCardProps {
 
 export function FlowerCard({ flower, compact = false }: FlowerCardProps) {
   return (
-    <Link to={`/gallery/${flower.id}`} className="group block overflow-hidden rounded-lg bg-white shadow-soft transition hover:-translate-y-1">
+    <Link to={`/gallery/${flower.id}`} className="surface-card group block overflow-hidden transition hover:-translate-y-1">
       <div className="aspect-square overflow-hidden bg-mint">
         <img
           src={flower.images[0]}

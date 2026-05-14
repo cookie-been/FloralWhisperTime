@@ -43,6 +43,62 @@ a {
     linear-gradient(180deg, rgba(97, 160, 101, 0.98), rgba(59, 143, 66, 1));
 }
 
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker,
+.ant-input-textarea textarea {
+  box-shadow: none;
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector {
+  border-radius: 8px;
+}
+
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector {
+  min-height: 40px;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-number-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  box-shadow: 0 0 0 3px rgba(106, 143, 115, 0.12) !important;
+}
+
+.ant-table-wrapper .ant-table {
+  background: transparent;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  vertical-align: top;
+}
+
+.surface-card {
+  border: 1px solid rgba(31, 49, 38, 0.08);
+  border-radius: 8px;
+  background: #fbfaf8;
+  box-shadow: 0 10px 30px rgba(88, 69, 48, 0.05);
+}
+
 .section-eyebrow {
   color: #456451;
   font-size: 0.75rem;

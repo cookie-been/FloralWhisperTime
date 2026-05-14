@@ -138,11 +138,11 @@ export function AdminDashboard() {
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg bg-[#fbfaf8] px-4 py-4">
+            <div className="surface-card px-4 py-4">
               <p className="text-sm font-medium text-muted">精选作品</p>
               <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{summary.featuredCount}</p>
             </div>
-            <div className="rounded-lg bg-[#fbfaf8] px-4 py-4">
+            <div className="surface-card px-4 py-4">
               <p className="text-sm font-medium text-muted">普通作品</p>
               <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{data.flowers.length - summary.featuredCount}</p>
             </div>
@@ -228,7 +228,7 @@ export function AdminDashboard() {
               </div>
               <ArrowRight size={18} className="text-forest" />
             </Link>
-            <div className="rounded-lg bg-[#f8f4ef] px-4 py-4">
+            <div className="surface-card px-4 py-4">
               <p className="text-sm font-semibold text-[#1b281e]">{data.siteConfig.brandName}</p>
               <p className="mt-1 text-sm text-muted">{data.shopInfo.phone} · {data.shopInfo.address}</p>
             </div>
@@ -253,7 +253,7 @@ export function AdminDashboard() {
               <p className="text-sm font-semibold text-[#1b281e]">最近上新</p>
               <div className="mt-3 space-y-3">
                 {summary.recentFlowers.map((flower) => (
-                  <div key={flower.id} className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-3">
+                  <div key={flower.id} className="surface-card px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-[#1b281e]">{flower.name}</p>
                       {flower.featured ? <Tag color="green">精选</Tag> : <Tag>普通</Tag>}
@@ -268,7 +268,7 @@ export function AdminDashboard() {
               <p className="text-sm font-semibold text-[#1b281e]">可补充精选的作品</p>
               <div className="mt-3 space-y-3">
                 {summary.attentionFlowers.map((flower) => (
-                  <div key={flower.id} className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-3">
+                  <div key={flower.id} className="surface-card px-4 py-3">
                     <p className="text-sm font-semibold text-[#1b281e]">{flower.name}</p>
                     <p className="mt-1 text-sm text-muted">排序 {flower.sort} · 标签 {flower.tags.slice(0, 2).join(" / ") || "暂无"}</p>
                   </div>
@@ -285,12 +285,12 @@ export function AdminDashboard() {
           </div>
 
           <div className="mt-5 space-y-4">
-            <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <div className="surface-card px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">Brand</p>
               <p className="mt-2 text-base font-semibold text-[#1b281e]">{data.siteConfig.brandName}</p>
               <p className="mt-1 text-sm text-muted">{data.siteConfig.heroEyebrow}</p>
             </div>
-            <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <div className="surface-card px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">Contact</p>
               <p className="mt-2 flex items-start gap-2 text-sm text-muted">
                 <MapPin size={16} className="mt-0.5 text-forest" />
@@ -298,7 +298,7 @@ export function AdminDashboard() {
               </p>
               <p className="mt-2 text-sm text-muted">{data.shopInfo.phone}</p>
             </div>
-            <div className="rounded-lg border border-black/6 bg-[#fbfaf8] px-4 py-4">
+            <div className="surface-card px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">Story</p>
               <p className="mt-2 text-base font-semibold text-[#1b281e]">{data.brandStory.title}</p>
               <p className="mt-2 text-sm leading-6 text-muted">{data.brandStory.content.slice(0, 90)}...</p>
