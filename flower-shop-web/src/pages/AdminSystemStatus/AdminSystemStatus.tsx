@@ -1,19 +1,59 @@
 import { Alert, Button, Empty, Spin, Tag, message } from "antd";
-import { Download, HardDriveDownload, KeyRound, ServerCog, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { downloadLatestAdminBackup, getAdminSystemStatus } from "@/services/api";
 import type { SystemStatus } from "@/types";
 
 export function AdminSystemStatus() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
+    if (mode === "refresh") {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    try {
+      setStatus(await getAdminSystemStatus());
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "系统状态加载失败");
+    } finally {
+      if (mode === "refresh") {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    getAdminSystemStatus()
-      .then(setStatus)
-      .catch((error) => message.error(error instanceof Error ? error.message : "系统状态加载失败"))
-      .finally(() => setLoading(false));
-  }, []);
+    loadStatus("init");
+  }, [loadStatus]);
+
+  const riskState = useMemo(() => {
+    if (!status) return { level: "warning", title: "系统状态未知", message: "暂时无法判断当前运行状态，请刷新后重试。" };
+
+    const issues: string[] = [];
+    if (!status.databaseConnected) issues.push("数据库连接异常");
+    if (!status.uploadDirectoryReady) issues.push("上传目录不可写");
+    if (status.aiEnabled && !status.aiKeyConfigured) issues.push("AI 已启用但密钥未配置");
+    if (!status.latestBackupPresent) issues.push("尚未发现可用备份");
+
+    if (issues.length === 0) {
+      return { level: "success", title: "系统运行正常", message: "关键依赖与目录状态均正常，可继续进行运营与部署操作。" };
+    }
+
+    const critical = !status.databaseConnected || !status.uploadDirectoryReady;
+    return {
+      level: critical ? "error" : "warning",
+      title: critical ? "系统存在高风险项" : "系统存在待处理项",
+      message: issues.join("，"),
+    };
+  }, [status]);
+
+  const riskAlertType = riskState.level === "success" ? "success" : riskState.level === "error" ? "error" : "warning";
 
   const summary = useMemo(() => {
     if (!status) return [];
@@ -48,6 +88,26 @@ export function AdminSystemStatus() {
 
   return (
     <div className="space-y-6">
+      <section className="admin-panel p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <Alert
+            showIcon
+            type={riskAlertType}
+            icon={<AlertTriangle size={16} />}
+            message={riskState.title}
+            description={riskState.message}
+            className="flex-1"
+          />
+          <Button
+            icon={<RefreshCw size={16} />}
+            loading={refreshing}
+            onClick={() => loadStatus("refresh")}
+          >
+            刷新状态
+          </Button>
+        </div>
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-4">
         {summary.map((item) => {
           const Icon = item.icon;

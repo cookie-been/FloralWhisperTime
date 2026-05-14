@@ -38,10 +38,11 @@
 - 从当前 git 远程拉取最新代码（默认 `origin` 和当前分支）
 - 首次根据 `.env.example` 生成 `.env`
 - 自动生成数据库密码、管理员密码、签名密钥
+- 校验生产环境关键配置，阻止默认弱密码直接上线
 - 创建上传目录
 - 从源码构建前端与 Java 后端镜像
 - 启动 `mysql + backend + web`
-- 自动验证 `/api/health` 和首页
+- 自动验证 `/api/health`、首页、管理员登录和系统状态接口
 
 常用参数：
 
@@ -52,7 +53,13 @@
 ./deploy.sh --no-git-pull
 ./deploy.sh --pull
 ./deploy.sh --skip-build
+./deploy.sh --allow-insecure-env
 ```
+
+说明：
+
+- 默认会阻止使用 `.env.example` 中的默认弱密码直接部署
+- 仅开发或演示环境可使用 `--allow-insecure-env` 显式跳过这层保护
 
 ## 备份
 
@@ -169,6 +176,7 @@ npm run dev
 - AI 配置启用情况
 - 最近一次备份目录与时间
 - 最近备份一键下载
+- 一键刷新与风险分级提示
 
 `作品管理` 已支持 AI 生成作品图工作流：
 

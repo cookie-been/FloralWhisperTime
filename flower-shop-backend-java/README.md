@@ -216,6 +216,7 @@ GET /api/admin/system/status
 
 - 生产容器请显式设置 `BACKUP_DIR`
 - Docker Compose 默认已挂载仓库根目录 `./backups` 到容器内 `/app/backups`
+- 推荐通过根目录 `deploy.sh` 部署，默认会执行管理员登录与系统状态自检
 
 方舟文本建议默认路径：
 

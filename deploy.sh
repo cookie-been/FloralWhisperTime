@@ -17,6 +17,8 @@ ALLOW_DIRTY_GIT=0
 DETACH=1
 TIMEOUT_SECONDS=300
 GENERATED_ADMIN_PASSWORD=""
+STRICT_ENV_VALIDATION=1
+ALLOW_INSECURE_ENV=0
 
 log() {
   printf '[deploy] %s\n' "$*"
@@ -42,6 +44,7 @@ Options:
   --pull               Pull newer base images before building
   --timeout SECONDS    Health check timeout, default 300
   --attach             Run docker compose in foreground
+  --allow-insecure-env Allow deployment with default or weak env secrets
   -h, --help           Show this help
 EOF
 }
@@ -124,6 +127,71 @@ warn_default_secrets() {
     || [[ "$admin_auth_secret" == "replace-with-a-long-random-secret" ]]; then
     log "Warning: $ENV_FILE still contains default credentials or secrets."
   fi
+}
+
+require_non_default_env_value() {
+  local key="$1"
+  local expected_description="$2"
+  local value
+  value="$(read_env_value "$ENV_FILE" "$key")"
+  [[ -n "$value" ]] || fail "$key is empty in $ENV_FILE. Expected: $expected_description"
+}
+
+validate_production_env() {
+  local mysql_password mysql_root_password admin_password admin_auth_secret web_port
+
+  require_non_default_env_value "MYSQL_DATABASE" "业务数据库名称"
+  require_non_default_env_value "MYSQL_USER" "数据库用户名"
+  require_non_default_env_value "MYSQL_PASSWORD" "非默认数据库密码"
+  require_non_default_env_value "MYSQL_ROOT_PASSWORD" "非默认 root 密码"
+  require_non_default_env_value "ADMIN_USERNAME" "后台管理员账号"
+  require_non_default_env_value "ADMIN_PASSWORD" "非默认后台管理员密码"
+  require_non_default_env_value "ADMIN_AUTH_SECRET" "足够长的签名密钥"
+  require_non_default_env_value "WEB_PORT" "站点暴露端口"
+
+  mysql_password="$(read_env_value "$ENV_FILE" "MYSQL_PASSWORD")"
+  mysql_root_password="$(read_env_value "$ENV_FILE" "MYSQL_ROOT_PASSWORD")"
+  admin_password="$(read_env_value "$ENV_FILE" "ADMIN_PASSWORD")"
+  admin_auth_secret="$(read_env_value "$ENV_FILE" "ADMIN_AUTH_SECRET")"
+  web_port="$(read_env_value "$ENV_FILE" "WEB_PORT")"
+
+  [[ "$mysql_password" != "change-me" ]] || fail "MYSQL_PASSWORD still uses default placeholder"
+  [[ "$mysql_root_password" != "change-root-password" ]] || fail "MYSQL_ROOT_PASSWORD still uses default placeholder"
+  [[ "$admin_password" != "Floral@2026" ]] || fail "ADMIN_PASSWORD still uses default demo password"
+  [[ "$admin_auth_secret" != "replace-with-a-long-random-secret" ]] || fail "ADMIN_AUTH_SECRET still uses default placeholder"
+  [[ "${#admin_auth_secret}" -ge 32 ]] || fail "ADMIN_AUTH_SECRET is too short, must be at least 32 characters"
+  [[ "$web_port" =~ ^[0-9]+$ ]] || fail "WEB_PORT must be numeric"
+}
+
+post_deploy_self_check() {
+  local admin_username admin_password token status_payload
+
+  admin_username="$(read_env_value "$ENV_FILE" "ADMIN_USERNAME")"
+  admin_password="$(read_env_value "$ENV_FILE" "ADMIN_PASSWORD")"
+
+  [[ -n "$admin_username" ]] || fail "ADMIN_USERNAME is empty in $ENV_FILE"
+  [[ -n "$admin_password" ]] || fail "ADMIN_PASSWORD is empty in $ENV_FILE"
+
+  log "Running post-deploy self-checks..."
+
+  token="$(
+    curl -fsS -X POST "http://127.0.0.1:${WEB_PORT}/api/admin/login" \
+      -H 'Content-Type: application/json' \
+      -d "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}" \
+      | sed -n 's/.*"token":"\([^"]*\)".*/\1/p'
+  )"
+
+  [[ -n "$token" ]] || fail "Admin login self-check failed"
+
+  status_payload="$(
+    curl -fsS "http://127.0.0.1:${WEB_PORT}/api/admin/system/status" \
+      -H "Authorization: Bearer ${token}"
+  )"
+
+  printf '%s' "$status_payload" | grep -q '"databaseConnected":true' || fail "System status self-check failed: databaseConnected is not true"
+  printf '%s' "$status_payload" | grep -q '"uploadDirectoryReady":true' || fail "System status self-check failed: uploadDirectoryReady is not true"
+
+  log "Post-deploy self-checks passed."
 }
 
 ensure_prerequisites() {
@@ -282,6 +350,10 @@ while [[ $# -gt 0 ]]; do
       DETACH=0
       shift
       ;;
+    --allow-insecure-env)
+      ALLOW_INSECURE_ENV=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -300,6 +372,9 @@ fi
 
 init_env_file
 warn_default_secrets
+if (( STRICT_ENV_VALIDATION == 1 && ALLOW_INSECURE_ENV == 0 )); then
+  validate_production_env
+fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
   fail "Env file not found: $ENV_FILE"
@@ -352,6 +427,8 @@ if ! wait_for_url "http://127.0.0.1:${WEB_PORT}/" "Web entry"; then
   show_failure_context
   fail "Web health check timed out"
 fi
+
+post_deploy_self_check
 
 log "Deployment completed successfully."
 log "Site URL: http://127.0.0.1:${WEB_PORT}"
