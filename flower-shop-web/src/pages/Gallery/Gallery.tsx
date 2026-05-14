@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Empty, Input, Pagination, Select, Segmented } from "antd";
+import { useSearchParams } from "react-router-dom";
 import { FlowerCard } from "@/components/common/FlowerCard";
 import { getCategories, getFlowers } from "@/services/api";
 import type { Category, Flower, FlowerQuery } from "@/types";
 
 export function Gallery() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialCategory = searchParams.get("category") ?? "all";
   const [categories, setCategories] = useState<Category[]>([]);
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [total, setTotal] = useState(0);
-  const [query, setQuery] = useState<FlowerQuery>({ categoryId: "all", sortBy: "featured", page: 1, limit: 24 });
+  const [query, setQuery] = useState<FlowerQuery>({ categoryId: initialCategory, sortBy: "featured", page: 1, limit: 24 });
   const currentPage = query.page ?? 1;
   const pageSize = query.limit ?? 24;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -18,6 +21,11 @@ export function Gallery() {
   }, []);
 
   useEffect(() => {
+    const category = searchParams.get("category") ?? "all";
+    setQuery((prev) => (prev.categoryId === category ? prev : { ...prev, categoryId: category, page: 1 }));
+  }, [searchParams]);
+
+  useEffect(() => {
     getFlowers(query).then((result) => {
       setFlowers(result.list);
       setTotal(result.total);
@@ -25,6 +33,13 @@ export function Gallery() {
   }, [query]);
 
   const categoryOptions = useMemo(() => categories.map((item) => ({ label: item.name, value: item.id })), [categories]);
+  const updateCategory = (value: string) => {
+    setQuery((prev) => ({ ...prev, categoryId: value, page: 1 }));
+    const next = new URLSearchParams(searchParams);
+    if (value === "all") next.delete("category");
+    else next.set("category", value);
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <section className="min-h-screen bg-[#f4f1eb]">
@@ -40,7 +55,7 @@ export function Gallery() {
               <Select
                 className="md:hidden"
                 value={query.categoryId}
-                onChange={(value) => setQuery((prev) => ({ ...prev, categoryId: value, page: 1 }))}
+                onChange={updateCategory}
                 options={categoryOptions}
               />
               <div className="hidden overflow-x-auto md:block">
@@ -48,7 +63,7 @@ export function Gallery() {
                   block
                   options={categoryOptions}
                   value={query.categoryId}
-                  onChange={(value) => setQuery((prev) => ({ ...prev, categoryId: String(value), page: 1 }))}
+                  onChange={(value) => updateCategory(String(value))}
                 />
               </div>
               <Select
