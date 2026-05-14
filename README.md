@@ -60,6 +60,8 @@
 
 - 默认会阻止使用 `.env.example` 中的默认弱密码直接部署
 - 仅开发或演示环境可使用 `--allow-insecure-env` 显式跳过这层保护
+- 生产环境建议基于 `.env.production.example` 生成正式 `.env`
+- 部署前后可按 [docs/deployment-checklist.md](/workspace/FloralWhisperTime/docs/deployment-checklist.md) 执行人工巡检
 
 ## 备份
 
@@ -177,6 +179,7 @@ npm run dev
 - 最近一次备份目录与时间
 - 最近备份一键下载
 - 一键刷新与风险分级提示
+- 最近刷新时间与自动轮询开关
 
 `作品管理` 已支持 AI 生成作品图工作流：
 

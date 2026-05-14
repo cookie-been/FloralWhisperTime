@@ -1,4 +1,4 @@
-import { Alert, Button, Empty, Spin, Tag, message } from "antd";
+import { Alert, Button, Empty, Spin, Switch, Tag, message } from "antd";
 import { AlertTriangle, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { downloadLatestAdminBackup, getAdminSystemStatus } from "@/services/api";
@@ -8,6 +8,8 @@ export function AdminSystemStatus() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState<string>("");
 
   const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
     if (mode === "refresh") {
@@ -17,6 +19,7 @@ export function AdminSystemStatus() {
     }
     try {
       setStatus(await getAdminSystemStatus());
+      setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
     } catch (error) {
       message.error(error instanceof Error ? error.message : "系统状态加载失败");
     } finally {
@@ -31,6 +34,16 @@ export function AdminSystemStatus() {
   useEffect(() => {
     loadStatus("init");
   }, [loadStatus]);
+
+  useEffect(() => {
+    if (!autoRefresh) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      void loadStatus("refresh");
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, [autoRefresh, loadStatus]);
 
   const riskState = useMemo(() => {
     if (!status) return { level: "warning", title: "系统状态未知", message: "暂时无法判断当前运行状态，请刷新后重试。" };
@@ -90,14 +103,22 @@ export function AdminSystemStatus() {
     <div className="space-y-6">
       <section className="admin-panel p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <Alert
-            showIcon
-            type={riskAlertType}
-            icon={<AlertTriangle size={16} />}
-            message={riskState.title}
-            description={riskState.message}
-            className="flex-1"
-          />
+          <div className="flex-1 space-y-3">
+            <Alert
+              showIcon
+              type={riskAlertType}
+              icon={<AlertTriangle size={16} />}
+              message={riskState.title}
+              description={riskState.message}
+            />
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
+              <span>最近刷新：{lastRefreshAt || "暂无"}</span>
+              <label className="flex items-center gap-2">
+                <Switch checked={autoRefresh} onChange={setAutoRefresh} size="small" />
+                <span>自动轮询（60秒）</span>
+              </label>
+            </div>
+          </div>
           <Button
             icon={<RefreshCw size={16} />}
             loading={refreshing}
