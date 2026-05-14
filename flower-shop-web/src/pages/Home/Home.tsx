@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Flower2, MapPin, Sparkles, Store } from "lucide-react";
 import { Button } from "antd";
 import { FlowerCard } from "@/components/common/FlowerCard";
-import { getBrandStory, getFlowers, getShopInfo, getSiteConfig } from "@/services/api";
-import type { BrandStory, Flower, ShopInfo, SiteConfig } from "@/types";
+import { getBrandStory, getCategories, getFlowers, getShopInfo, getSiteConfig } from "@/services/api";
+import type { BrandStory, Category, Flower, ShopInfo, SiteConfig } from "@/types";
 
 const fallbackHeroSlides = [
   { image: "/home-hero/hero-1.jpg", label: "花艺陈列", note: "适合礼赠与门店展示的花束陈列空间" },
@@ -14,6 +14,7 @@ const fallbackHeroSlides = [
 ];
 
 export function Home() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [featured, setFeatured] = useState<Flower[]>([]);
   const [story, setStory] = useState<BrandStory | null>(null);
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
@@ -43,6 +44,7 @@ export function Home() {
       note: shop?.address ? `门店服务范围已覆盖到店咨询与现场选花，地址：${shop.address}` : "门店支持到店咨询、预约定制与线下花材沟通。",
     },
   ];
+  const serviceCategories = categories.filter((category) => category.id !== "all").slice(0, 6);
 
   const heroSlides = useMemo(
     () =>
@@ -62,6 +64,7 @@ export function Home() {
   );
 
   useEffect(() => {
+    getCategories().then(setCategories);
     getFlowers({ sortBy: "featured", limit: 5 }).then((result) => setFeatured(result.list));
     getBrandStory().then(setStory);
     getSiteConfig().then(setSiteConfig);
@@ -259,6 +262,46 @@ export function Home() {
           </div>
         ) : null}
       </section>
+
+      {serviceCategories.length ? (
+        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <p className="section-eyebrow">Service Scenes</p>
+              <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">服务场景</h2>
+              <p className="mt-3 text-sm leading-7 text-muted sm:text-base">
+                用更明确的分类入口，把婚礼、日常赠礼、开业和空间定制等常用浏览路径提前放到首页，减少访客进入画廊后的筛选成本。
+              </p>
+            </div>
+            <Link to="/gallery" className="inline-flex items-center gap-2 text-sm font-semibold text-forest">
+              浏览全部分类 <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {serviceCategories.map((category) => (
+              <Link
+                key={category.id}
+                to={`/gallery?category=${category.id}`}
+                className="surface-card group p-5 transition duration-300 hover:-translate-y-1 hover:border-[#d9e5d7] hover:bg-[#f8fbf7]"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">
+                      {String(category.sort).padStart(2, "0")}
+                    </p>
+                    <h3 className="mt-3 text-xl font-semibold text-ink">{category.name}</h3>
+                  </div>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-mint text-forest transition group-hover:bg-white">
+                    <ArrowRight size={16} />
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-muted">{category.description || "进入该主题查看更完整的花艺作品与场景内容。"}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {story && (
         <section className="bg-[#f7fbf7]">
