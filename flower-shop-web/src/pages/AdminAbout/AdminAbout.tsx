@@ -402,20 +402,22 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
         ))}
       </section>
 
-      {embedded ? null : (
-        <section className="admin-toolbar p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="section-eyebrow">关于页工作区</p>
-              <h3 className="admin-section-title mt-2 text-xl">关于页内容工作台</h3>
-              <p className="mt-2 text-sm leading-6 text-muted">统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。</p>
-            </div>
-            <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()} block={!screens.sm}>
-              保存页首与故事
-            </Button>
+      <section className={`admin-toolbar p-5 ${embedded ? "admin-sticky-toolbar" : ""}`}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="section-eyebrow">{embedded ? "关于我们配置" : "关于页工作区"}</p>
+            <h3 className="admin-section-title mt-2 text-xl">{embedded ? "关于我们内容维护" : "关于页内容工作台"}</h3>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              {embedded
+                ? "当前在内容配置菜单内维护关于页首图、标题副标题、品牌故事、发展时间轴和团队成员，保存后前台 About 页面会同步更新。"
+                : "统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。"}
+            </p>
           </div>
-        </section>
-      )}
+          <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()} block={!screens.sm}>
+            保存页首与故事
+          </Button>
+        </div>
+      </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
         <div className="admin-panel p-5">
@@ -496,6 +498,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
             columns={timelineColumns}
             dataSource={sortedTimeline}
             pagination={false}
+            scroll={{ x: 720 }}
             locale={{
               emptyText: (
                 <div className="admin-empty-state min-h-[220px]">
@@ -523,6 +526,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
             columns={memberColumns}
             dataSource={sortedMembers}
             pagination={false}
+            scroll={{ x: 760 }}
             locale={{
               emptyText: (
                 <div className="admin-empty-state min-h-[220px]">
@@ -607,7 +611,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
             </div>
           </Form.Item>
           {memberAvatar ? (
-            <div className="admin-subpanel mb-6 flex items-center gap-4 px-4 py-4">
+            <div className="admin-subpanel mb-6 flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center">
               <Image src={memberAvatar} alt="" width={88} height={88} className="rounded-lg object-cover" preview={false} />
               <div>
                 <p className="m-0 text-sm font-semibold text-[#1b281e]">头像预览</p>

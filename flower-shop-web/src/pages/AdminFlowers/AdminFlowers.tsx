@@ -443,7 +443,7 @@ export function AdminFlowers() {
         ))}
       </section>
 
-      <section className="admin-toolbar p-5">
+      <section className="admin-toolbar admin-sticky-toolbar p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">作品工作区</p>
@@ -567,7 +567,7 @@ export function AdminFlowers() {
         width={screens.lg ? 720 : "100%"}
         destroyOnHidden
         extra={
-          <Space>
+          <Space wrap>
             <Button onClick={closeDrawer}>取消</Button>
             <Button type="primary" loading={saving} onClick={save}>
               保存
@@ -639,7 +639,7 @@ export function AdminFlowers() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">图片预览</p>
                 {imagePreviewList.length ? (
-                  <div className="mt-3 grid grid-cols-3 gap-3">
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {imagePreviewList.map((url) => (
                       <div key={url} className="overflow-hidden rounded-lg border border-black/6 bg-white">
                         <Image src={url} alt="" height={96} className="!h-24 !w-full object-cover" />

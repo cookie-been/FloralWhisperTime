@@ -266,7 +266,7 @@ export function AdminContacts() {
         })}
       </section>
 
-      <section className="admin-toolbar p-5">
+      <section className="admin-toolbar admin-sticky-toolbar p-5">
         <div>
           <p className="section-eyebrow">留言筛选</p>
           <h3 className="admin-section-title mt-2 text-xl">留言筛选</h3>
@@ -370,6 +370,7 @@ export function AdminContacts() {
             pageSize,
             total: data?.total ?? 0,
             showSizeChanger: true,
+            size: screens.sm ? undefined : "small",
             pageSizeOptions: ["10", "20", "50"],
             showTotal: (total) => `共 ${total} 条留言`,
             onChange: (nextPage, nextPageSize) => {
@@ -400,7 +401,7 @@ export function AdminContacts() {
         width={screens.md ? 520 : "100%"}
         extra={
           activeContact && !activeContact.readAt ? (
-            <Button type="primary" onClick={() => handleMarkRead(activeContact.id)}>
+            <Button type="primary" onClick={() => handleMarkRead(activeContact.id)} block={!screens.sm}>
               标记已读
             </Button>
           ) : null

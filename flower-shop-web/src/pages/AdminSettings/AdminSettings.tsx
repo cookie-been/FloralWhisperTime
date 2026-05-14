@@ -291,7 +291,7 @@ export function AdminSettings() {
           <div className="admin-panel p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">故事图片</p>
             {storyPreviewImages.length ? (
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {storyPreviewImages.slice(0, 4).map((url) => (
                   <div key={url} className="admin-subpanel overflow-hidden bg-[#f3efe9]">
                     <img src={url} alt="" className="h-28 w-full object-cover" />
@@ -309,7 +309,7 @@ export function AdminSettings() {
 
   return (
     <div className="space-y-6">
-      <section className="admin-toolbar p-5">
+      <section className={`admin-toolbar p-5 ${activeTab === "site" ? "admin-sticky-toolbar" : ""}`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">统一配置台</p>
