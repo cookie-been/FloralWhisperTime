@@ -151,9 +151,13 @@ export interface SystemStatus {
   databaseConnected: boolean;
   databaseVersion: string;
   databaseSize: string;
+  diskTotal: string;
+  diskUsable: string;
+  diskUsageRate: string;
   uploadDirectoryReady: boolean;
   uploadDirectoryPath: string;
   uploadFileCount: number;
+  uploadDirectorySize: string;
   uptimeLabel: string;
   aiEnabled: boolean;
   aiKeyConfigured: boolean;
@@ -163,5 +167,6 @@ export interface SystemStatus {
   latestBackupName: string;
   latestBackupPath: string;
   latestBackupModifiedAt: string;
+  latestBackupDownloadUrl: string;
   latestBackupPresent: boolean;
 }

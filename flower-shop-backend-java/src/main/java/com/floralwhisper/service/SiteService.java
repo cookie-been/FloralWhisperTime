@@ -43,6 +43,9 @@ import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.math.BigDecimal;
 import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.time.Clock;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -53,6 +56,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.GZIPOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import javax.sql.DataSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.boot.info.BuildProperties;
@@ -192,9 +198,13 @@ public class SiteService {
     response.setDatabaseConnected(databaseStatus.connected());
     response.setDatabaseVersion(databaseStatus.version());
     response.setDatabaseSize(databaseStatus.size());
+    response.setDiskTotal(formatBytes(uploadsDir.getTotalSpace()));
+    response.setDiskUsable(formatBytes(uploadsDir.getUsableSpace()));
+    response.setDiskUsageRate(formatDiskUsageRate(uploadsDir));
     response.setUploadDirectoryReady(uploadsDir.exists() && uploadsDir.isDirectory() && uploadsDir.canWrite());
     response.setUploadDirectoryPath(uploadsDir.getAbsolutePath());
     response.setUploadFileCount(countFiles(uploadsDir));
+    response.setUploadDirectorySize(formatBytes(calculateDirectorySize(uploadsDir)));
     response.setUptimeLabel(formatUptime());
     response.setAiEnabled(Boolean.TRUE.equals(aiSettings.getEnabled()));
     response.setAiKeyConfigured(notBlank(aiSettings.getApiKey()));
@@ -205,7 +215,25 @@ public class SiteService {
     response.setLatestBackupName(latestBackup == null ? "" : latestBackup.getName());
     response.setLatestBackupPath(latestBackup == null ? "" : latestBackup.getAbsolutePath());
     response.setLatestBackupModifiedAt(formatBackupModifiedAt(latestBackup));
+    response.setLatestBackupDownloadUrl(latestBackup == null ? "" : "/api/admin/system/backups/latest/download");
     return response;
+  }
+
+  public String writeLatestBackupArchive(OutputStream outputStream) throws IOException {
+    File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
+    File latestBackup = resolveLatestBackup(backupsDir);
+    if (latestBackup == null) {
+      throw new ApiException(HttpStatus.NOT_FOUND, "暂无可下载备份");
+    }
+
+    try (TarArchiveOutputStream tarOutputStream =
+        new TarArchiveOutputStream(new GZIPOutputStream(outputStream))) {
+      tarOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+      writeDirectoryToTar(latestBackup, latestBackup.getName(), tarOutputStream);
+      tarOutputStream.finish();
+    }
+
+    return latestBackup.getName() + ".tar.gz";
   }
 
   public List<Category> getCategories() {
@@ -761,6 +789,56 @@ public class SiteService {
     return new File(path).getAbsoluteFile();
   }
 
+  private String formatDiskUsageRate(File directory) {
+    long total = directory.getTotalSpace();
+    long usable = directory.getUsableSpace();
+    if (total <= 0L) {
+      return "";
+    }
+    double usedRate = ((double) (total - usable) / (double) total) * 100D;
+    return String.format(java.util.Locale.US, "%.2f%%", usedRate);
+  }
+
+  private String formatBytes(long bytes) {
+    if (bytes <= 0L) {
+      return "";
+    }
+    double value = bytes;
+    String unit = "B";
+    if (value >= 1024D) {
+      value /= 1024D;
+      unit = "KB";
+    }
+    if (value >= 1024D && !"B".equals(unit)) {
+      value /= 1024D;
+      unit = "MB";
+    }
+    if (value >= 1024D && "MB".equals(unit)) {
+      value /= 1024D;
+      unit = "GB";
+    }
+    return String.format(java.util.Locale.US, "%.2f %s", value, unit);
+  }
+
+  private long calculateDirectorySize(File directory) {
+    if (!directory.exists() || !directory.isDirectory()) {
+      return 0L;
+    }
+    File[] files = directory.listFiles();
+    if (files == null) {
+      return 0L;
+    }
+    long total = 0L;
+    for (File file : files) {
+      if (file.isDirectory()) {
+        total += calculateDirectorySize(file);
+      } else {
+        total += file.length();
+      }
+    }
+    return total;
+  }
+
   private String formatUptime() {
     if (startedAt == null) {
       return "未知";
@@ -825,6 +903,27 @@ public class SiteService {
       }
     }
     return latest;
+  }
+
+  private void writeDirectoryToTar(File source, String entryName, TarArchiveOutputStream outputStream) throws IOException {
+    TarArchiveEntry entry = new TarArchiveEntry(source, entryName);
+    outputStream.putArchiveEntry(entry);
+    outputStream.closeArchiveEntry();
+
+    if (!source.isDirectory()) {
+      try (BufferedInputStream inputStream = new BufferedInputStream(java.nio.file.Files.newInputStream(source.toPath()))) {
+        inputStream.transferTo(outputStream);
+      }
+      return;
+    }
+
+    File[] files = source.listFiles();
+    if (files == null) {
+      return;
+    }
+    for (File file : files) {
+      writeDirectoryToTar(file, entryName + "/" + file.getName(), outputStream);
+    }
   }
 
   private record DatabaseStatus(boolean connected, String version, String size) {}

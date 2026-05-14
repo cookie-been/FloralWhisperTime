@@ -336,9 +336,13 @@ Authorization: Bearer <token>
   "databaseConnected": true,
   "databaseVersion": "8.0.36",
   "databaseSize": "128.50 MB",
+  "diskTotal": "500.00 GB",
+  "diskUsable": "320.00 GB",
+  "diskUsageRate": "36.00%",
   "uploadDirectoryReady": true,
   "uploadDirectoryPath": "/app/uploads",
   "uploadFileCount": 7,
+  "uploadDirectorySize": "245.60 MB",
   "uptimeLabel": "3小时12分钟",
   "aiEnabled": true,
   "aiKeyConfigured": true,
@@ -348,6 +352,7 @@ Authorization: Bearer <token>
   "latestBackupName": "20260515-002808",
   "latestBackupPath": "/app/backups/20260515-002808",
   "latestBackupModifiedAt": "2026-05-15 08:28:08",
+  "latestBackupDownloadUrl": "/api/admin/system/backups/latest/download",
   "latestBackupPresent": true
 }
 ```
@@ -359,9 +364,13 @@ Authorization: Bearer <token>
 - `databaseConnected`：数据库探测结果
 - `databaseVersion`：当前数据库版本
 - `databaseSize`：当前业务库估算容量
+- `diskTotal`：当前挂载磁盘总容量
+- `diskUsable`：当前挂载磁盘可用容量
+- `diskUsageRate`：当前挂载磁盘已用比例
 - `uploadDirectoryReady`：上传目录是否存在且可写
 - `uploadDirectoryPath`：上传目录绝对路径
 - `uploadFileCount`：上传目录文件总数
+- `uploadDirectorySize`：上传目录累计容量
 - `uptimeLabel`：当前服务运行时长
 - `aiEnabled`：AI 图片能力是否启用
 - `aiKeyConfigured`：AI 密钥是否已配置
@@ -371,7 +380,23 @@ Authorization: Bearer <token>
 - `latestBackupName`：最近备份目录名
 - `latestBackupPath`：最近备份目录绝对路径
 - `latestBackupModifiedAt`：最近备份目录最后更新时间
+- `latestBackupDownloadUrl`：最近备份下载接口地址
 - `latestBackupPresent`：是否发现备份目录
+
+#### `GET /api/admin/system/backups/latest/download`
+
+说明：
+
+- 仅管理员可访问
+- 动态将最近一份备份目录打包为 `tar.gz` 并直接下载
+- 无需先在服务器额外生成临时归档文件
+
+成功响应头示例：
+
+```text
+Content-Type: application/gzip
+Content-Disposition: attachment; filename="latest-backup.tar.gz"
+```
 
 ## 5.4 AI 配置
 

@@ -107,6 +107,34 @@ export function getAdminSystemStatus() {
   return request<SystemStatus>("/api/admin/system/status");
 }
 
+export async function downloadLatestAdminBackup(downloadUrl: string) {
+  const token = getAdminToken();
+  if (!token) {
+    throw new Error("请先登录管理后台");
+  }
+  const link = document.createElement("a");
+  link.href = `${API_BASE_URL}${downloadUrl}`;
+  link.style.display = "none";
+  link.setAttribute("download", "");
+
+  const response = await fetch(`${API_BASE_URL}${downloadUrl}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "下载失败" }));
+    throw new Error(error.message ?? "下载失败");
+  }
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  link.href = blobUrl;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+}
+
 export function getAdminContacts(query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread" } = {}) {
   return request<PaginatedResult<ContactMessage>>(withQuery("/api/admin/contacts", query));
 }

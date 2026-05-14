@@ -19,7 +19,10 @@ import com.floralwhisper.service.SiteService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -58,6 +61,14 @@ public class AdminController {
   @GetMapping("/system/status")
   public SystemStatusResponse systemStatus() {
     return siteService.getSystemStatus();
+  }
+
+  @GetMapping(value = "/system/backups/latest/download", produces = "application/gzip")
+  public void downloadLatestBackup(HttpServletResponse response) throws java.io.IOException {
+    String filename = "latest-backup.tar.gz";
+    response.setContentType("application/gzip");
+    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+    siteService.writeLatestBackupArchive(response.getOutputStream());
   }
 
   @GetMapping("/system/ai-settings")

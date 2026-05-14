@@ -9,9 +9,13 @@ public class SystemStatusResponse {
   private boolean databaseConnected;
   private String databaseVersion;
   private String databaseSize;
+  private String diskTotal;
+  private String diskUsable;
+  private String diskUsageRate;
   private boolean uploadDirectoryReady;
   private String uploadDirectoryPath;
   private long uploadFileCount;
+  private String uploadDirectorySize;
   private String uptimeLabel;
   private boolean aiEnabled;
   private boolean aiKeyConfigured;
@@ -21,5 +25,6 @@ public class SystemStatusResponse {
   private String latestBackupName;
   private String latestBackupPath;
   private String latestBackupModifiedAt;
+  private String latestBackupDownloadUrl;
   private boolean latestBackupPresent;
 }

@@ -102,9 +102,13 @@ class SiteServiceTest {
     assertTrue(response.isDatabaseConnected());
     assertEquals("8.0.36", response.getDatabaseVersion());
     assertEquals("128.50 MB", response.getDatabaseSize());
+    assertEquals(formatBytes(uploadsDir.toFile().getTotalSpace()), response.getDiskTotal());
+    assertEquals(formatBytes(uploadsDir.toFile().getUsableSpace()), response.getDiskUsable());
+    assertEquals(formatDiskUsageRate(uploadsDir.toFile()), response.getDiskUsageRate());
     assertTrue(response.isUploadDirectoryReady());
     assertEquals(1L, response.getUploadFileCount());
     assertEquals(uploadsDir.toFile().getAbsolutePath(), response.getUploadDirectoryPath());
+    assertEquals(formatBytes(Files.size(uploadsDir.resolve("hero.jpg"))), response.getUploadDirectorySize());
     assertTrue(response.isAiEnabled());
     assertTrue(response.isAiKeyConfigured());
     assertEquals("volcengine", response.getAiProvider());
@@ -114,6 +118,7 @@ class SiteServiceTest {
     assertEquals("20260515-010101", response.getLatestBackupName());
     assertEquals(backupsDir.resolve("20260515-010101").toFile().getAbsolutePath(), response.getLatestBackupPath());
     assertEquals("2026-05-15 09:01:01", response.getLatestBackupModifiedAt());
+    assertEquals("/api/admin/system/backups/latest/download", response.getLatestBackupDownloadUrl());
     assertEquals("15分钟", response.getUptimeLabel());
   }
 
@@ -153,14 +158,19 @@ class SiteServiceTest {
     assertFalse(response.isDatabaseConnected());
     assertEquals("", response.getDatabaseVersion());
     assertEquals("", response.getDatabaseSize());
+    assertEquals("", response.getDiskTotal());
+    assertEquals("", response.getDiskUsable());
+    assertEquals("", response.getDiskUsageRate());
     assertFalse(response.isUploadDirectoryReady());
     assertEquals(0L, response.getUploadFileCount());
+    assertEquals("", response.getUploadDirectorySize());
     assertFalse(response.isAiEnabled());
     assertFalse(response.isAiKeyConfigured());
     assertFalse(response.isLatestBackupPresent());
     assertEquals("", response.getLatestBackupName());
     assertEquals("", response.getLatestBackupPath());
     assertEquals("", response.getLatestBackupModifiedAt());
+    assertEquals("", response.getLatestBackupDownloadUrl());
     assertEquals("未知", response.getUptimeLabel());
   }
 
@@ -184,5 +194,36 @@ class SiteServiceTest {
     settings.setModel(imageModel);
     settings.setTextModel(textModel);
     return settings;
+  }
+
+  private String formatBytes(long bytes) {
+    if (bytes <= 0L) {
+      return "";
+    }
+    double value = bytes;
+    String unit = "B";
+    if (value >= 1024D) {
+      value /= 1024D;
+      unit = "KB";
+    }
+    if (value >= 1024D && !"B".equals(unit)) {
+      value /= 1024D;
+      unit = "MB";
+    }
+    if (value >= 1024D && "MB".equals(unit)) {
+      value /= 1024D;
+      unit = "GB";
+    }
+    return String.format(java.util.Locale.US, "%.2f %s", value, unit);
+  }
+
+  private String formatDiskUsageRate(java.io.File directory) {
+    long total = directory.getTotalSpace();
+    long usable = directory.getUsableSpace();
+    if (total <= 0L) {
+      return "";
+    }
+    double usedRate = ((double) (total - usable) / (double) total) * 100D;
+    return String.format(java.util.Locale.US, "%.2f%%", usedRate);
   }
 }

@@ -2,6 +2,7 @@ package com.floralwhisper.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -47,6 +48,7 @@ import com.floralwhisper.service.SiteService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -174,9 +176,13 @@ class AdminControllerTest {
     response.setDatabaseConnected(true);
     response.setDatabaseVersion("8.0.36");
     response.setDatabaseSize("128.50 MB");
+    response.setDiskTotal("120.00 GB");
+    response.setDiskUsable("78.40 GB");
+    response.setDiskUsageRate("34.67%");
     response.setUploadDirectoryReady(true);
     response.setUploadDirectoryPath("/app/uploads");
     response.setUploadFileCount(24);
+    response.setUploadDirectorySize("256.00 MB");
     response.setUptimeLabel("15分钟");
     response.setAiEnabled(true);
     response.setAiKeyConfigured(true);
@@ -187,6 +193,7 @@ class AdminControllerTest {
     response.setLatestBackupName("20260515-002808");
     response.setLatestBackupPath("/app/backups/20260515-002808");
     response.setLatestBackupModifiedAt("2026-05-15 08:28:08");
+    response.setLatestBackupDownloadUrl("/api/admin/system/backups/latest/download");
 
     when(siteService.getSystemStatus()).thenReturn(response);
 
@@ -198,10 +205,38 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.databaseConnected").value(true))
         .andExpect(jsonPath("$.databaseVersion").value("8.0.36"))
         .andExpect(jsonPath("$.databaseSize").value("128.50 MB"))
+        .andExpect(jsonPath("$.diskTotal").value("120.00 GB"))
+        .andExpect(jsonPath("$.diskUsable").value("78.40 GB"))
+        .andExpect(jsonPath("$.diskUsageRate").value("34.67%"))
+        .andExpect(jsonPath("$.uploadDirectorySize").value("256.00 MB"))
         .andExpect(jsonPath("$.uptimeLabel").value("15分钟"))
         .andExpect(jsonPath("$.aiKeyConfigured").value(true))
         .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"))
-        .andExpect(jsonPath("$.latestBackupModifiedAt").value("2026-05-15 08:28:08"));
+        .andExpect(jsonPath("$.latestBackupModifiedAt").value("2026-05-15 08:28:08"))
+        .andExpect(jsonPath("$.latestBackupDownloadUrl").value("/api/admin/system/backups/latest/download"));
+  }
+
+  @Test
+  void latestBackupDownloadRequiresAdminToken() throws Exception {
+    mockMvc.perform(get("/api/admin/system/backups/latest/download"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录管理后台"));
+  }
+
+  @Test
+  void latestBackupDownloadStreamsArchiveWhenTokenIsValid() throws Exception {
+    doAnswer(invocation -> {
+      OutputStream outputStream = invocation.getArgument(0);
+      outputStream.write("archive-demo".getBytes(StandardCharsets.UTF_8));
+      return "latest-backup.tar.gz";
+    }).when(siteService).writeLatestBackupArchive(any(OutputStream.class));
+
+    mockMvc.perform(get("/api/admin/system/backups/latest/download")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "application/gzip"))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"latest-backup.tar.gz\""))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes("archive-demo".getBytes(StandardCharsets.UTF_8)));
   }
 
   @Test
