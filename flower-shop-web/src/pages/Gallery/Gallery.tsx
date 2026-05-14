@@ -47,7 +47,7 @@ export function Gallery() {
         <div className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr] xl:items-end">
             <div>
-              <p className="section-eyebrow">Gallery</p>
+              <p className="section-eyebrow">作品浏览</p>
               <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">作品画廊</h1>
               <p className="mt-3 max-w-2xl leading-7 text-muted">按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。</p>
             </div>

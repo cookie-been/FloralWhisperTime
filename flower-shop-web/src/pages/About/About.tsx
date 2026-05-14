@@ -66,7 +66,7 @@ export function About() {
 
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 xl:grid-cols-[0.96fr_1.04fr] lg:px-8">
         <div>
-          <p className="section-eyebrow">Story</p>
+          <p className="section-eyebrow">品牌故事</p>
           <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">{aboutPage.storyTitle}</h2>
           <p className="mt-5 whitespace-pre-line leading-8 text-muted">{aboutPage.storyContent}</p>
 
@@ -79,7 +79,7 @@ export function About() {
         </div>
 
         <div className="surface-card p-6 sm:p-8">
-          <p className="section-eyebrow">Timeline</p>
+          <p className="section-eyebrow">发展历程</p>
           <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">发展历程</h2>
           <div className="mt-8">
             {timelineItems.length ? (
@@ -95,7 +95,7 @@ export function About() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
-              <p className="section-eyebrow !text-[#456451]">Team</p>
+              <p className="section-eyebrow !text-[#456451]">团队成员</p>
               <h2 className="section-title section-title-accent mt-2 text-2xl !text-[#1f2d24] sm:text-3xl">花艺师团队</h2>
               <p className="mt-3 text-sm leading-7 text-muted">团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。</p>
             </div>

@@ -43,7 +43,7 @@ export function FlowerDetail() {
       <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr]">
         <ImageGallery images={flower.images} name={flower.name} />
         <div>
-          <p className="section-eyebrow">Flower Detail</p>
+          <p className="section-eyebrow">作品详情</p>
           <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl">{flower.name}</h1>
           <p className="mt-4 text-xl font-semibold text-forest sm:text-2xl">参考价 ¥{flower.price}</p>
           <p className="mt-5 leading-8 text-muted">{flower.description}</p>

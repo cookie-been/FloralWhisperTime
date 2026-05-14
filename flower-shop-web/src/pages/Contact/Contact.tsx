@@ -31,7 +31,7 @@ export function Contact() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-10">
-        <p className="section-eyebrow">Contact</p>
+        <p className="section-eyebrow">联系咨询</p>
         <h1 className="section-title section-title-accent mt-2 text-3xl sm:text-4xl">联系我们</h1>
         <p className="mt-3 max-w-2xl leading-7 text-muted">
           {siteConfig?.contactIntro ?? "欢迎预约花束、婚礼花艺、商业空间花艺和节日定制服务。"}
