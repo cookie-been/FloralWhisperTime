@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Empty, Input, Select, Segmented } from "antd";
+import { Empty, Input, Pagination, Select, Segmented } from "antd";
 import { FlowerCard } from "@/components/common/FlowerCard";
 import { getCategories, getFlowers } from "@/services/api";
 import type { Category, Flower, FlowerQuery } from "@/types";
@@ -8,7 +8,7 @@ export function Gallery() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [flowers, setFlowers] = useState<Flower[]>([]);
   const [total, setTotal] = useState(0);
-  const [query, setQuery] = useState<FlowerQuery>({ categoryId: "all", sortBy: "featured", page: 1, limit: 200 });
+  const [query, setQuery] = useState<FlowerQuery>({ categoryId: "all", sortBy: "featured", page: 1, limit: 24 });
 
   useEffect(() => {
     getCategories().then(setCategories);
@@ -44,7 +44,7 @@ export function Gallery() {
               </div>
               <Select
                 value={query.sortBy}
-                onChange={(value) => setQuery((prev) => ({ ...prev, sortBy: value }))}
+                onChange={(value) => setQuery((prev) => ({ ...prev, sortBy: value, page: 1 }))}
                 options={[
                   { label: "精选优先", value: "featured" },
                   { label: "最新作品", value: "latest" },
@@ -70,11 +70,22 @@ export function Gallery() {
         </div>
 
         {flowers.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {flowers.map((flower) => (
-              <FlowerCard key={flower.id} flower={flower} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {flowers.map((flower) => (
+                <FlowerCard key={flower.id} flower={flower} />
+              ))}
+            </div>
+            <div className="mt-10 flex justify-center">
+              <Pagination
+                current={query.page ?? 1}
+                pageSize={query.limit ?? 24}
+                total={total}
+                showSizeChanger={false}
+                onChange={(page) => setQuery((prev) => ({ ...prev, page }))}
+              />
+            </div>
+          </>
         ) : (
           <div className="rounded-lg border border-black/6 bg-white/72 py-20">
             <Empty description="没有找到匹配的花束作品" />
