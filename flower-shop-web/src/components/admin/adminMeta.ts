@@ -39,22 +39,22 @@ export const adminPublicLink = {
 
 export const adminPageMeta = {
   "/admin": {
-    eyebrow: "Overview",
+    eyebrow: "后台概览",
     title: "运营总览",
     description: "先看网站状态，再进入作品与内容编辑。",
   },
   "/admin/flowers": {
-    eyebrow: "Catalog",
+    eyebrow: "作品目录",
     title: "作品管理",
     description: "筛选、整理与更新作品内容，保持前台展示一致。",
   },
   "/admin/settings": {
-    eyebrow: "Content",
+    eyebrow: "动态配置",
     title: "内容配置",
     description: "统一维护站点首页、门店信息、品牌故事与关于我们内容。",
   },
   "/admin/contacts": {
-    eyebrow: "Messages",
+    eyebrow: "访客留言",
     title: "用户留言",
     description: "查看访客提交的预约、咨询与定制需求。",
   },

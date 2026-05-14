@@ -170,7 +170,7 @@ export function AdminSettings() {
               {heroImage ? <img src={heroImage} alt="" className="h-60 w-full object-cover" /> : <div className="flex h-60 items-center justify-center text-muted">暂无首页主图</div>}
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,17,0.06),rgba(15,23,17,0.68))]" />
               <div className="absolute inset-x-0 bottom-0 px-5 py-5 text-white">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/72">{heroEyebrow || "Hero Eyebrow"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/72">{heroEyebrow || "首页标语预览"}</p>
                 <p className="mt-2 text-2xl font-semibold">{heroTitle || "首页主标题预览"}</p>
                 <p className="mt-2 max-w-md text-sm leading-6 text-white/80">{heroDescription || "这里会展示首页首屏的介绍文案。"} </p>
               </div>
@@ -252,7 +252,7 @@ export function AdminSettings() {
         </div>
 
         <div className="admin-panel p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">Preview</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">信息预览</p>
           <p className="mt-3 text-base font-semibold text-[#1b281e]">门店信息预览</p>
           <div className="admin-subpanel mt-4 px-4 py-4">
             <p className="text-sm font-semibold text-[#1b281e]">{brandName || "花语时光"}</p>
@@ -284,12 +284,12 @@ export function AdminSettings() {
 
         <div className="space-y-6">
           <div className="admin-panel p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">Story Summary</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">故事摘要</p>
             <p className="mt-3 text-xl font-semibold text-[#1b281e]">{storyTitle || "品牌故事标题预览"}</p>
             <p className="mt-2 text-sm leading-7 text-muted">{storyContent || "故事正文预览会显示在这里，帮助你在保存前快速确认语气与长度。"} </p>
           </div>
           <div className="admin-panel p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">Story Images</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">故事图片</p>
             {storyPreviewImages.length ? (
               <div className="mt-4 grid grid-cols-2 gap-3">
                 {storyPreviewImages.slice(0, 4).map((url) => (
@@ -312,7 +312,7 @@ export function AdminSettings() {
       <section className="admin-toolbar p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="section-eyebrow">Editing Surface</p>
+            <p className="section-eyebrow">统一配置台</p>
             <h3 className="admin-section-title mt-2 text-xl">内容配置工作区</h3>
             <p className="mt-2 text-sm leading-6 text-muted">将站点配置和关于我们配置统一放在一个菜单里维护，减少切换路径，所有动态内容在同一处完成管理。</p>
           </div>

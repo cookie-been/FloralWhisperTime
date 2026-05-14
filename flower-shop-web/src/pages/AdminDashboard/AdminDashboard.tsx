@@ -123,7 +123,7 @@ export function AdminDashboard() {
         <div className="admin-panel p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Charts</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">精选分析</p>
               <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">精选占比</h3>
             </div>
             <Tag color={summary.featuredRate >= 40 ? "green" : "gold"}>{summary.featuredRate}%</Tag>
@@ -160,7 +160,7 @@ export function AdminDashboard() {
         <div className="admin-panel p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Charts</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">分类分析</p>
               <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">分类分布</h3>
             </div>
             <span className="text-sm text-muted">{summary.categoryCount} 个分类</span>
@@ -188,7 +188,7 @@ export function AdminDashboard() {
           <div className="grid min-h-[320px] md:grid-cols-[1.05fr_0.95fr]">
             <div className="flex flex-col justify-between px-6 py-6">
               <div>
-                <p className="section-eyebrow">Hero Preview</p>
+                <p className="section-eyebrow">首页预览</p>
                 <h3 className="admin-section-title mt-3 text-3xl leading-tight">{data.siteConfig.heroTitle}</h3>
                 <p className="mt-3 text-sm leading-7 text-muted">{data.siteConfig.heroDescription}</p>
               </div>
@@ -216,7 +216,7 @@ export function AdminDashboard() {
         <div className="admin-panel p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="section-eyebrow">Quick Access</p>
+              <p className="section-eyebrow">快捷入口</p>
               <h3 className="admin-section-title mt-2 text-xl">快速入口</h3>
             </div>
             <ArrowRight size={18} className="text-forest" />
@@ -255,7 +255,7 @@ export function AdminDashboard() {
         <div className="admin-panel p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Flowers</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">作品状态</p>
               <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">作品状态</h3>
             </div>
             <Link to="/admin/flowers" className="text-sm font-medium text-forest">
@@ -299,18 +299,18 @@ export function AdminDashboard() {
 
         <div className="admin-panel p-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">Content</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-forest/70">内容摘要</p>
             <h3 className="mt-2 text-xl font-semibold text-[#1b281e]">站点内容摘要</h3>
           </div>
 
           <div className="mt-5 space-y-4">
             <div className="surface-card px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">Brand</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">品牌信息</p>
               <p className="mt-2 text-base font-semibold text-[#1b281e]">{data.siteConfig.brandName}</p>
               <p className="mt-1 text-sm text-muted">{data.siteConfig.heroEyebrow}</p>
             </div>
             <div className="surface-card px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">Contact</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">门店联系</p>
               <p className="mt-2 flex items-start gap-2 text-sm text-muted">
                 <MapPin size={16} className="mt-0.5 text-forest" />
                 <span>{data.shopInfo.address}</span>
@@ -318,7 +318,7 @@ export function AdminDashboard() {
               <p className="mt-2 text-sm text-muted">{data.shopInfo.phone}</p>
             </div>
             <div className="surface-card px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">Story</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">品牌故事</p>
               <p className="mt-2 text-base font-semibold text-[#1b281e]">{data.brandStory.title}</p>
               <p className="mt-2 text-sm leading-6 text-muted">{data.brandStory.content.slice(0, 90)}...</p>
             </div>

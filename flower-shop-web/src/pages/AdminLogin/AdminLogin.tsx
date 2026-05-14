@@ -84,7 +84,7 @@ export function AdminLogin() {
             <Flower2 size={20} />
           </span>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">Floral Whisper</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">管理入口</p>
             <p className="mt-1 text-lg font-semibold">{siteConfig?.brandName ?? "花语时光"}</p>
           </div>
         </div>
@@ -92,7 +92,7 @@ export function AdminLogin() {
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-md rounded-2xl border border-[#efe2d3]/56 bg-[#f8f3eb]/88 px-6 py-7 shadow-[0_32px_90px_rgba(20,30,24,0.24)] backdrop-blur-md sm:px-9 sm:py-10">
             <div className="mb-8 text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#536b59]">Sign In</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#536b59]">后台登录</p>
               <h2 className="mt-3 text-2xl font-semibold text-[#243127] sm:text-3xl">管理者登录</h2>
               <p className="mt-3 text-sm leading-7 text-[#66756a]">登录后可维护作品、上传图片，并更新首页与品牌故事内容。</p>
             </div>

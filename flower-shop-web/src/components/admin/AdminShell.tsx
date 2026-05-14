@@ -75,7 +75,7 @@ export function AdminShell() {
       <div className="grid min-h-screen w-full lg:grid-cols-[288px_minmax(0,1fr)]">
         <aside className="admin-sidebar hidden min-h-full flex-col border-r border-white/10 px-5 py-6 lg:flex">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">Floral Whisper</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">管理入口</p>
             <div className="mt-4 rounded-lg border border-white/10 bg-white/8 px-4 py-4">
               <h1 className="text-lg font-semibold text-white">花语时光后台</h1>
               <p className="mt-2 text-sm leading-6 text-white/70">从作品、首页与门店内容三个层面维护品牌展示。</p>
@@ -126,7 +126,7 @@ export function AdminShell() {
         width={screens.sm ? 320 : "100%"}
         title={
           <div className="admin-drawer-title">
-            <p>Navigation</p>
+            <p>后台导航</p>
             <h3>后台导航</h3>
             <span>在移动端快速切换总览、作品、配置与留言管理。</span>
           </div>

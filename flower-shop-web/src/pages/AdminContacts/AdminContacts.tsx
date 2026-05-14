@@ -268,12 +268,12 @@ export function AdminContacts() {
 
       <section className="admin-toolbar p-5">
         <div>
-          <p className="section-eyebrow">Inbox Filters</p>
+          <p className="section-eyebrow">留言筛选</p>
           <h3 className="admin-section-title mt-2 text-xl">留言筛选</h3>
           <p className="mt-2 text-sm leading-6 text-muted">按访客、联系方式和已读状态快速定位需要优先处理的留言。</p>
         </div>
         <div className="mt-5">
-          <p className="admin-filter-caption">Filter Controls</p>
+          <p className="admin-filter-caption">筛选条件</p>
         </div>
         <div className="admin-quick-filters">
           <Button type={status === "unread" ? "primary" : "default"} onClick={() => {
@@ -390,7 +390,7 @@ export function AdminContacts() {
       <Drawer
         title={
           <div className="admin-drawer-title">
-            <p>Message Detail</p>
+            <p>留言详情</p>
             <h3>{activeContact?.name ?? "留言详情"}</h3>
             <span>集中查看访客联系方式、提交时间与完整留言内容。</span>
           </div>

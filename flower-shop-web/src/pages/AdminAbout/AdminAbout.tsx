@@ -406,7 +406,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
         <section className="admin-toolbar p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="section-eyebrow">About Workspace</p>
+              <p className="section-eyebrow">关于页工作区</p>
               <h3 className="admin-section-title mt-2 text-xl">关于页内容工作台</h3>
               <p className="mt-2 text-sm leading-6 text-muted">统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。</p>
             </div>
@@ -462,7 +462,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
               {heroImage ? <img src={heroImage} alt="" className="h-[420px] w-full object-cover" /> : <div className="flex h-[420px] items-center justify-center text-muted">暂无关于页首图</div>}
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,27,20,0.12),rgba(17,27,20,0.72))]" />
               <div className="absolute inset-x-0 bottom-0 px-6 py-6 text-white">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/74">{heroEyebrow || "About Floral Whisper Time"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/74">{heroEyebrow || "关于我们页首预览"}</p>
                 <p className="mt-3 text-3xl font-semibold leading-tight">{heroTitle || "关于页标题预览"}</p>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-white/84">{heroSubtitle || "这里会展示前台 About 页第一屏的副标题文案。"}</p>
               </div>
@@ -484,7 +484,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
         <div className="admin-panel overflow-hidden p-0">
           <div className="flex items-center justify-between border-b border-black/6 px-5 py-4">
             <div>
-              <p className="section-eyebrow">Timeline</p>
+              <p className="section-eyebrow">发展历程</p>
               <h3 className="admin-section-title mt-2 text-xl">发展时间轴</h3>
             </div>
             <Button type="primary" icon={<Plus size={16} />} onClick={openCreateTimeline}>
@@ -511,7 +511,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
         <div className="admin-panel overflow-hidden p-0">
           <div className="flex items-center justify-between border-b border-black/6 px-5 py-4">
             <div>
-              <p className="section-eyebrow">Team</p>
+              <p className="section-eyebrow">团队信息</p>
               <h3 className="admin-section-title mt-2 text-xl">团队成员</h3>
             </div>
             <Button type="primary" icon={<Plus size={16} />} onClick={openCreateMember}>

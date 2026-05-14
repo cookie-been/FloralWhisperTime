@@ -446,7 +446,7 @@ export function AdminFlowers() {
       <section className="admin-toolbar p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="section-eyebrow">Workspace</p>
+            <p className="section-eyebrow">作品工作区</p>
             <h3 className="admin-section-title mt-2 text-xl">作品工作台</h3>
             <p className="mt-2 text-sm leading-6 text-muted">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
           </div>
@@ -456,7 +456,7 @@ export function AdminFlowers() {
         </div>
 
         <div className="mt-5">
-          <p className="admin-filter-caption">Filter Controls</p>
+          <p className="admin-filter-caption">筛选条件</p>
         </div>
         <div className="admin-quick-filters">
           <Button type={featuredFilter === "featured" ? "primary" : "default"} onClick={() => setFeaturedFilter("featured")}>
@@ -557,7 +557,7 @@ export function AdminFlowers() {
       <Drawer
         title={
           <div className="admin-drawer-title">
-            <p>{editing ? "Editing Flower" : "Create Flower"}</p>
+            <p>{editing ? "编辑作品" : "新增作品"}</p>
             <h3>{editing ? `编辑作品 · ${editing.name}` : "新增作品"}</h3>
             <span>{editing ? "在右侧抽屉中集中修改作品信息、图片与展示状态。" : "填写基础资料后即可创建新的前台展示作品。"}</span>
           </div>
@@ -637,7 +637,7 @@ export function AdminFlowers() {
             </div>
             <div className="mt-4 space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">当前图片</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">图片预览</p>
                 {imagePreviewList.length ? (
                   <div className="mt-3 grid grid-cols-3 gap-3">
                     {imagePreviewList.map((url) => (
