@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 ENV_EXAMPLE_FILE="$REPO_ROOT/.env.example"
+ENV_TEMPLATE_FILE="$ENV_EXAMPLE_FILE"
 ENV_FILE="$REPO_ROOT/.env"
 WEB_PORT_OVERRIDE=""
 SKIP_BUILD=0
@@ -35,6 +36,7 @@ Usage: ./deploy.sh [options]
 
 Options:
   --env-file PATH      Use a custom compose env file
+  --env-template PATH  Use a custom env template when initializing env file
   --web-port PORT      Override WEB_PORT for this deployment
   --branch NAME        Pull and deploy the specified git branch
   --remote NAME        Git remote name used for pull, default origin
@@ -72,7 +74,15 @@ compose_cmd() {
 
 random_alnum() {
   local length="$1"
-  tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$length"
+  python3 - "$length" <<'PY'
+import secrets
+import string
+import sys
+
+length = int(sys.argv[1])
+alphabet = string.ascii_letters + string.digits
+print("".join(secrets.choice(alphabet) for _ in range(length)), end="")
+PY
 }
 
 set_env_value() {
@@ -101,9 +111,9 @@ init_env_file() {
     return
   fi
 
-  [[ -f "$ENV_EXAMPLE_FILE" ]] || fail "Missing env template: $ENV_EXAMPLE_FILE"
+  [[ -f "$ENV_TEMPLATE_FILE" ]] || fail "Missing env template: $ENV_TEMPLATE_FILE"
 
-  cp "$ENV_EXAMPLE_FILE" "$ENV_FILE"
+  cp "$ENV_TEMPLATE_FILE" "$ENV_FILE"
 
   set_env_value "$ENV_FILE" "MYSQL_PASSWORD" "$(random_alnum 24)"
   set_env_value "$ENV_FILE" "MYSQL_ROOT_PASSWORD" "$(random_alnum 28)"
@@ -111,7 +121,7 @@ init_env_file() {
   set_env_value "$ENV_FILE" "ADMIN_PASSWORD" "$GENERATED_ADMIN_PASSWORD"
   set_env_value "$ENV_FILE" "ADMIN_AUTH_SECRET" "$(random_alnum 48)"
 
-  log "Created $ENV_FILE with generated secrets."
+  log "Created $ENV_FILE from template $ENV_TEMPLATE_FILE with generated secrets."
 }
 
 warn_default_secrets() {
@@ -200,6 +210,7 @@ ensure_prerequisites() {
   require_cmd sed
   require_cmd grep
   require_cmd tr
+  require_cmd python3
   require_cmd mvn
   if (( GIT_PULL == 1 )); then
     require_cmd git
@@ -308,6 +319,11 @@ while [[ $# -gt 0 ]]; do
     --env-file)
       [[ $# -ge 2 ]] || fail "--env-file requires a value"
       ENV_FILE="$2"
+      shift 2
+      ;;
+    --env-template)
+      [[ $# -ge 2 ]] || fail "--env-template requires a value"
+      ENV_TEMPLATE_FILE="$2"
       shift 2
       ;;
     --web-port)

@@ -48,6 +48,7 @@
 
 ```bash
 ./deploy.sh --env-file .env.production --web-port 8081
+./deploy.sh --env-file .env.production --env-template .env.production.example
 ./deploy.sh --branch main
 ./deploy.sh --remote origin --branch main
 ./deploy.sh --no-git-pull
@@ -62,6 +63,7 @@
 - 仅开发或演示环境可使用 `--allow-insecure-env` 显式跳过这层保护
 - 生产环境建议基于 `.env.production.example` 生成正式 `.env`
 - 部署前后可按 [docs/deployment-checklist.md](/workspace/FloralWhisperTime/docs/deployment-checklist.md) 执行人工巡检
+- 如需接入企业域名与 HTTPS 入口，可参考 [docs/nginx-https-example.md](/workspace/FloralWhisperTime/docs/nginx-https-example.md)
 
 ## 备份
 
@@ -180,6 +182,7 @@ npm run dev
 - 最近备份一键下载
 - 一键刷新与风险分级提示
 - 最近刷新时间与自动轮询开关
+- 连续刷新失败次数、最近错误与自动轮询暂停提示
 
 `作品管理` 已支持 AI 生成作品图工作流：
 

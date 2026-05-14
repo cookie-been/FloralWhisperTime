@@ -4,12 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { downloadLatestAdminBackup, getAdminSystemStatus } from "@/services/api";
 import type { SystemStatus } from "@/types";
 
+const AUTO_REFRESH_INTERVAL_MS = 60000;
+const AUTO_REFRESH_ERROR_THRESHOLD = 3;
+
 export function AdminSystemStatus() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lastRefreshAt, setLastRefreshAt] = useState<string>("");
+  const [refreshErrorCount, setRefreshErrorCount] = useState(0);
+  const [lastRefreshError, setLastRefreshError] = useState("");
+  const [autoRefreshPaused, setAutoRefreshPaused] = useState(false);
 
   const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
     if (mode === "refresh") {
@@ -20,8 +26,21 @@ export function AdminSystemStatus() {
     try {
       setStatus(await getAdminSystemStatus());
       setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
+      setRefreshErrorCount(0);
+      setLastRefreshError("");
+      setAutoRefreshPaused(false);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : "系统状态加载失败");
+      const errorMessage = error instanceof Error ? error.message : "系统状态加载失败";
+      setLastRefreshError(errorMessage);
+      setRefreshErrorCount((previous) => {
+        const nextCount = previous + 1;
+        if (mode === "refresh" && nextCount >= AUTO_REFRESH_ERROR_THRESHOLD) {
+          setAutoRefresh(false);
+          setAutoRefreshPaused(true);
+        }
+        return nextCount;
+      });
+      message.error(errorMessage);
     } finally {
       if (mode === "refresh") {
         setRefreshing(false);
@@ -36,14 +55,30 @@ export function AdminSystemStatus() {
   }, [loadStatus]);
 
   useEffect(() => {
-    if (!autoRefresh) {
+    if (!autoRefresh || autoRefreshPaused) {
       return;
     }
     const timer = window.setInterval(() => {
       void loadStatus("refresh");
-    }, 60000);
+    }, AUTO_REFRESH_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [autoRefresh, loadStatus]);
+  }, [autoRefresh, autoRefreshPaused, loadStatus]);
+
+  const handleToggleAutoRefresh = useCallback((checked: boolean) => {
+    setAutoRefresh(checked);
+    if (checked) {
+      setAutoRefreshPaused(false);
+      setRefreshErrorCount(0);
+      setLastRefreshError("");
+    }
+  }, []);
+
+  const handleManualRefresh = useCallback(() => {
+    setAutoRefreshPaused(false);
+    setRefreshErrorCount(0);
+    setLastRefreshError("");
+    void loadStatus("refresh");
+  }, [loadStatus]);
 
   const riskState = useMemo(() => {
     if (!status) return { level: "warning", title: "系统状态未知", message: "暂时无法判断当前运行状态，请刷新后重试。" };
@@ -111,18 +146,31 @@ export function AdminSystemStatus() {
               message={riskState.title}
               description={riskState.message}
             />
+            {lastRefreshError ? (
+              <Alert
+                showIcon
+                type={autoRefreshPaused ? "error" : "warning"}
+                message={autoRefreshPaused ? "自动轮询已暂停" : "最近一次刷新失败"}
+                description={
+                  autoRefreshPaused
+                    ? `连续失败 ${refreshErrorCount} 次，已暂停自动轮询。最近错误：${lastRefreshError}`
+                    : `连续失败 ${refreshErrorCount} 次。最近错误：${lastRefreshError}`
+                }
+              />
+            ) : null}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
               <span>最近刷新：{lastRefreshAt || "暂无"}</span>
+              <span>连续失败：{refreshErrorCount} 次</span>
               <label className="flex items-center gap-2">
-                <Switch checked={autoRefresh} onChange={setAutoRefresh} size="small" />
-                <span>自动轮询（60秒）</span>
+                <Switch checked={autoRefresh} onChange={handleToggleAutoRefresh} size="small" />
+                <span>自动轮询（60秒）{autoRefreshPaused ? " · 已暂停" : ""}</span>
               </label>
             </div>
           </div>
           <Button
             icon={<RefreshCw size={16} />}
             loading={refreshing}
-            onClick={() => loadStatus("refresh")}
+            onClick={handleManualRefresh}
           >
             刷新状态
           </Button>
