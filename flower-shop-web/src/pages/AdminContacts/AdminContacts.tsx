@@ -18,6 +18,11 @@ function formatDateTime(value?: string) {
   }).format(date);
 }
 
+function truncateText(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength).trim()}...`;
+}
+
 export function AdminContacts() {
   const [data, setData] = useState<PaginatedResult<ContactMessage> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,6 +30,7 @@ export function AdminContacts() {
   const [pageSize, setPageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<"all" | "read" | "unread">("all");
+  const hasActiveFilters = Boolean(keyword.trim()) || status !== "all";
 
   const load = async (
     nextPage = page,
@@ -68,6 +74,14 @@ export function AdminContacts() {
     ];
   }, [data]);
 
+  const filterSummary = useMemo(() => {
+    const parts = [];
+    if (keyword.trim()) parts.push(`关键词“${keyword.trim()}”`);
+    if (status === "read") parts.push("仅看已读");
+    if (status === "unread") parts.push("仅看未读");
+    return parts;
+  }, [keyword, status]);
+
   const handleMarkRead = async (id: string) => {
     try {
       await markAdminContactRead(id);
@@ -76,6 +90,12 @@ export function AdminContacts() {
     } catch (error) {
       message.error(error instanceof Error ? error.message : "操作失败");
     }
+  };
+
+  const resetFilters = () => {
+    setKeyword("");
+    setStatus("all");
+    load(1, pageSize, "", "all").catch(() => undefined);
   };
 
   const columns: ColumnsType<ContactMessage> = [
@@ -106,7 +126,12 @@ export function AdminContacts() {
     {
       title: "留言内容",
       dataIndex: "message",
-      render: (content: string) => <p className="whitespace-pre-wrap leading-7 text-[#33463a]">{content}</p>,
+      render: (content: string) => (
+        <div>
+          <p className="leading-7 text-[#33463a]">{truncateText(content, 86)}</p>
+          {content.length > 86 ? <p className="admin-cell-note">完整留言请结合行内容继续查看。</p> : null}
+        </div>
+      ),
     },
     {
       title: "提交时间",
@@ -192,6 +217,15 @@ export function AdminContacts() {
           <Button type="primary" onClick={() => load(1, pageSize, keyword, status).catch(() => undefined)}>
             筛选留言
           </Button>
+        </div>
+        <div className="admin-filter-summary">
+          <div className="admin-filter-summary-copy">
+            <p>当前结果 {data?.list.length ?? 0} 条</p>
+            <span>{hasActiveFilters ? `已应用 ${filterSummary.join(" · ")}` : "当前显示全部留言，可直接翻页或处理未读消息。"}</span>
+          </div>
+          {hasActiveFilters ? (
+            <Button onClick={resetFilters}>清空筛选</Button>
+          ) : null}
         </div>
       </section>
 

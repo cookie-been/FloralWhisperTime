@@ -74,6 +74,11 @@ function fromForm(values: FlowerForm): Flower {
   };
 }
 
+function truncateText(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength).trim()}...`;
+}
+
 type FeaturedFilter = "all" | "featured" | "normal";
 
 export function AdminFlowers() {
@@ -103,6 +108,7 @@ export function AdminFlowers() {
   );
 
   const imagePreviewList = useMemo(() => splitText(watchedImages), [watchedImages]);
+  const hasActiveFilters = Boolean(search.trim()) || selectedCategory !== "all" || featuredFilter !== "all";
 
   const filteredFlowers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -131,6 +137,15 @@ export function AdminFlowers() {
     ],
     [categoryOptions.length, filteredFlowers.length, flowers],
   );
+
+  const filterSummary = useMemo(() => {
+    const parts = [];
+    if (search.trim()) parts.push(`关键词“${search.trim()}”`);
+    if (selectedCategory !== "all") parts.push(`分类“${categoryMap.get(selectedCategory) ?? selectedCategory}”`);
+    if (featuredFilter === "featured") parts.push("仅看精选");
+    if (featuredFilter === "normal") parts.push("仅看普通");
+    return parts;
+  }, [categoryMap, featuredFilter, search, selectedCategory]);
 
   const load = async () => {
     setLoading(true);
@@ -165,6 +180,12 @@ export function AdminFlowers() {
     setDrawerOpen(false);
     setEditing(null);
     form.resetFields();
+  };
+
+  const resetFilters = () => {
+    setSearch("");
+    setSelectedCategory("all");
+    setFeaturedFilter("all");
   };
 
   const handleUpload = async (file: RcFile) => {
@@ -231,6 +252,7 @@ export function AdminFlowers() {
         <div>
           <p className="font-semibold text-[#1b281e]">{record.name}</p>
           <p className="mt-1 text-xs text-muted">{record.id}</p>
+          <p className="admin-cell-note line-clamp-2">{truncateText(record.description, 48) || "暂无作品描述"}</p>
         </div>
       ),
     },
@@ -249,6 +271,7 @@ export function AdminFlowers() {
     {
       title: "标签",
       dataIndex: "tags",
+      width: 220,
       render: (tags: string[]) => (
         <Space size={[4, 4]} wrap>
           {tags.slice(0, 3).map((tag) => (
@@ -333,6 +356,15 @@ export function AdminFlowers() {
               { label: "仅看普通", value: "normal" },
             ]}
           />
+        </div>
+        <div className="admin-filter-summary">
+          <div className="admin-filter-summary-copy">
+            <p>当前结果 {filteredFlowers.length} 条</p>
+            <span>{hasActiveFilters ? `已应用 ${filterSummary.join(" · ")}` : "当前显示全部作品，可直接进入编辑。"}</span>
+          </div>
+          {hasActiveFilters ? (
+            <Button onClick={resetFilters}>清空筛选</Button>
+          ) : null}
         </div>
       </section>
 
