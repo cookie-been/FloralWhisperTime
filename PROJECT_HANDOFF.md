@@ -1,344 +1,180 @@
 # 花语时光鲜花店展示系统交接文档
 
-## 1. 项目现状
+## 当前基线
 
-本项目是「花语时光」鲜花店展示系统，已经从静态 Mock 展示升级为带后端数据源的双端系统：
+项目当前默认运行方式已经切换为企业级三层 Docker 架构：
 
-- PC Web 前台：展示首页、作品画廊、作品详情、关于我们、联系我们。
-- PC Web 后台：管理员登录后管理作品和站点配置。
-- 微信小程序端：展示首页、分类、详情、关于我们、联系我们，并读取同一后端数据。
-- 后端服务：Express API + 本地 JSON 数据库 + 本地图片上传目录。
+- `mysql`：MySQL 8，持久化业务数据
+- `backend`：`flower-shop-backend-java/`，Spring Boot 3 + MyBatis-Plus + Flyway
+- `web`：`flower-shop-web/`，Vite 构建后由 Nginx 托管，并反代 `/api` 和 `/uploads`
 
-当前不包含购物车、支付、订单、库存、客户登录、会员中心等电商能力。
+`flower-shop-backend/` 仍保留为历史兼容版 Node/Express 后端，仅用于旧数据导入和兼容参考，不是默认部署主线。
 
-## 2. 目录结构
+## 目录结构
 
 ```text
-D:\workspace\project\FloralWhisperTime
-├── flower-shop-backend/     # Express 后端、JSON 数据库、上传目录
-├── flower-shop-web/         # React + Vite PC Web 前台与后台
-├── flower-shop-mini/        # 微信小程序原生工程
-├── shared/                  # 双端共享类型与早期 Mock 数据
-├── README.md                # 简要运行说明
-├── PROJECT_HANDOFF.md       # 当前交接文档
-└── 鲜花店展示方案.zip        # 原始需求方案
+/workspace/FloralWhisperTime
+├── flower-shop-backend-java/   # Java + MySQL 主线后端
+├── flower-shop-web/            # React PC Web 前台与后台
+├── flower-shop-mini/           # 微信小程序
+├── flower-shop-backend/        # 历史兼容 Node/Express 后端
+├── shared/                     # Web 共享类型与数据结构
+├── scripts/catalog/            # 作品批量生成与导入脚本
+├── docs/superpowers/           # 设计、计划、迁移与验收文档
+├── docker-compose.yml          # 默认部署编排
+├── deploy.sh                   # 一键部署脚本
+└── README.md                   # 总体说明
 ```
 
-重要文件：
+## 一键部署
 
-- 后端入口：`flower-shop-backend/server.js`
-- 后端数据：`flower-shop-backend/data/db.json`
-- 上传图片：`flower-shop-backend/uploads/`
-- Web API 封装：`flower-shop-web/src/services/api.ts`
-- Web 路由：`flower-shop-web/src/router/index.tsx`
-- 小程序 API 地址：`flower-shop-mini/config/api.ts`
-- 共享类型：`shared/types.ts`
-
-## 3. 启动方式
-
-先启动后端：
+在仓库根目录执行：
 
 ```bash
-cd D:\workspace\project\FloralWhisperTime\flower-shop-backend
-npm install
-npm run dev
+./deploy.sh
 ```
 
-默认后端地址：
+脚本会自动：
+
+- 首次根据 `.env.example` 生成 `.env`
+- 自动生成数据库密码、管理员密码、签名密钥
+- 创建 `flower-shop-backend-java/uploads/`
+- 从源码构建前端和 Java 后端镜像
+- 启动 `mysql + backend + web`
+- 验证 `/api/health` 和首页可访问
+
+常用参数：
+
+```bash
+./deploy.sh --web-port 8081
+./deploy.sh --pull
+./deploy.sh --skip-build
+./deploy.sh --env-file .env.production
+```
+
+默认访问入口：
+
+```text
+http://localhost:8080
+```
+
+## 本地开发
+
+### Java 后端
+
+```bash
+cd flower-shop-backend-java
+mvn spring-boot:run
+```
+
+默认地址：
 
 ```text
 http://localhost:3001
 ```
 
-再启动 Web：
+### Web
 
 ```bash
-cd D:\workspace\project\FloralWhisperTime\flower-shop-web
+cd flower-shop-web
 npm install
 npm run dev
 ```
 
-默认 Web 地址：
+默认地址：
 
 ```text
 http://localhost:5173
 ```
 
-Web 构建验证：
+### 小程序
 
-```bash
-cd D:\workspace\project\FloralWhisperTime\flower-shop-web
-npm run build
-```
-
-小程序预览：
-
-1. 打开微信开发者工具。
-2. 导入 `D:\workspace\project\FloralWhisperTime\flower-shop-mini`。
-3. 本机模拟器可用 `http://localhost:3001`。
-4. 真机预览需要把 `flower-shop-mini/config/api.ts` 改为电脑局域网 IP 或正式 HTTPS 域名，并配置微信小程序 request 合法域名。
-
-## 4. 管理后台
-
-后台登录页：
+微信开发者工具导入：
 
 ```text
-http://localhost:5173/admin/login
+flower-shop-mini
 ```
 
-默认账号：
+真机调试前，需要把 `flower-shop-mini/config/api.ts` 改成局域网 IP 或正式 HTTPS 域名，并配置微信小程序合法域名。
 
-```text
-账号：admin
-密码：Floral@2026
-```
+## 后台功能
 
-生产环境必须通过环境变量修改：
+当前 Web 管理后台包含四个一级入口：
 
-```text
-ADMIN_USERNAME
-ADMIN_PASSWORD
-ADMIN_AUTH_SECRET
-```
+- `/admin`：运营总览
+- `/admin/flowers`：作品管理
+- `/admin/settings`：内容配置
+- `/admin/contacts`：用户留言
 
-后台页面：
+其中“内容配置”统一维护：
 
-- `/admin/login`：管理员登录。
-- `/admin/flowers`：作品管理，支持新增、编辑、删除、上传图片。
-- `/admin/settings`：站点配置，支持管理首页文案、品牌故事、地址、电话、微信、经纬度、营业时间、页脚简介、统计数据等。
+- 首页首屏与统计文案
+- 门店信息与营业时间
+- 品牌故事
+- 关于我们页首图/标题/副标题
+- 时间轴
+- 团队成员
 
-鉴权方式：
+## 数据与持久化
 
-- 登录接口返回 token。
-- Web 端把 token 存到 `localStorage`。
-- 管理类接口通过 `Authorization: Bearer <token>` 调用。
-- 后端对作品新增、编辑、删除、图片上传、站点配置保存做了 `requireAdmin` 保护。
+- MySQL 数据：Docker volume `floral_whisper_mysql`
+- 上传文件：`flower-shop-backend-java/uploads/`
+- Web 静态资源：构建进入容器镜像
 
-## 5. 数据模型与存储
-
-主要数据都保存在：
+历史兼容数据源仍保留在：
 
 ```text
 flower-shop-backend/data/db.json
 ```
 
-核心字段：
+Java 后端支持一次性 JSON 导入，用于从旧库迁移到 MySQL。
 
-- `categories`：花束分类。
-- `flowers`：花束作品。
-- `shopInfo`：门店信息。
-- `brandStory`：品牌故事。
-- `siteConfig`：首页与站点可配置文案。
-- `teamMembers`：团队成员。
-- `contacts`：联系表单留言。
+## 默认环境变量
 
-作品 `Flower` 关键字段：
+根目录 `.env.example` 包含部署基线参数，核心字段有：
 
-```ts
-{
-  id: string;
-  name: string;
-  categoryId: string;
-  images: string[];
-  price: number;
-  description: string;
-  materials: string[];
-  meaning: string;
-  tags: string[];
-  featured: boolean;
-  sort: number;
-  createdAt: string;
-}
+- `WEB_PORT`
+- `MYSQL_DATABASE`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+- `MYSQL_ROOT_PASSWORD`
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `ADMIN_AUTH_SECRET`
+- `JWT_ISSUER`
+- `CORS_ALLOWED_ORIGIN_PATTERNS`
+
+生产环境必须替换默认密码和密钥。
+
+## 关键文件
+
+- 部署脚本：`deploy.sh`
+- 编排文件：`docker-compose.yml`
+- Java 运行时镜像：`flower-shop-backend-java/Dockerfile.runtime`
+- Web 运行时镜像：`flower-shop-web/Dockerfile.runtime`
+- Web 路由：`flower-shop-web/src/router/index.tsx`
+- Web API：`flower-shop-web/src/services/api.ts`
+- Java 应用配置：`flower-shop-backend-java/src/main/resources/application.yml`
+- Flyway 迁移：`flower-shop-backend-java/src/main/resources/db/migration/`
+
+## 验收方式
+
+基础容器验收：
+
+```bash
+docker compose ps
+curl -fsS http://localhost:8080/api/health
+curl -I http://localhost:8080/
 ```
 
-站点配置 `SiteConfig` 关键字段：
+更完整的 Docker 验收流程见：
 
-```ts
-{
-  brandName: string;
-  heroEyebrow: string;
-  heroTitle: string;
-  heroDescription: string;
-  heroImage: string;
-  primaryCtaText: string;
-  secondaryCtaText: string;
-  stats: { value: string; label: string }[];
-  contactIntro: string;
-  businessHoursText: string;
-  footerDescription: string;
-}
-```
+- `docs/superpowers/migration-checklists/2026-05-13-docker-cutover-runbook.md`
 
-注意：
+## 当前保留但非主线的内容
 
-- 现在使用 JSON 文件作为轻量数据库。
-- 不适合高并发生产环境。
-- 后续生产化建议迁移到 SQLite、PostgreSQL、MySQL 或云数据库。
+- `flower-shop-backend/`：历史兼容 Node/Express 后端
+- `flower-shop-backend/data/db.json`：旧版 JSON 数据
+- `flower-shop-backend-java` 的 JSON 导入能力：用于一次性历史数据迁移
 
-## 6. 后端 API
-
-公开接口：
-
-- `GET /api/health`
-- `GET /api/site-config`
-- `GET /api/flowers`
-- `GET /api/flowers/:id`
-- `GET /api/flowers/:id/related`
-- `GET /api/categories`
-- `GET /api/shop-info`
-- `GET /api/brand-story`
-- `GET /api/team`
-- `POST /api/contact`
-
-管理员接口：
-
-- `POST /api/admin/login`
-- `GET /api/admin/me`
-- `PUT /api/site-config`
-- `POST /api/flowers`
-- `PUT /api/flowers/:id`
-- `DELETE /api/flowers/:id`
-- `POST /api/uploads`
-
-`GET /api/flowers` 支持参数：
-
-- `categoryId`
-- `tag`
-- `keyword`
-- `sortBy`: `featured` / `latest` / `price_asc` / `price_desc`
-- `page`
-- `limit`
-
-## 7. Web 端功能
-
-技术栈：
-
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Ant Design
-- React Router
-
-主要页面：
-
-- `Home`：首页，读取 `siteConfig`、精选作品、品牌故事、门店地址。
-- `Gallery`：作品画廊，支持分类、搜索、排序。
-- `FlowerDetail`：作品详情，支持相关推荐。
-- `About`：品牌故事、团队和门店信息。
-- `Contact`：门店信息、地图、联系表单。
-- `AdminLogin`：管理员登录。
-- `AdminFlowers`：作品管理。
-- `AdminSettings`：站点配置。
-
-Web 端所有 API 统一在：
-
-```text
-flower-shop-web/src/services/api.ts
-```
-
-如需改后端地址，可设置：
-
-```text
-VITE_API_BASE_URL
-```
-
-## 8. 小程序端功能
-
-技术栈：
-
-- 微信小程序原生框架
-- TypeScript
-- WXML
-- WXSS
-
-页面：
-
-- `pages/index/index`：首页，读取站点配置、分类、热门作品。
-- `pages/category/index`：分类列表，支持分类和排序。
-- `pages/flower-detail/index`：作品详情和相关推荐。
-- `pages/about/index`：品牌故事与店铺信息。
-- `pages/contact/index`：地图、拨号、复制微信号、营业时间文案。
-
-小程序后端地址配置：
-
-```text
-flower-shop-mini/config/api.ts
-```
-
-默认：
-
-```ts
-export const API_BASE_URL = "http://localhost:3001";
-```
-
-## 9. 当前已验证
-
-已完成验证：
-
-- 后端 `/api/health` 正常。
-- 后端 `/api/site-config` 正常返回配置。
-- 管理员登录正常返回 token。
-- 未登录访问写接口会返回 `401`。
-- 登录后 `PUT /api/site-config` 可保存配置。
-- Web `/`、`/contact`、`/admin/settings` 返回 200。
-- `npm run build` 构建通过。
-
-构建提示：
-
-- Ant Design chunk 较大，Vite 会提示 chunk 超过 500 KB。
-- 这是依赖体积警告，不影响当前运行。
-- 后续可通过按需引入、拆包或替换部分后台组件优化。
-
-## 10. 已知注意事项
-
-1. PowerShell 直接打印中文时可能出现乱码显示，但 Node 按 UTF-8 读取 `db.json` 是正常的。
-2. 不建议用 PowerShell 手写包含中文的大段 JSON 回写 `db.json`，容易受编码影响。
-3. 管理后台当前是简单 token 鉴权，适合开发和演示，不是完整生产级安全方案。
-4. 上传图片保存在本地 `uploads/`，部署到云服务器时需要持久化该目录。
-5. 小程序真机预览不能直接访问电脑的 `localhost`，需要局域网 IP 或 HTTPS 域名。
-
-## 11. 后续建议
-
-优先级较高：
-
-- 给后台增加分类管理。
-- 给后台增加品牌故事图片上传，而不只是填写 URL。
-- 给后台增加留言查看和处理状态。
-- 增加更正式的登录过期时间和退出后 token 失效机制。
-- 把 JSON 数据库迁移到 SQLite 或 PostgreSQL。
-- 增加后端数据备份机制。
-
-体验优化：
-
-- 后台增加图片预览、拖拽排序、批量删除。
-- 前台图片加载失败时显示占位图。
-- 小程序端补充搜索框和更多筛选能力。
-- 后台站点配置增加实时预览。
-- Web 前台做移动端细节检查。
-
-生产化：
-
-- 使用 HTTPS 域名部署后端。
-- 配置小程序 request 合法域名。
-- 图片上传迁移到 OSS/COS/S3 等对象存储。
-- 增加环境变量 `.env.example`。
-- 增加后端日志、错误监控和接口限流。
-
-## 12. 后续接手提示
-
-如果后续上下文丢失，接手者应该先做这几步：
-
-1. 阅读本文件。
-2. 启动 `flower-shop-backend`。
-3. 启动 `flower-shop-web`。
-4. 打开 `/admin/login`，用默认账号登录。
-5. 检查 `/admin/settings` 和 `/admin/flowers` 是否正常。
-6. 开始新增功能前，优先检查 `server.js`、`api.ts`、`db.json`、对应页面组件。
-
-当前系统的核心设计原则：
-
-- 前台只展示，不做交易。
-- 后台所有写操作必须登录。
-- Web 和小程序必须读取同一个后端数据源。
-- 可配置内容尽量进入 `siteConfig` 或后台管理，而不是硬编码在页面里。
+这些内容仍然有用，但不应再被当作默认运行主线。

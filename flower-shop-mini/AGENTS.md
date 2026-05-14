@@ -31,6 +31,7 @@ flower-shop-mini/
 |------|-----|------|
 | pages/index/index | 首页 | 轮播公告 + 分类入口 + 热门花束 + 品牌故事入口 |
 | pages/category/index | 分类 | 分类 Tab + 排序 + 花束网格 |
+| pages/flower-detail/index | 详情 | 图片画廊 + 花材 + 寓意 + 相关推荐 |
 | pages/about/index | 关于我们 | 品牌故事 + 店铺信息 + 团队成员 |
 | pages/contact/index | 联系我们 | 地图 + 联系方式 + 拨号/复制微信号 |
 
@@ -50,6 +51,7 @@ flower-shop-mini/
 - **API 调用**: `services/api.ts` 封装 `wx.request`，使用 `config/api.ts` 中的 API_BASE_URL
 - **页面跳转**: 首页/分类用 `wx.switchTab`，详情页用 `wx.navigateTo`
 - **Mock 数据**: `mock/data.ts` 作为本地开发回退
+- **共享数据**: 使用 `flower-shop-mini/shared/` 本地副本，不直接依赖根目录 `shared/`
 - **颜色主题**: 绿色系 `#2E7D32`（导航栏 + Tab 选中色），`#E8F5E9`（背景色）
 
 ## COMMANDS

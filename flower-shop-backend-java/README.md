@@ -97,6 +97,8 @@ mvn spring-boot:run
 - `GET /api/health`
 - `POST /api/admin/login`
 - `GET /api/admin/me`
+- `GET /api/admin/contacts`
+- `PATCH /api/admin/contacts/{id}/read`
 - `GET /api/flowers`
 - `GET /api/flowers/{id}`
 - `GET /api/flowers/{id}/related`
@@ -107,9 +109,21 @@ mvn spring-boot:run
 - `GET /api/categories`
 - `GET /api/site-config`
 - `PUT /api/site-config`
+- `GET /api/about-page`
+- `GET /api/about-timeline`
+- `GET /api/admin/about-page`
+- `PUT /api/admin/about-page`
+- `GET /api/admin/about-timeline`
+- `POST /api/admin/about-timeline`
+- `PUT /api/admin/about-timeline/{id}`
+- `DELETE /api/admin/about-timeline/{id}`
 - `GET /api/shop-info`
 - `GET /api/brand-story`
 - `GET /api/team`
+- `GET /api/admin/team`
+- `POST /api/admin/team`
+- `PUT /api/admin/team/{id}`
+- `DELETE /api/admin/team/{id}`
 - `POST /api/contact`
 
 ## 旧 JSON 导入 MySQL

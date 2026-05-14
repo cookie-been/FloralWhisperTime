@@ -1,12 +1,13 @@
 # flower-shop-backend-java
 
-Spring Boot 3 + MyBatis-Plus + MySQL 后端，目标是兼容原 Express 后端的 `/api/*` 接口。
+Spring Boot 3 + MyBatis-Plus + MySQL 后端，是当前默认后端主线。
 
 ## COMMANDS
 
 ```bash
 mvn spring-boot:run
 mvn package
+mvn test
 ```
 
 默认端口：`3001`
@@ -24,6 +25,8 @@ mvn package
 | `ADMIN_AUTH_SECRET` | `floral-whisper-time-java-dev-secret-change-me` |
 | `PUBLIC_BASE_URL` | `http://localhost:${server.port}` |
 | `UPLOAD_DIR` | `uploads` |
+| `JSON_IMPORT_ENABLED` | `false` |
+| `JSON_IMPORT_PATH` | `../flower-shop-backend/data/db.json` |
 
 ## STRUCTURE
 
@@ -35,10 +38,11 @@ mvn package
 - `security/`：JWT Bearer token
 - `storage/`：图片上传
 - `db/migration/`：Flyway 建表和初始数据
+- `migration/`：旧版 JSON 数据导入
 
 ## NOTES
 
 - 保持响应错误格式 `{ "message": "..." }`，前端依赖该格式展示错误。
 - 管理端继续使用 `Authorization: Bearer <token>`。
 - 图片上传接口返回 `{ "url": "..." }`，本地默认是绝对 URL；`PUBLIC_BASE_URL` 为空时可返回相对 `/uploads/...`。
-
+- 当前后台还包含留言管理、关于我们页配置、时间轴和团队成员管理相关接口。

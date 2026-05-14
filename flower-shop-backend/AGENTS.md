@@ -1,6 +1,6 @@
 # flower-shop-backend
 
-Express 5 后端服务，JSON 文件数据库，图片上传。单文件（server.js）包含所有路由。
+历史兼容版 Express 5 后端。保留用于旧版 JSON 数据参考和导入，不是当前默认运行主线。
 
 ## API ENDPOINTS
 
@@ -33,6 +33,7 @@ Express 5 后端服务，JSON 文件数据库，图片上传。单文件（serve
 
 - **勿直接编辑 `data/db.json`** — 通过 API 写入，手动编辑会破坏 JSON 格式一致性
 - **勿添加额外依赖** — 当前仅 express + cors + multer，够用
+- **勿把这里当默认生产主线** — 新功能优先落在 `flower-shop-backend-java/`
 
 ## COMMANDS
 

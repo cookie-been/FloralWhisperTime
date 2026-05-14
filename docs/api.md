@@ -1,0 +1,543 @@
+# 花语时光接口文档
+
+## 1. 接口概览
+
+当前默认 API 服务由 `flower-shop-backend-java` 提供，统一前缀为：
+
+```text
+/api
+```
+
+开发默认地址：
+
+```text
+http://localhost:3001
+```
+
+Docker 部署时，浏览器通常直接通过 Web 服务同源访问：
+
+```text
+http://localhost:8080/api
+```
+
+## 2. 认证机制
+
+### 2.1 登录
+
+管理员通过：
+
+```http
+POST /api/admin/login
+```
+
+获得 Bearer Token。
+
+### 2.2 鉴权头
+
+受保护接口需要：
+
+```http
+Authorization: Bearer <token>
+```
+
+## 3. 通用返回规则
+
+### 3.1 成功
+
+- 普通查询接口返回 JSON 对象或数组
+- 创建接口通常返回 `201 Created`
+- 删除接口通常返回 `204 No Content`
+
+### 3.2 失败
+
+错误统一格式：
+
+```json
+{ "message": "错误说明" }
+```
+
+## 4. 公开接口
+
+### 4.1 健康检查
+
+#### `GET /api/health`
+
+返回示例：
+
+```json
+{
+  "ok": true,
+  "service": "flower-shop-backend-java"
+}
+```
+
+### 4.2 分类列表
+
+#### `GET /api/categories`
+
+返回：
+
+```json
+[
+  {
+    "id": "wedding",
+    "name": "婚礼花艺",
+    "icon": "Flower2",
+    "description": "婚礼与宴会花艺",
+    "sort": 1
+  }
+]
+```
+
+### 4.3 作品列表
+
+#### `GET /api/flowers`
+
+查询参数：
+
+- `categoryId`
+- `tag`
+- `keyword`
+- `sortBy`
+- `page`
+- `limit`
+
+`sortBy` 支持：
+
+- `featured`
+- `latest`
+- `price_asc`
+- `price_desc`
+
+返回结构：
+
+```json
+{
+  "list": [],
+  "total": 72,
+  "page": 1,
+  "limit": 12
+}
+```
+
+作品对象字段：
+
+- `id`
+- `name`
+- `categoryId`
+- `images`
+- `price`
+- `description`
+- `materials`
+- `meaning`
+- `tags`
+- `featured`
+- `sort`
+- `createdAt`
+
+### 4.4 作品详情
+
+#### `GET /api/flowers/{id}`
+
+返回单个作品对象。
+
+### 4.5 相关推荐
+
+#### `GET /api/flowers/{id}/related`
+
+查询参数：
+
+- `limit`
+
+返回作品数组。
+
+### 4.6 站点配置
+
+#### `GET /api/site-config`
+
+返回首页和站点文案配置。
+
+核心字段：
+
+- `brandName`
+- `heroEyebrow`
+- `heroTitle`
+- `heroDescription`
+- `heroImage`
+- `primaryCtaText`
+- `secondaryCtaText`
+- `stats`
+- `contactIntro`
+- `businessHoursText`
+- `footerDescription`
+
+### 4.7 门店信息
+
+#### `GET /api/shop-info`
+
+返回：
+
+- 门店名称
+- 电话
+- 微信
+- 地址
+- 经纬度
+- 每周营业时间
+
+### 4.8 品牌故事
+
+#### `GET /api/brand-story`
+
+返回：
+
+- `title`
+- `subtitle`
+- `content`
+- `images`
+
+### 4.9 关于我们页内容
+
+#### `GET /api/about-page`
+
+返回：
+
+- `heroImage`
+- `heroEyebrow`
+- `heroTitle`
+- `heroSubtitle`
+- `storyTitle`
+- `storyContent`
+
+### 4.10 关于我们时间轴
+
+#### `GET /api/about-timeline`
+
+返回数组，每项包含：
+
+- `id`
+- `yearLabel`
+- `content`
+- `sort`
+
+### 4.11 团队成员
+
+#### `GET /api/team`
+
+返回数组，每项包含：
+
+- `id`
+- `name`
+- `title`
+- `avatar`
+- `bio`
+- `sort`
+
+### 4.12 提交留言
+
+#### `POST /api/contact`
+
+请求体：
+
+```json
+{
+  "name": "张三",
+  "phone": "13800000000",
+  "message": "想预约开业花篮"
+}
+```
+
+成功返回：
+
+```json
+{
+  "success": true
+}
+```
+
+### 4.13 上传文件
+
+#### `POST /api/uploads`
+
+请求方式：
+
+- `multipart/form-data`
+- 字段名：`file`
+
+说明：
+
+- 当前控制器中接口路径是公开的
+- 实际部署中后台页面按管理员流程使用该接口
+
+成功返回：
+
+```json
+{
+  "url": "/uploads/xxx.jpg"
+}
+```
+
+## 5. 管理员接口
+
+## 5.1 登录
+
+#### `POST /api/admin/login`
+
+请求体：
+
+```json
+{
+  "username": "admin",
+  "password": "Floral@2026"
+}
+```
+
+返回：
+
+```json
+{
+  "token": "xxxxx",
+  "username": "admin"
+}
+```
+
+## 5.2 当前管理员
+
+#### `GET /api/admin/me`
+
+返回：
+
+```json
+{
+  "username": "admin"
+}
+```
+
+## 5.3 用户留言列表
+
+#### `GET /api/admin/contacts`
+
+查询参数：
+
+- `page`
+- `limit`
+- `keyword`
+- `status`
+
+其中 `status` 支持：
+
+- `all`
+- `read`
+- `unread`
+
+返回：
+
+```json
+{
+  "list": [],
+  "total": 10,
+  "page": 1,
+  "limit": 10
+}
+```
+
+## 5.4 标记留言已读
+
+#### `PATCH /api/admin/contacts/{id}/read`
+
+返回更新后的留言对象。
+
+## 5.5 创建作品
+
+#### `POST /api/flowers`
+
+请求体示例：
+
+```json
+{
+  "id": "wedding-001",
+  "name": "白绿婚礼手捧",
+  "categoryId": "wedding",
+  "images": ["/catalog/wedding/wedding-001-a.svg"],
+  "price": 599,
+  "description": "适合轻仪式感婚礼场景",
+  "materials": ["白玫瑰", "尤加利"],
+  "meaning": "纯净与陪伴",
+  "tags": ["婚礼", "白绿"],
+  "featured": true,
+  "sort": 10,
+  "createdAt": "2026-05-14T00:00:00.000Z"
+}
+```
+
+说明：
+
+- `name` 必填
+- `categoryId` 必填
+- `id` 可传，也可由服务端生成
+
+## 5.6 更新作品
+
+#### `PUT /api/flowers/{id}`
+
+请求体与创建作品相同。
+
+## 5.7 删除作品
+
+#### `DELETE /api/flowers/{id}`
+
+成功返回：
+
+```http
+204 No Content
+```
+
+## 5.8 更新站点配置
+
+#### `PUT /api/site-config`
+
+这个接口用于统一更新首页、门店和品牌故事相关内容。
+
+核心可写字段：
+
+- `brandName`
+- `heroEyebrow`
+- `heroTitle`
+- `heroDescription`
+- `heroImage`
+- `primaryCtaText`
+- `secondaryCtaText`
+- `stats`
+- `contactIntro`
+- `businessHoursText`
+- `footerDescription`
+- `phone`
+- `wechat`
+- `address`
+- `latitude`
+- `longitude`
+- `storyTitle`
+- `storySubtitle`
+- `storyContent`
+- `storyImages`
+
+## 5.9 获取关于我们页配置
+
+#### `GET /api/admin/about-page`
+
+返回关于我们页可编辑内容。
+
+## 5.10 更新关于我们页配置
+
+#### `PUT /api/admin/about-page`
+
+请求体：
+
+```json
+{
+  "heroImage": "/uploads/about-hero.jpg",
+  "heroEyebrow": "About Floral Whisper",
+  "heroTitle": "关于我们",
+  "heroSubtitle": "用花表达空间与情绪",
+  "storyTitle": "品牌故事",
+  "storyContent": "......"
+}
+```
+
+## 5.11 获取关于我们时间轴
+
+#### `GET /api/admin/about-timeline`
+
+返回时间轴数组。
+
+## 5.12 新增时间轴条目
+
+#### `POST /api/admin/about-timeline`
+
+请求体：
+
+```json
+{
+  "id": "timeline-2024",
+  "yearLabel": "2024",
+  "content": "完成品牌空间升级",
+  "sort": 10
+}
+```
+
+## 5.13 更新时间轴条目
+
+#### `PUT /api/admin/about-timeline/{id}`
+
+请求体与新增相同。
+
+## 5.14 删除时间轴条目
+
+#### `DELETE /api/admin/about-timeline/{id}`
+
+成功返回：
+
+```http
+204 No Content
+```
+
+## 5.15 获取团队成员
+
+#### `GET /api/admin/team`
+
+返回团队成员数组。
+
+## 5.16 新增团队成员
+
+#### `POST /api/admin/team`
+
+请求体：
+
+```json
+{
+  "id": "team-001",
+  "name": "林青",
+  "title": "主理花艺师",
+  "avatar": "/uploads/team-001.jpg",
+  "bio": "负责婚礼与品牌空间花艺",
+  "sort": 10
+}
+```
+
+## 5.17 更新团队成员
+
+#### `PUT /api/admin/team/{id}`
+
+请求体与新增相同。
+
+## 5.18 删除团队成员
+
+#### `DELETE /api/admin/team/{id}`
+
+成功返回：
+
+```http
+204 No Content
+```
+
+## 6. 状态码约定
+
+常见状态码：
+
+- `200 OK`：查询或更新成功
+- `201 Created`：创建成功
+- `204 No Content`：删除成功
+- `400 Bad Request`：参数错误
+- `401 Unauthorized`：未登录或 token 无效
+- `403 Forbidden`：无权限
+- `404 Not Found`：资源不存在
+- `500 Internal Server Error`：服务端异常
+
+## 7. 调试方式
+
+开发环境可直接访问 Swagger：
+
+```text
+http://localhost:3001/swagger-ui.html
+```
+
+部署环境下，如容器未对后端单独暴露端口，通常通过 Web 统一入口访问业务接口。

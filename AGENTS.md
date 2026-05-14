@@ -1,35 +1,42 @@
 # 花语时光鲜花店展示系统
 
-Monorepo 风格目录结构（非 npm workspaces，各子目录独立 `package.json` + `node_modules`）。
-Express 5 后端 + React 19 + Vite 7 + Tailwind 3 + Ant Design 6 PC Web + 微信小程序原生（TypeScript + WXML + WXSS）。
+当前默认基线是企业级 Docker 部署：
+
+- `mysql`：MySQL 8
+- `flower-shop-backend-java`：Spring Boot 3 + MyBatis-Plus + Flyway
+- `flower-shop-web`：React 19 + Vite 7 + Ant Design 6，产物由 Nginx 托管并反代 `/api`、`/uploads`
+- `flower-shop-mini`：微信小程序原生（TypeScript + WXML + WXSS）
+
+`flower-shop-backend/` 仍保留为历史兼容实现，但不是默认运行主线。
 
 ## QUICK START
 
 ```bash
-# 1. 启动后端（默认 :3001）
-cd flower-shop-backend && npm install && npm run dev
+# 一键部署整站
+./deploy.sh
 
-# 2. 启动 Web（默认 :5173，需后端运行中）
+# 或分别启动
+docker compose up -d --build
+
+# Web 本地开发
 cd flower-shop-web && npm install && npm run dev
 
-# 3. 小程序：微信开发者工具导入 flower-shop-mini
-```
+# Java 后端本地开发
+cd flower-shop-backend-java && mvn spring-boot:run
 
-| 命令 | 含义 |
-|------|------|
-| `npm run dev` (backend) | `node --watch server.js`（Node 内置 watch，非 nodemon） |
-| `npm run dev` (web) | `vite --host 0.0.0.0` |
-| `npm run build` (web) | `tsc -b && vite build`（先类型检查再构建） |
+# 小程序：微信开发者工具导入 flower-shop-mini
+```
 
 ## KEY FACTS
 
-- **后端**: Express 5（ESM, `"type": "module"`），单文件 `server.js` 包含所有路由，JSON 文件数据库 `data/db.json`，multer 图片上传至 `uploads/`
-- **Web**: React 19 + Vite 7 + Tailwind 3 + Ant Design 6。路径别名 `@/` → `src/`，`@shared/` → `../shared/`
-- **小程序**: 原生框架，5 个页面（首页/分类/详情/关于/联系），无购物车/支付/订单
-- **认证**: Base64URL 编码 HMAC-SHA256 token，`Authorization: Bearer <token>`。默认账号 `admin` / `Floral@2026`
-- **共享代码**: `shared/types.ts`、`shared/data.ts`、`shared/api.ts`。小程序另有本地副本 `flower-shop-mini/shared/`
-- **无 lint / 无 test**: 三个子项目均无 lint 脚本或测试框架（`npm run lint` / `npm test` 不可用）
-- **Web 构建**: 必须 `tsc -b && vite build`（跳过 tsc 会漏类型错误）。React/Ant Design/lucide-react 已配置独立 chunk
+- **默认部署**：使用仓库根 `docker-compose.yml`
+- **后端主线**：`flower-shop-backend-java/`，接口前缀统一为 `/api/*`
+- **Web API 基址**：开发态通过 `VITE_API_BASE_URL` 指向后端；容器部署态默认走同源 `/api`
+- **管理员默认账号**：`admin` / `Floral@2026`，生产环境必须改
+- **上传目录**：`flower-shop-backend-java/uploads/`，由 compose bind mount 持久化
+- **共享代码**：`shared/` 供 Web 使用；小程序使用 `flower-shop-mini/shared/` 本地副本
+- **Web 构建**：必须 `tsc -b && vite build`
+- **Docker 一键脚本**：`deploy.sh`
 
 ## WEB ROUTES
 
@@ -41,29 +48,40 @@ cd flower-shop-web && npm install && npm run dev
 | `/about` | 关于我们 | 无 |
 | `/contact` | 联系我们 | 无 |
 | `/admin/login` | 管理员登录 | 无 |
-| `/admin/flowers` | 作品管理 CRUD | Bearer token |
-| `/admin/settings` | 站点配置 | Bearer token |
+| `/admin` | 运营总览 | Bearer token |
+| `/admin/flowers` | 作品管理 | Bearer token |
+| `/admin/settings` | 内容配置 | Bearer token |
+| `/admin/contacts` | 用户留言 | Bearer token |
 
 ## ENV VARS
 
 | 变量 | 所属 | 默认值 |
 |------|------|--------|
-| `PORT` | 后端 | `3001` |
-| `PUBLIC_BASE_URL` | 后端 | `http://localhost:PORT` |
-| `ADMIN_USERNAME` | 后端 | `admin` |
-| `ADMIN_PASSWORD` | 后端 | `Floral@2026` |
-| `ADMIN_AUTH_SECRET` | 后端 | `floral-whisper-time-dev-secret` |
-| `VITE_API_BASE_URL` | Web | `http://localhost:3001` |
-| `API_BASE_URL` (config/api.ts) | 小程序 | `http://localhost:3001` |
+| `WEB_PORT` | Docker Web | `8080` |
+| `MYSQL_DATABASE` | Docker MySQL | `floral_whisper_time` |
+| `MYSQL_USER` | Docker MySQL | `floral_whisper` |
+| `MYSQL_PASSWORD` | Docker MySQL | `change-me` |
+| `MYSQL_ROOT_PASSWORD` | Docker MySQL | `change-root-password` |
+| `PORT` | Java 后端 | `3001` |
+| `DB_URL` | Java 后端 | `jdbc:mysql://mysql:3306/...` |
+| `DB_USERNAME` | Java 后端 | `floral_whisper` |
+| `DB_PASSWORD` | Java 后端 | `change-me` |
+| `ADMIN_USERNAME` | Java 后端 | `admin` |
+| `ADMIN_PASSWORD` | Java 后端 | `Floral@2026` |
+| `ADMIN_AUTH_SECRET` | Java 后端 | `replace-with-a-long-random-secret` |
+| `JWT_ISSUER` | Java 后端 | `flower-shop-backend-java` |
+| `CORS_ALLOWED_ORIGIN_PATTERNS` | Java 后端 | `*` |
+| `VITE_API_BASE_URL` | Web 本地开发 | `http://localhost:3001` |
+| `API_BASE_URL` | 小程序 | `http://localhost:3001` |
 
 ## ANTI-PATTERNS
 
-- 勿直接编辑 `data/db.json` — 通过 API 写入，保持 JSON 一致性
-- 勿删除 `shared/` 下文件 — 被双端引用
-- 勿在后端用 `require()` — ESM only
-- Web 构建勿跳过 `tsc -b` — 类型检查在 build 流程中
-- 小程序端勿引根 `shared/` — 使用 `flower-shop-mini/shared/` 本地副本
+- 勿把 `.env`、上传目录、构建日志提交进仓库
+- 勿直接依赖根目录旧版 `project.config.json`，小程序只认 `flower-shop-mini/` 内配置
+- Web 构建勿跳过 `tsc -b`
+- 勿删除 `shared/` 与 `flower-shop-mini/shared/` 而不同时处理引用
+- 若修改 Docker 部署链，优先验证 `./deploy.sh` 和 `docker compose up -d --build`
 
 ## SUBDIR AGENTS
 
-每个子目录另有独立的 `AGENTS.md` 提供更细粒度的 API 表、页面结构、组件清单。
+每个子目录都有独立 `AGENTS.md`，描述该子项目的边界、命令与注意事项。
