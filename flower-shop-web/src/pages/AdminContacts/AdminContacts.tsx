@@ -160,7 +160,15 @@ export function AdminContacts() {
       </section>
 
       <section className="admin-toolbar p-5">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_140px]">
+        <div>
+          <p className="section-eyebrow">Inbox Filters</p>
+          <h3 className="admin-section-title mt-2 text-xl">留言筛选</h3>
+          <p className="mt-2 text-sm leading-6 text-muted">按访客、联系方式和已读状态快速定位需要优先处理的留言。</p>
+        </div>
+        <div className="mt-5">
+          <p className="admin-filter-caption">Filter Controls</p>
+        </div>
+        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1fr)_220px_140px]">
           <Input
             allowClear
             value={keyword}

@@ -124,11 +124,17 @@ export function AdminShell() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         width={320}
-        title="后台导航"
-        className="lg:hidden"
+        title={
+          <div className="admin-drawer-title">
+            <p>Navigation</p>
+            <h3>后台导航</h3>
+            <span>在移动端快速切换总览、作品、配置与留言管理。</span>
+          </div>
+        }
+        className="admin-mobile-drawer lg:hidden"
       >
         <div className="flex h-full flex-col">
-          <div className="rounded-lg border border-black/6 bg-[#f6f3ee] px-4 py-4">
+          <div className="admin-subpanel px-4 py-4">
             <p className="text-sm font-semibold text-[#1b281e]">花语时光后台</p>
             <p className="mt-2 text-sm leading-6 text-muted">移动端以抽屉方式浏览后台导航与操作入口。</p>
           </div>

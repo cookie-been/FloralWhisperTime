@@ -90,6 +90,15 @@ a {
 
 .ant-table-wrapper .ant-table-tbody > tr > td {
   vertical-align: top;
+  padding-top: 18px !important;
+  padding-bottom: 18px !important;
+}
+
+.ant-table-wrapper .ant-table-pagination.ant-pagination {
+  margin: 0;
+  padding: 16px 20px 18px;
+  border-top: 1px solid rgba(41, 57, 46, 0.08);
+  background: rgba(251, 248, 242, 0.72);
 }
 
 .surface-card {
@@ -166,6 +175,20 @@ a {
   border: 1px solid rgba(41, 57, 46, 0.08);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(251, 248, 242, 0.94), rgba(247, 242, 233, 0.94));
+}
+
+.admin-filter-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-filter-caption {
+  margin: 0 0 14px;
+  color: #6d7e72;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .admin-subpanel {
@@ -262,4 +285,15 @@ a {
   color: #6d7e72;
   font-size: 14px;
   line-height: 1.8;
+}
+
+.admin-mobile-drawer .ant-drawer-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(41, 57, 46, 0.08);
+  background: linear-gradient(180deg, rgba(251, 248, 242, 0.96), rgba(247, 242, 233, 0.92));
+}
+
+.admin-mobile-drawer .ant-drawer-body {
+  padding: 20px;
+  background: #f6f3ee;
 }

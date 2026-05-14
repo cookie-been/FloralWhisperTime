@@ -311,7 +311,10 @@ export function AdminFlowers() {
           </Button>
         </div>
 
-        <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_220px_220px]">
+        <div className="mt-5">
+          <p className="admin-filter-caption">Filter Controls</p>
+        </div>
+        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1.3fr)_220px_220px]">
           <Input
             size="large"
             value={search}
