@@ -10,6 +10,10 @@ ENV_FILE="$REPO_ROOT/.env"
 WEB_PORT_OVERRIDE=""
 SKIP_BUILD=0
 PULL_BASE=0
+GIT_PULL=1
+GIT_REMOTE="origin"
+GIT_BRANCH=""
+ALLOW_DIRTY_GIT=0
 DETACH=1
 TIMEOUT_SECONDS=300
 GENERATED_ADMIN_PASSWORD=""
@@ -30,6 +34,10 @@ Usage: ./deploy.sh [options]
 Options:
   --env-file PATH      Use a custom compose env file
   --web-port PORT      Override WEB_PORT for this deployment
+  --branch NAME        Pull and deploy the specified git branch
+  --remote NAME        Git remote name used for pull, default origin
+  --no-git-pull        Skip pulling latest code from git remote
+  --allow-dirty-git    Allow deployment without a clean git worktree
   --skip-build         Reuse existing images and start containers only
   --pull               Pull newer base images before building
   --timeout SECONDS    Health check timeout, default 300
@@ -116,11 +124,74 @@ ensure_prerequisites() {
   require_cmd sed
   require_cmd grep
   require_cmd tr
+  if (( GIT_PULL == 1 )); then
+    require_cmd git
+  fi
 
   docker compose version >/dev/null 2>&1 || fail "docker compose is not available"
   [[ -f "$COMPOSE_FILE" ]] || fail "Missing compose file: $COMPOSE_FILE"
 
   mkdir -p "$REPO_ROOT/flower-shop-backend-java/uploads"
+}
+
+ensure_git_context() {
+  [[ -d "$REPO_ROOT/.git" ]] || fail "Git pull is enabled, but $REPO_ROOT is not a git repository"
+  git -C "$REPO_ROOT" remote get-url "$GIT_REMOTE" >/dev/null 2>&1 || fail "Git remote does not exist: $GIT_REMOTE"
+}
+
+current_git_branch() {
+  git -C "$REPO_ROOT" branch --show-current
+}
+
+ensure_clean_git_worktree() {
+  if (( ALLOW_DIRTY_GIT == 1 )); then
+    return
+  fi
+
+  if [[ -n "$(git -C "$REPO_ROOT" status --short)" ]]; then
+    fail "Git worktree is not clean. Commit or stash changes first, or rerun with --allow-dirty-git"
+  fi
+}
+
+checkout_git_branch_if_needed() {
+  local current_branch target_branch
+
+  current_branch="$(current_git_branch)"
+  target_branch="$1"
+
+  [[ -n "$target_branch" ]] || fail "Cannot determine deployment branch"
+
+  if [[ "$current_branch" == "$target_branch" ]]; then
+    return
+  fi
+
+  if git -C "$REPO_ROOT" show-ref --verify --quiet "refs/heads/$target_branch"; then
+    log "Switching branch: $current_branch -> $target_branch"
+    git -C "$REPO_ROOT" checkout "$target_branch"
+    return
+  fi
+
+  log "Creating local branch from $GIT_REMOTE/$target_branch"
+  git -C "$REPO_ROOT" checkout -b "$target_branch" --track "$GIT_REMOTE/$target_branch"
+}
+
+pull_latest_code() {
+  local target_branch current_branch
+
+  ensure_git_context
+  ensure_clean_git_worktree
+
+  current_branch="$(current_git_branch)"
+  target_branch="${GIT_BRANCH:-$current_branch}"
+
+  [[ -n "$target_branch" ]] || fail "Unable to determine git branch for deployment"
+
+  log "Fetching latest code from $GIT_REMOTE/$target_branch..."
+  git -C "$REPO_ROOT" fetch "$GIT_REMOTE" "$target_branch"
+  checkout_git_branch_if_needed "$target_branch"
+
+  log "Updating local branch with remote changes..."
+  git -C "$REPO_ROOT" pull --ff-only "$GIT_REMOTE" "$target_branch"
 }
 
 wait_for_url() {
@@ -167,6 +238,24 @@ while [[ $# -gt 0 ]]; do
       WEB_PORT_OVERRIDE="$2"
       shift 2
       ;;
+    --branch)
+      [[ $# -ge 2 ]] || fail "--branch requires a value"
+      GIT_BRANCH="$2"
+      shift 2
+      ;;
+    --remote)
+      [[ $# -ge 2 ]] || fail "--remote requires a value"
+      GIT_REMOTE="$2"
+      shift 2
+      ;;
+    --no-git-pull)
+      GIT_PULL=0
+      shift
+      ;;
+    --allow-dirty-git)
+      ALLOW_DIRTY_GIT=1
+      shift
+      ;;
     --skip-build)
       SKIP_BUILD=1
       shift
@@ -195,6 +284,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 ensure_prerequisites
+
+if (( GIT_PULL == 1 )); then
+  pull_latest_code
+fi
+
 init_env_file
 warn_default_secrets
 
@@ -207,6 +301,10 @@ WEB_PORT="${WEB_PORT:-8080}"
 
 log "Using env file: $ENV_FILE"
 log "Web port: $WEB_PORT"
+if (( GIT_PULL == 1 )); then
+  log "Git source: $(git -C "$REPO_ROOT" remote get-url "$GIT_REMOTE")"
+  log "Git branch: $(current_git_branch)"
+fi
 
 if (( PULL_BASE == 1 )); then
   log "Pulling newer base images..."

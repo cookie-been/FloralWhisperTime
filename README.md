@@ -35,6 +35,7 @@
 
 脚本会自动：
 
+- 从当前 git 远程拉取最新代码（默认 `origin` 和当前分支）
 - 首次根据 `.env.example` 生成 `.env`
 - 自动生成数据库密码、管理员密码、签名密钥
 - 创建上传目录
@@ -46,9 +47,18 @@
 
 ```bash
 ./deploy.sh --env-file .env.production --web-port 8081
+./deploy.sh --branch main
+./deploy.sh --remote origin --branch main
+./deploy.sh --no-git-pull
 ./deploy.sh --pull
 ./deploy.sh --skip-build
 ```
+
+说明：
+
+- 默认会先执行 `git fetch` + `git pull --ff-only`
+- 如果本地 git 工作区不干净，脚本会停止，避免把本地修改直接冲掉
+- 确认需要跳过这层保护时，可显式传 `--allow-dirty-git`
 
 默认访问地址：`http://localhost:8080`
 

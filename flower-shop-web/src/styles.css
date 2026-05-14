@@ -392,6 +392,26 @@ a {
   margin-inline-end: 0;
 }
 
+.gallery-search.ant-input-search .ant-input-affix-wrapper {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.gallery-search.ant-input-search .ant-input {
+  line-height: 1.5;
+}
+
+.gallery-search.ant-input-search .ant-input-suffix,
+.gallery-search.ant-input-search .ant-input-prefix,
+.gallery-search.ant-input-search .ant-input-search-button,
+.gallery-search.ant-input-search .ant-input-search-icon,
+.gallery-search.ant-input-search .ant-input-clear-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 767px) {
   .ant-segmented {
     width: 100%;

@@ -103,7 +103,7 @@ export function Gallery() {
               <Input.Search
                 allowClear
                 placeholder="搜索花束、花材或标签"
-                className="md:col-span-2"
+                className="gallery-search md:col-span-2"
                 onSearch={(keyword) => setQuery((prev) => ({ ...prev, keyword, page: 1 }))}
               />
             </div>
