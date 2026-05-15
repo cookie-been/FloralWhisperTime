@@ -19,8 +19,13 @@ import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.CacheConfig;
 import com.floralwhisper.dto.ConfigImportResponse;
+import com.floralwhisper.dto.AboutPageResponse;
+import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
+import com.floralwhisper.dto.ShopInfoResponse;
+import com.floralwhisper.dto.SiteConfigResponse;
+import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.protection.ProtectionMetrics;
 import com.floralwhisper.protection.RouteProtectionGroup;
 import com.floralwhisper.entity.AboutPage;
@@ -220,6 +225,94 @@ class SiteServiceTest {
 
     verify(siteConfigMapper).updateById(any(SiteConfig.class));
     verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
+  }
+
+  @Test
+  void cleanReleaseDefaultsDoNotSeedDemoContent() {
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
+    ShopHourMapper shopHourMapper = mock(ShopHourMapper.class);
+    AboutPageMapper aboutPageMapper = mock(AboutPageMapper.class);
+    AboutTimelineEntryMapper aboutTimelineEntryMapper = mock(AboutTimelineEntryMapper.class);
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    BrandStoryMapper brandStoryMapper = mock(BrandStoryMapper.class);
+    BrandStoryImageMapper brandStoryImageMapper = mock(BrandStoryImageMapper.class);
+    TeamMemberMapper teamMemberMapper = mock(TeamMemberMapper.class);
+
+    when(siteConfigMapper.selectById(1L)).thenReturn(null);
+    when(shopInfoMapper.selectById(1L)).thenReturn(null);
+    when(aboutPageMapper.selectById(1L)).thenReturn(null);
+    when(aiSettingsMapper.selectById(1L)).thenReturn(null);
+    when(brandStoryMapper.selectById(1L)).thenReturn(null);
+    when(shopHourMapper.selectList(any())).thenReturn(List.of());
+    when(aboutTimelineEntryMapper.selectList(any())).thenReturn(List.of());
+    when(teamMemberMapper.selectList(any())).thenReturn(List.of());
+    when(brandStoryImageMapper.selectList(any())).thenReturn(List.of());
+
+    SiteService siteService = createSiteService(
+        siteConfigMapper,
+        shopInfoMapper,
+        shopHourMapper,
+        aboutPageMapper,
+        aboutTimelineEntryMapper,
+        aiSettingsMapper,
+        brandStoryMapper,
+        brandStoryImageMapper,
+        mock(OperationLogMapper.class),
+        teamMemberMapper,
+        mock(AuditLogService.class));
+
+    SiteConfigResponse siteConfig = siteService.getSiteConfig();
+    ShopInfoResponse shopInfo = siteService.getShopInfo();
+    BrandStoryResponse brandStory = siteService.getBrandStory();
+    AboutPageResponse aboutPage = siteService.getAboutPage();
+    List<AboutTimelineEntryResponse> timeline = siteService.getAboutTimeline();
+    List<TeamMember> teamMembers = siteService.getAdminTeamMembers();
+
+    assertEquals("花语时光", siteConfig.getBrandName());
+    assertEquals("花语时光", siteConfig.getHeroTitle());
+    assertEquals("", siteConfig.getHeroEyebrow());
+    assertEquals("", siteConfig.getHeroDescription());
+    assertEquals("", siteConfig.getHeroImage());
+    assertEquals("浏览作品", siteConfig.getPrimaryCtaText());
+    assertEquals("联系门店", siteConfig.getSecondaryCtaText());
+    assertEquals("", siteConfig.getContactIntro());
+    assertEquals("", siteConfig.getBusinessHoursText());
+    assertEquals("", siteConfig.getFooterDescription());
+
+    assertEquals("花语时光", shopInfo.getName());
+    assertEquals("", shopInfo.getPhone());
+    assertEquals("", shopInfo.getWechat());
+    assertEquals("", shopInfo.getAddress());
+    assertEquals(java.math.BigDecimal.ZERO, shopInfo.getLatitude());
+    assertEquals(java.math.BigDecimal.ZERO, shopInfo.getLongitude());
+    assertNotNull(shopInfo.getHours());
+    assertNull(shopInfo.getHours().getMonday());
+    assertNull(shopInfo.getHours().getSunday());
+
+    assertEquals("", brandStory.getTitle());
+    assertEquals("", brandStory.getSubtitle());
+    assertEquals("", brandStory.getContent());
+    assertTrue(brandStory.getImages().isEmpty());
+
+    assertEquals("", aboutPage.getHeroImage());
+    assertEquals("", aboutPage.getHeroEyebrow());
+    assertEquals("关于我们", aboutPage.getHeroTitle());
+    assertEquals("", aboutPage.getHeroSubtitle());
+    assertEquals("品牌故事", aboutPage.getStoryTitle());
+    assertEquals("", aboutPage.getStoryContent());
+
+    assertTrue(timeline.isEmpty());
+    assertTrue(teamMembers.isEmpty());
+
+    verify(siteConfigMapper, times(1)).insert(any(SiteConfig.class));
+    verify(shopInfoMapper, times(1)).insert(any(ShopInfo.class));
+    verify(brandStoryMapper, times(1)).insert(any(BrandStory.class));
+    verify(aboutPageMapper, times(1)).insert(any(AboutPage.class));
+    verify(aiSettingsMapper, never()).insert(any(AiSettings.class));
+    verify(shopHourMapper, never()).insert(any(ShopHour.class));
+    verify(aboutTimelineEntryMapper, never()).insert(any(AboutTimelineEntry.class));
+    verify(teamMemberMapper, never()).insert(any(TeamMember.class));
   }
 
   @Test

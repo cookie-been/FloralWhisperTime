@@ -603,14 +603,12 @@ public class SiteService {
 
   @Cacheable("aboutTimeline")
   public List<AboutTimelineEntryResponse> getAboutTimeline() {
-    ensureDefaultTimelineEntries();
     return aboutTimelineEntryMapper.selectList(new LambdaQueryWrapper<AboutTimelineEntry>().orderByAsc(AboutTimelineEntry::getSort))
         .stream().map(this::toAboutTimelineEntryResponse).toList();
   }
 
   @Cacheable("team")
   public List<TeamMember> getAdminTeamMembers() {
-    ensureDefaultTeamMembers();
     return teamMemberMapper.selectList(new LambdaQueryWrapper<TeamMember>().orderByDesc(TeamMember::getSort));
   }
 
@@ -1036,7 +1034,6 @@ public class SiteService {
   }
 
   private BusinessHoursResponse getBusinessHours() {
-    ensureDefaultHours();
     BusinessHoursResponse hours = new BusinessHoursResponse();
     List<ShopHour> rows = shopHourMapper.selectList(new LambdaQueryWrapper<ShopHour>().orderByAsc(ShopHour::getId));
     for (ShopHour row : rows) {
@@ -1176,15 +1173,15 @@ public class SiteService {
     created.setId(SINGLETON_ID);
     ShopInfo shopInfo = shopInfoMapper.selectById(SINGLETON_ID);
     created.setBrandName(shopInfo != null && notBlank(shopInfo.getName()) ? shopInfo.getName() : "花语时光");
-    created.setHeroEyebrow("清新文艺 · 自然温暖");
+    created.setHeroEyebrow("");
     created.setHeroTitle(created.getBrandName());
-    created.setHeroDescription("用季节花材和克制色彩，制作适合婚礼、日常赠礼与空间陈列的鲜花作品。");
-    created.setHeroImage("https://picsum.photos/seed/floral-hero/1920/1080");
+    created.setHeroDescription("");
+    created.setHeroImage("");
     created.setPrimaryCtaText("浏览作品");
     created.setSecondaryCtaText("联系门店");
-    created.setContactIntro("欢迎预约花束、婚礼花艺、商业空间花艺和节日定制服务。");
-    created.setBusinessHoursText("周一至周五 09:30-21:00，周末 10:00-21:30");
-    created.setFooterDescription("纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。");
+    created.setContactIntro("");
+    created.setBusinessHoursText("");
+    created.setFooterDescription("");
     created.setLicenseWarningDays(30);
     siteConfigMapper.insert(created);
     return created;
@@ -1260,7 +1257,6 @@ public class SiteService {
     created.setLatitude(BigDecimal.ZERO);
     created.setLongitude(BigDecimal.ZERO);
     shopInfoMapper.insert(created);
-    ensureDefaultHours();
     return created;
   }
 
@@ -1269,9 +1265,9 @@ public class SiteService {
     if (current != null) return current;
     BrandStory created = new BrandStory();
     created.setId(SINGLETON_ID);
-    created.setTitle("让花束像一封慢慢抵达的信");
-    created.setSubtitle("花语时光相信，每一束花都应该有清楚的情绪和自然的呼吸。");
-    created.setContent("我们从季节花材出发，为婚礼、日常赠礼、商业空间和私人宴会设计花艺。店铺坚持少量精选、手工制作，用克制的色彩和舒展的结构表达真诚心意。");
+    created.setTitle("");
+    created.setSubtitle("");
+    created.setContent("");
     brandStoryMapper.insert(created);
     return created;
   }
@@ -1281,30 +1277,14 @@ public class SiteService {
     if (current != null) return current;
     AboutPage created = new AboutPage();
     created.setId(SINGLETON_ID);
-    created.setHeroImage("https://picsum.photos/seed/floral-about/1920/1080");
-    created.setHeroEyebrow("About Floral Whisper Time");
-    created.setHeroTitle("让花束像一封慢慢抵达的信");
-    created.setHeroSubtitle("花语时光相信，每一束花都应该有清楚的情绪和自然的呼吸。");
+    created.setHeroImage("");
+    created.setHeroEyebrow("");
+    created.setHeroTitle("关于我们");
+    created.setHeroSubtitle("");
     created.setStoryTitle("品牌故事");
-    created.setStoryContent("我们从季节花材出发，为婚礼、日常赠礼、商业空间和私人宴会设计花艺。店铺坚持少量精选、手工制作，用克制的色彩和舒展的结构表达真诚心意。");
+    created.setStoryContent("");
     aboutPageMapper.insert(created);
     return created;
-  }
-
-  private void ensureDefaultTimelineEntries() {
-    if (!aboutTimelineEntryMapper.selectList(null).isEmpty()) return;
-    insertTimelineEntry("timeline_2021", "2021", "花语时光第一间工作室成立，专注日常花礼。", 0);
-    insertTimelineEntry("timeline_2023", "2023", "开始承接婚礼、展陈与品牌活动花艺设计。", 1);
-    insertTimelineEntry("timeline_2026", "2026", "升级双端展示系统，统一展示作品与门店信息。", 2);
-  }
-
-  private void insertTimelineEntry(String id, String yearLabel, String content, int sort) {
-    AboutTimelineEntry entity = new AboutTimelineEntry();
-    entity.setId(id);
-    entity.setYearLabel(yearLabel);
-    entity.setContent(content);
-    entity.setSort(sort);
-    aboutTimelineEntryMapper.insert(entity);
   }
 
   private AboutTimelineEntry requireTimelineEntry(String id) {
@@ -1318,27 +1298,6 @@ public class SiteService {
         .stream().map(AboutTimelineEntry::getSort).filter(value -> value != null).findFirst().orElse(-1) + 1;
   }
 
-  private void ensureDefaultTeamMembers() {
-    if (!teamMemberMapper.selectList(null).isEmpty()) return;
-    TeamMember one = new TeamMember();
-    one.setId("designer_01");
-    one.setName("林汐");
-    one.setTitle("主理花艺师");
-    one.setAvatar("https://picsum.photos/seed/team-1/600/600");
-    one.setBio("负责品牌花艺风格、季节系列与空间陈列方向。");
-    one.setSort(2);
-    teamMemberMapper.insert(one);
-
-    TeamMember two = new TeamMember();
-    two.setId("designer_02");
-    two.setName("周宁");
-    two.setTitle("婚礼与活动花艺师");
-    two.setAvatar("https://picsum.photos/seed/team-2/600/600");
-    two.setBio("负责婚礼花艺、品牌活动现场和大型空间花艺布置。");
-    two.setSort(1);
-    teamMemberMapper.insert(two);
-  }
-
   private TeamMember requireTeamMember(String id) {
     TeamMember current = teamMemberMapper.selectById(id);
     if (current == null) throw new ApiException(HttpStatus.NOT_FOUND, "团队成员不存在");
@@ -1348,26 +1307,6 @@ public class SiteService {
   private int nextTeamSort() {
     return teamMemberMapper.selectList(new LambdaQueryWrapper<TeamMember>().orderByDesc(TeamMember::getSort))
         .stream().map(TeamMember::getSort).filter(value -> value != null).findFirst().orElse(-1) + 1;
-  }
-
-  private void ensureDefaultHours() {
-    if (!shopHourMapper.selectList(null).isEmpty()) return;
-    insertDefaultHour("monday", "09:30", "21:00", false);
-    insertDefaultHour("tuesday", "09:30", "21:00", false);
-    insertDefaultHour("wednesday", "09:30", "21:00", false);
-    insertDefaultHour("thursday", "09:30", "21:00", false);
-    insertDefaultHour("friday", "09:30", "21:30", false);
-    insertDefaultHour("saturday", "10:00", "21:30", false);
-    insertDefaultHour("sunday", "10:00", "20:30", false);
-  }
-
-  private void insertDefaultHour(String weekday, String openTime, String closeTime, boolean off) {
-    ShopHour entity = new ShopHour();
-    entity.setWeekday(weekday);
-    entity.setOpenTime(openTime);
-    entity.setCloseTime(closeTime);
-    entity.setOff(off);
-    shopHourMapper.insert(entity);
   }
 
   private boolean notBlank(String value) {

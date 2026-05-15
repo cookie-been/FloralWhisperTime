@@ -59,6 +59,12 @@ export function About() {
         })),
     [timeline],
   );
+  const heroImage = aboutPage?.heroImage || "/home-hero/hero-2.jpg";
+  const heroEyebrow = aboutPage?.heroEyebrow || "关于我们";
+  const heroTitle = aboutPage?.heroTitle || "关于我们";
+  const heroSubtitle = aboutPage?.heroSubtitle || "品牌信息与服务内容由后台统一维护。";
+  const storyTitle = aboutPage?.storyTitle || "品牌故事";
+  const storyContent = aboutPage?.storyContent || "当前暂无品牌故事内容。";
 
   if (loading) {
     return (
@@ -80,13 +86,13 @@ export function About() {
 
   return (
     <section>
-      <div className="relative min-h-[380px] bg-cover bg-center sm:min-h-[520px]" style={{ backgroundImage: `url(${aboutPage.heroImage})` }}>
+      <div className="relative min-h-[380px] bg-cover bg-center sm:min-h-[520px]" style={{ backgroundImage: `url(${heroImage})` }}>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,26,18,0.72),rgba(15,26,18,0.12))]" />
         <div className="relative mx-auto flex min-h-[380px] max-w-7xl items-center px-4 sm:min-h-[520px] sm:px-6 lg:px-8">
           <div className="max-w-3xl text-white">
-            <p className="section-eyebrow text-white">{aboutPage.heroEyebrow}</p>
-            <h1 className="section-title mt-3 text-[2rem] text-white sm:text-4xl lg:text-5xl">{aboutPage.heroTitle}</h1>
-            <p className="mt-4 text-base leading-7 text-white/88 sm:mt-5 sm:text-lg sm:leading-8">{aboutPage.heroSubtitle}</p>
+            <p className="section-eyebrow text-white">{heroEyebrow}</p>
+            <h1 className="section-title mt-3 text-[2rem] text-white sm:text-4xl lg:text-5xl">{heroTitle}</h1>
+            <p className="mt-4 text-base leading-7 text-white/88 sm:mt-5 sm:text-lg sm:leading-8">{heroSubtitle}</p>
           </div>
         </div>
       </div>
@@ -94,8 +100,8 @@ export function About() {
       <div className="site-shell-section site-shell-block grid gap-10 xl:grid-cols-[0.96fr_1.04fr] xl:gap-12">
         <div>
           <p className="section-eyebrow">品牌故事</p>
-          <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">{aboutPage.storyTitle}</h2>
-          <p className="site-shell-copy mt-5 whitespace-pre-line">{aboutPage.storyContent}</p>
+          <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">{storyTitle}</h2>
+          <p className="site-shell-copy mt-5 whitespace-pre-line">{storyContent}</p>
 
           <div className="surface-card site-shell-card mt-8 text-sm text-muted">
             <p className="font-semibold text-ink">{shop?.name || "花语时光"}</p>

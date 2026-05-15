@@ -209,7 +209,11 @@ export function HomeBrandStorySection({
             <div className="grid lg:grid-cols-[1.02fr_0.98fr]">
               <div className="grid gap-3 bg-[#eef4ed] p-3 sm:p-4">
                 <div className="overflow-hidden rounded-lg">
-                  <img src={story.images[0]} alt={story.title} className="aspect-[4/4.6] w-full object-cover sm:aspect-[4/4.2] lg:min-h-[520px]" />
+                  <img
+                    src={story.images[0] || "/home-hero/hero-1.jpg"}
+                    alt={story.title || "品牌故事"}
+                    className="aspect-[4/4.6] w-full object-cover sm:aspect-[4/4.2] lg:min-h-[520px]"
+                  />
                 </div>
                 {story.images[1] ? (
                   <div className="grid grid-cols-2 gap-3">
@@ -219,7 +223,7 @@ export function HomeBrandStorySection({
                     <div className="rounded-lg border border-black/6 bg-white/78 p-4 sm:p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">品牌气质</p>
                       <p className="mt-3 text-lg font-semibold text-ink">自然、克制、适合长期被记住</p>
-                  <p className="site-shell-copy mt-3 text-sm">
+                      <p className="site-shell-copy mt-3 text-sm">
                         以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。
                       </p>
                     </div>
@@ -248,14 +252,16 @@ export function HomeBrandStorySection({
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">门店信息</p>
                     <p className="site-shell-copy mt-3 inline-flex items-start gap-2 text-sm">
                       <MapPin size={16} className="mt-1 shrink-0 text-forest" />
-                      <span>{shop?.address}</span>
+                      <span>{shop?.address || "地址信息待完善"}</span>
                     </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        ) : null}
+        ) : (
+          <PlaceholderCard height="h-[560px]" />
+        )}
       </div>
     </section>
   );

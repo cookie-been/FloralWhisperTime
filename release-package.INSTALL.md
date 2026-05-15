@@ -30,6 +30,13 @@ sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 /opt/floralwhispertime
 ```
 
+发布版初始化后的数据库默认是干净状态：
+
+- 不包含演示作品、演示图片、留言和操作日志
+- 不包含默认团队成员和默认时间轴条目
+- 仅保留必要的系统配置结构与默认管理员登录能力
+- 首次交付后需在后台补充站点信息、关于我们、AI 配置和正式业务内容
+
 如果要改安装目录：
 
 ```bash
