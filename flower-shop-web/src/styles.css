@@ -675,16 +675,24 @@ a {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 48px;
   gap: 0;
+  align-items: stretch;
 }
 
-.gallery-search .ant-input-affix-wrapper {
-  min-height: 40px;
+.gallery-search > .ant-input,
+.gallery-search > .ant-input-affix-wrapper {
+  height: 44px;
+  min-height: 44px;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 
+.gallery-search > .ant-input,
+.gallery-search > .ant-input-affix-wrapper .ant-input {
+  height: 100%;
+}
+
 .gallery-search-button.ant-btn {
-  height: 40px;
+  height: 44px;
   width: 48px;
   min-width: 48px;
   padding: 0;

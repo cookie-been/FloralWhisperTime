@@ -92,7 +92,7 @@ export function AdminLogin() {
             <div className="mb-8 text-center">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#536b59]">后台登录</p>
               <h2 className="mt-3 text-2xl font-semibold text-[#243127] sm:text-3xl">管理者登录</h2>
-              <p className="mt-3 text-sm leading-7 text-[#66756a]">登录后可维护作品、上传图片，并更新首页与品牌故事内容。</p>
+              <p className="mt-3 text-sm leading-7 text-[#66756a]">登录后可维护作品、留言、站点配置、AI 生图参数，并查看系统状态与操作日志。</p>
             </div>
 
             <Form<LoginForm> layout="vertical" onFinish={onFinish} initialValues={{ username: "admin" }}>
@@ -128,9 +128,9 @@ export function AdminLogin() {
         <div className="hidden gap-3 text-white/88 lg:grid lg:max-w-4xl lg:grid-cols-4">
           {[
             { label: "运营总览", note: "先看状态再编辑" },
-            { label: "作品工作台", note: "列表与抽屉并行操作" },
-            { label: "站点配置", note: "首页与品牌内容统一维护" },
-            { label: "AI 生图配置", note: "密钥与模型参数独立维护" },
+            { label: "作品与留言", note: "集中处理作品与访客咨询" },
+            { label: "站点配置", note: "首页、门店与关于内容统一维护" },
+            { label: "AI 与审计", note: "生图参数、系统状态与操作日志" },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-[#efe2d3]/18 bg-[#f4ede3]/10 px-4 py-4 backdrop-blur">
               <div className="flex items-center gap-2 text-white">

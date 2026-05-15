@@ -10,11 +10,11 @@ interface FlowerCardProps {
 export function FlowerCard({ flower, compact = false }: FlowerCardProps) {
   return (
     <Link to={`/gallery/${flower.id}`} className="surface-card group block h-full overflow-hidden transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(88,69,48,0.12)]">
-      <div className={compact ? "aspect-square overflow-hidden bg-mint" : "aspect-[4/4.6] overflow-hidden bg-mint"}>
+      <div className={compact ? "aspect-square overflow-hidden bg-[#edf4eb]" : "aspect-[4/4.6] overflow-hidden bg-[#edf4eb]"}>
         <img
           src={flower.images[0]}
           alt={flower.name}
-          className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           loading="lazy"
         />
       </div>

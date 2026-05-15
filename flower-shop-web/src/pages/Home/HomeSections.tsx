@@ -86,7 +86,7 @@ export function HomeFeaturedSection({
                 <img
                   src={featuredPrimary.images[0]}
                   alt={featuredPrimary.name}
-                  className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                   loading="lazy"
                 />
               </div>
