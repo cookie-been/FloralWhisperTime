@@ -359,8 +359,21 @@ export function getBrandStory() {
 }
 
 export async function getDashboardData() {
-  const [flowers, categories, siteConfig, shopInfo, brandStory] = await Promise.all([
-    getFlowers({ limit: 200 }),
+  const pageSize = 200;
+  const firstFlowersPage = await getFlowers({ sortBy: "featured", page: 1, limit: pageSize });
+  const totalPages = Math.max(1, Math.ceil(firstFlowersPage.total / pageSize));
+  const remainingPages = totalPages > 1
+    ? await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) => getFlowers({ sortBy: "featured", page: index + 2, limit: pageSize })),
+      )
+    : [];
+
+  const flowers = {
+    ...firstFlowersPage,
+    list: [firstFlowersPage, ...remainingPages].flatMap((page) => page.list),
+  };
+
+  const [categories, siteConfig, shopInfo, brandStory] = await Promise.all([
     getCategories(),
     getSiteConfig(),
     getShopInfo(),

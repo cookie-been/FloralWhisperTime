@@ -47,6 +47,12 @@ export function AdminDashboard() {
   const summary = useMemo(() => {
     if (!data) return null;
 
+    const categoryNameMap = new Map(
+      data.categories
+        .filter((item) => item.id !== "all")
+        .map((item) => [item.id, item.name]),
+    );
+
     const categoryCount = data.categories.filter((item) => item.id !== "all").length;
     const featuredCount = data.flowers.filter((item) => item.featured).length;
     const latestFlower = [...data.flowers].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
@@ -72,6 +78,7 @@ export function AdminDashboard() {
 
     return {
       categoryCount,
+      categoryNameMap,
       featuredCount,
       unreadContacts: data.unreadContacts.total,
       normalCount: data.flowers.length - featuredCount,
@@ -410,7 +417,7 @@ export function AdminDashboard() {
                       <p className="text-sm font-semibold text-[#1b281e]">{flower.name}</p>
                       {flower.featured ? <Tag color="green">精选</Tag> : <Tag>普通</Tag>}
                     </div>
-                    <p className="mt-1 text-sm text-muted">{flower.categoryId} · {formatDate(flower.createdAt)}</p>
+                    <p className="mt-1 text-sm text-muted">{summary.categoryNameMap.get(flower.categoryId) ?? "未分类"} · {formatDate(flower.createdAt)}</p>
                   </div>
                 ))}
               </div>
