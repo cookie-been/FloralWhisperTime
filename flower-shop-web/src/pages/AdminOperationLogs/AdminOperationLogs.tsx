@@ -759,8 +759,9 @@ export function AdminOperationLogs() {
             AI 配置
           </Button>
         </div>
-        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1fr)_180px_160px_180px_180px_150px_150px_auto_auto]">
+        <div className="admin-filter-grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(0,1fr)_180px_160px_180px_180px_150px_150px_auto_auto]">
           <Input
+            className="min-w-0 sm:col-span-2 xl:col-span-3 2xl:col-span-1"
             allowClear
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
@@ -825,13 +826,14 @@ export function AdminOperationLogs() {
             placeholder="结束日期"
           />
           <Button
+            className="w-full 2xl:w-auto"
             type="primary"
             icon={<RefreshCw size={16} />}
             onClick={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
           >
             刷新日志
           </Button>
-          <Button icon={<Download size={16} />} onClick={() => void handleExport()}>
+          <Button className="w-full 2xl:w-auto" icon={<Download size={16} />} onClick={() => void handleExport()}>
             导出 CSV
           </Button>
         </div>
