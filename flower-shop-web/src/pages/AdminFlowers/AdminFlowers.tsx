@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   Empty,
@@ -25,6 +25,7 @@ import {
   generateAdminAiFlowerSuggestion,
   generateAdminAiImage,
   getCategories,
+  isAbortError,
   updateFlower,
   listAllFlowers,
   uploadFlowerImage,
@@ -74,6 +75,7 @@ export function AdminFlowers() {
   const [aiSuggesting, setAiSuggesting] = useState(false);
   const [generatedAiImage, setGeneratedAiImage] = useState<GeneratedAiImageResult | null>(null);
   const [aiSettings, setAiSettings] = useState<AiSettings | null>(null);
+  const requestControllerRef = useRef<AbortController | null>(null);
   const initialFeatured = searchParams.get("featured");
   const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>(
     initialFeatured === "featured" || initialFeatured === "normal" ? initialFeatured : "all",
@@ -138,21 +140,35 @@ export function AdminFlowers() {
   );
 
   const load = async () => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     setLoading(true);
     try {
-      const [categoryList, allFlowers, adminAiSettings] = await Promise.all([getCategories(), listAllFlowers({ sortBy: "featured" }), getAdminAiSettings()]);
+      const [categoryList, allFlowers, adminAiSettings] = await Promise.all([
+        getCategories({ signal: controller.signal }),
+        listAllFlowers({ sortBy: "featured" }, { signal: controller.signal }),
+        getAdminAiSettings({ signal: controller.signal }),
+      ]);
       setCategories(categoryList);
       setFlowers(allFlowers);
       setAiSettings(adminAiSettings);
     } catch (error) {
+      if (isAbortError(error)) return;
       message.error(error instanceof Error ? error.message : "加载失败");
     } finally {
-      setLoading(false);
+      if (requestControllerRef.current === controller) {
+        requestControllerRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     load().catch(() => undefined);
+    return () => {
+      requestControllerRef.current?.abort();
+    };
   }, []);
 
   useEffect(() => {

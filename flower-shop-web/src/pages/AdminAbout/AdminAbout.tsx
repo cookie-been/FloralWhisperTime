@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   Drawer,
@@ -27,6 +27,7 @@ import {
   getAdminAboutPage,
   getAdminAboutTimeline,
   getAdminTeamMembers,
+  isAbortError,
   updateAdminAboutPage,
   updateAdminAboutTimeline,
   updateAdminTeamMember,
@@ -83,6 +84,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
   const [memberDrawerOpen, setMemberDrawerOpen] = useState(false);
   const [editingTimeline, setEditingTimeline] = useState<AboutTimelineEntry | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const requestControllerRef = useRef<AbortController | null>(null);
 
   const heroImage = Form.useWatch("heroImage", aboutForm) ?? "";
   const heroEyebrow = Form.useWatch("heroEyebrow", aboutForm) ?? "";
@@ -112,25 +114,35 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
   );
 
   const load = async () => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     setLoading(true);
     try {
       const [aboutPage, aboutTimeline, adminTeamMembers] = await Promise.all([
-        getAdminAboutPage(),
-        getAdminAboutTimeline(),
-        getAdminTeamMembers(),
+        getAdminAboutPage({ signal: controller.signal }),
+        getAdminAboutTimeline({ signal: controller.signal }),
+        getAdminTeamMembers({ signal: controller.signal }),
       ]);
       aboutForm.setFieldsValue(aboutPage);
       setTimeline(aboutTimeline);
       setTeamMembers(adminTeamMembers);
     } catch (error) {
+      if (isAbortError(error)) return;
       message.error(error instanceof Error ? error.message : "关于页数据加载失败");
     } finally {
-      setLoading(false);
+      if (requestControllerRef.current === controller) {
+        requestControllerRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     load().catch(() => undefined);
+    return () => {
+      requestControllerRef.current?.abort();
+    };
   }, []);
 
   const saveAbout = async () => {

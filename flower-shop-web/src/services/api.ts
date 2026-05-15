@@ -178,14 +178,14 @@ export function getFlowers(query: FlowerQuery = {}, options: RequestOptions = {}
   return request<PaginatedResult<Flower>>(withQuery("/api/flowers", query), options);
 }
 
-export async function listAllFlowers(baseQuery: Omit<FlowerQuery, "page" | "limit"> = {}) {
+export async function listAllFlowers(baseQuery: Omit<FlowerQuery, "page" | "limit"> = {}, options: RequestOptions = {}) {
   const pageSize = 200;
-  const firstPage = await getFlowers({ ...baseQuery, page: 1, limit: pageSize });
+  const firstPage = await getFlowers({ ...baseQuery, page: 1, limit: pageSize }, options);
   const totalPages = Math.max(1, Math.ceil(firstPage.total / pageSize));
   const remainingPages = totalPages > 1
     ? await Promise.all(
         Array.from({ length: totalPages - 1 }, (_, index) =>
-          getFlowers({ ...baseQuery, page: index + 2, limit: pageSize }),
+          getFlowers({ ...baseQuery, page: index + 2, limit: pageSize }, options),
         ),
       )
     : [];
@@ -350,32 +350,32 @@ export function restoreAdminOperationLog(id: number, reason?: string) {
   );
 }
 
-export function getSiteConfig() {
+export function getSiteConfig(options: RequestOptions = {}) {
   return requestCached<SiteConfig>("/api/site-config", {
     key: "public:site-config",
     ttlMs: 60_000,
-  });
+  }, options);
 }
 
-export function getAdminSiteConfig() {
+export function getAdminSiteConfig(options: RequestOptions = {}) {
   return requestCached<SiteConfig>("/api/admin/site-config", {
     key: "admin:site-config",
     ttlMs: 30_000,
-  });
+  }, options);
 }
 
-export function getAboutPage() {
+export function getAboutPage(options: RequestOptions = {}) {
   return requestCached<AboutPageContent>("/api/about-page", {
     key: "public:about-page",
     ttlMs: 60_000,
-  });
+  }, options);
 }
 
-export function getAboutTimeline() {
+export function getAboutTimeline(options: RequestOptions = {}) {
   return requestCached<AboutTimelineEntry[]>("/api/about-timeline", {
     key: "public:about-timeline",
     ttlMs: 60_000,
-  });
+  }, options);
 }
 
 export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
@@ -401,11 +401,11 @@ export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
   );
 }
 
-export function getAdminAiSettings() {
+export function getAdminAiSettings(options: RequestOptions = {}) {
   return requestCached<AiSettings>("/api/admin/system/ai-settings", {
     key: "admin:ai-settings",
     ttlMs: 30_000,
-  });
+  }, options);
 }
 
 export function updateAdminAiSettings(payload: AiSettings) {
@@ -500,28 +500,28 @@ export function generateAdminAiFlowerSuggestion(payload: {
   );
 }
 
-export function getCategories() {
+export function getCategories(options: RequestOptions = {}) {
   return requestCached<Category[]>("/api/categories", {
     key: "public:categories",
     ttlMs: 60_000,
-  });
+  }, options);
 }
 
-export function getShopInfo() {
+export function getShopInfo(options: RequestOptions = {}) {
   return requestCached<ShopInfo>("/api/shop-info", {
     key: "public:shop-info",
     ttlMs: 60_000,
-  });
+  }, options);
 }
 
-export function getBrandStory() {
+export function getBrandStory(options: RequestOptions = {}) {
   return requestCached<BrandStory>("/api/brand-story", {
     key: "public:brand-story",
     ttlMs: 60_000,
-  });
+  }, options);
 }
 
-export async function getDashboardData() {
+export async function getDashboardData(options: RequestOptions = {}) {
   const cached = responseCache.get("dashboard:data");
   if (cached && cached.expiresAt > Date.now()) {
     return cached.value as {
@@ -533,13 +533,13 @@ export async function getDashboardData() {
     };
   }
 
-  const flowers = await listAllFlowers({ sortBy: "featured" });
+  const flowers = await listAllFlowers({ sortBy: "featured" }, options);
 
   const [categories, siteConfig, shopInfo, brandStory] = await Promise.all([
-    getCategories(),
-    getSiteConfig(),
-    getShopInfo(),
-    getBrandStory(),
+    getCategories(options),
+    getSiteConfig(options),
+    getShopInfo(options),
+    getBrandStory(options),
   ]);
 
   const value = {
@@ -556,18 +556,18 @@ export async function getDashboardData() {
   return value;
 }
 
-export function getTeamMembers() {
+export function getTeamMembers(options: RequestOptions = {}) {
   return requestCached<TeamMember[]>("/api/team", {
     key: "public:team",
     ttlMs: 60_000,
-  });
+  }, options);
 }
 
-export function getAdminAboutPage() {
+export function getAdminAboutPage(options: RequestOptions = {}) {
   return requestCached<AboutPageContent>("/api/admin/about-page", {
     key: "admin:about-page",
     ttlMs: 30_000,
-  });
+  }, options);
 }
 
 export function updateAdminAboutPage(payload: AboutPageContent) {
@@ -582,11 +582,11 @@ export function updateAdminAboutPage(payload: AboutPageContent) {
   );
 }
 
-export function getAdminAboutTimeline() {
+export function getAdminAboutTimeline(options: RequestOptions = {}) {
   return requestCached<AboutTimelineEntry[]>("/api/admin/about-timeline", {
     key: "admin:about-timeline",
     ttlMs: 30_000,
-  });
+  }, options);
 }
 
 export function createAdminAboutTimeline(entry: Omit<AboutTimelineEntry, "id"> & { id?: string }) {
@@ -624,11 +624,11 @@ export function deleteAdminAboutTimeline(id: string) {
   );
 }
 
-export function getAdminTeamMembers() {
+export function getAdminTeamMembers(options: RequestOptions = {}) {
   return requestCached<TeamMember[]>("/api/admin/team", {
     key: "admin:team",
     ttlMs: 30_000,
-  });
+  }, options);
 }
 
 export function createAdminTeamMember(member: TeamMember) {

@@ -1,8 +1,8 @@
 import { Button, Empty, Grid, Progress, Spin, Tag, message } from "antd";
 import { AlertTriangle, ArrowRight, Flower2, History, Image as ImageIcon, MapPin, RotateCcw, Sparkles, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
-import { getAdminContacts, getAdminOperationLogs, getDashboardData } from "@/services/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getAdminContacts, getAdminOperationLogs, getDashboardData, isAbortError } from "@/services/api";
 import type { BrandStory, Category, ContactMessage, Flower, OperationLogItem, PaginatedResult, ShopInfo, SiteConfig } from "@/types";
 
 interface DashboardData {
@@ -70,20 +70,37 @@ export function AdminDashboard() {
   const screens = Grid.useBreakpoint();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const requestControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
+
     Promise.all([
-      getDashboardData(),
-      getAdminContacts({ page: 1, limit: 1, status: "all" }),
-      getAdminContacts({ page: 1, limit: 1, status: "unread" }),
-      getAdminOperationLogs({ page: 1, limit: 5, success: false }),
-      getAdminOperationLogs({ page: 1, limit: 5, restorable: true }),
+      getDashboardData({ signal: controller.signal }),
+      getAdminContacts({ page: 1, limit: 1, status: "all" }, { signal: controller.signal }),
+      getAdminContacts({ page: 1, limit: 1, status: "unread" }, { signal: controller.signal }),
+      getAdminOperationLogs({ page: 1, limit: 5, success: false }, { signal: controller.signal }),
+      getAdminOperationLogs({ page: 1, limit: 5, restorable: true }, { signal: controller.signal }),
     ])
       .then(([dashboardData, latestContacts, unreadContacts, failedOperationLogs, restorableOperationLogs]) =>
         setData({ ...dashboardData, latestContacts, unreadContacts, failedOperationLogs, restorableOperationLogs }),
       )
-      .catch((error) => message.error(error instanceof Error ? error.message : "概览加载失败"))
-      .finally(() => setLoading(false));
+      .catch((error) => {
+        if (isAbortError(error)) return;
+        message.error(error instanceof Error ? error.message : "概览加载失败");
+      })
+      .finally(() => {
+        if (requestControllerRef.current === controller) {
+          requestControllerRef.current = null;
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const summary = useMemo(() => {
