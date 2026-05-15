@@ -21,6 +21,7 @@ import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.LoginResponse;
+import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.PaginatedResult;
@@ -207,6 +208,9 @@ class AdminControllerTest {
     response.setLatestBackupPath("/app/backups/20260515-002808");
     response.setLatestBackupModifiedAt("2026-05-15 08:28:08");
     response.setLatestBackupDownloadUrl("/api/admin/system/backups/latest/download");
+    response.setOperationLogCount(128L);
+    response.setOperationLogRetentionDays(180);
+    response.setOperationLogArchiveBefore("2025-11-16 08:15:00");
 
     when(siteService.getSystemStatus()).thenReturn(response);
 
@@ -224,9 +228,31 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.uploadDirectorySize").value("256.00 MB"))
         .andExpect(jsonPath("$.uptimeLabel").value("15分钟"))
         .andExpect(jsonPath("$.aiKeyConfigured").value(true))
+        .andExpect(jsonPath("$.operationLogCount").value(128))
+        .andExpect(jsonPath("$.operationLogRetentionDays").value(180))
+        .andExpect(jsonPath("$.operationLogArchiveBefore").value("2025-11-16 08:15:00"))
         .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"))
         .andExpect(jsonPath("$.latestBackupModifiedAt").value("2026-05-15 08:28:08"))
         .andExpect(jsonPath("$.latestBackupDownloadUrl").value("/api/admin/system/backups/latest/download"));
+  }
+
+  @Test
+  void archiveOperationLogsReturnsSummaryWhenTokenIsValid() throws Exception {
+    OperationLogArchiveResponse response = new OperationLogArchiveResponse();
+    response.setArchivedCount(24);
+    response.setArchiveFilename("operation-logs-archive-20260515-090000.csv");
+    response.setArchivePath("/app/backups/operation-logs/operation-logs-archive-20260515-090000.csv");
+    response.setArchiveBefore("2025-11-16 00:00:00");
+
+    when(siteService.archiveOperationLogs(eq(LocalDateTime.of(2025, 11, 16, 0, 0)))).thenReturn(response);
+
+    mockMvc.perform(post("/api/admin/system/operation-logs/archive")
+            .param("before", "2025-11-16T00:00:00")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.archivedCount").value(24))
+        .andExpect(jsonPath("$.archiveFilename").value("operation-logs-archive-20260515-090000.csv"))
+        .andExpect(jsonPath("$.archiveBefore").value("2025-11-16 00:00:00"));
   }
 
   @Test

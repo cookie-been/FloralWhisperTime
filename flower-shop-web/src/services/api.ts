@@ -7,6 +7,7 @@ import type {
   ContactForm,
   ContactMessage,
   OperationLogDetail,
+  OperationLogArchiveResult,
   OperationLogItem,
   OperationLogQuery,
   Flower,
@@ -108,6 +109,14 @@ export function getCurrentAdmin() {
 
 export function getAdminSystemStatus() {
   return request<SystemStatus>("/api/admin/system/status");
+}
+
+export function archiveAdminOperationLogs(before: string) {
+  return withMutationGuard(`admin:operation-logs:archive:${before}`, () =>
+    request<OperationLogArchiveResult>(withQuery("/api/admin/system/operation-logs/archive", { before }), {
+      method: "POST",
+    }),
+  );
 }
 
 export async function downloadLatestAdminBackup(downloadUrl: string) {

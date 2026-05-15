@@ -12,6 +12,7 @@ public class AppProperties {
   private Jwt jwt = new Jwt();
   private Upload upload = new Upload();
   private Backup backup = new Backup();
+  private OperationLog operationLog = new OperationLog();
   private Cors cors = new Cors();
   private Import importer = new Import();
 
@@ -37,6 +38,12 @@ public class AppProperties {
   @Data
   public static class Backup {
     private String dir;
+  }
+
+  @Data
+  public static class OperationLog {
+    private Integer retentionDays = 180;
+    private String archiveDir = "operation-logs";
   }
 
   @Data

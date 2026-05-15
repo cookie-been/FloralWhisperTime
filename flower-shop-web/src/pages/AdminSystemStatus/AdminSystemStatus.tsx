@@ -1,8 +1,8 @@
-import { Alert, Button, Empty, Spin, Switch, Tag, message } from "antd";
-import { AlertTriangle, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles } from "lucide-react";
+import { Alert, Button, Empty, Input, Modal, Spin, Switch, Tag, message } from "antd";
+import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { downloadLatestAdminBackup, getAdminSystemStatus } from "@/services/api";
-import type { SystemStatus } from "@/types";
+import { archiveAdminOperationLogs, downloadLatestAdminBackup, getAdminSystemStatus } from "@/services/api";
+import type { OperationLogArchiveResult, SystemStatus } from "@/types";
 
 const AUTO_REFRESH_INTERVAL_MS = 60000;
 const AUTO_REFRESH_ERROR_THRESHOLD = 3;
@@ -16,6 +16,10 @@ export function AdminSystemStatus() {
   const [refreshErrorCount, setRefreshErrorCount] = useState(0);
   const [lastRefreshError, setLastRefreshError] = useState("");
   const [autoRefreshPaused, setAutoRefreshPaused] = useState(false);
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [archiveBefore, setArchiveBefore] = useState("");
+  const [archiving, setArchiving] = useState(false);
+  const [latestArchiveResult, setLatestArchiveResult] = useState<OperationLogArchiveResult | null>(null);
 
   const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
     if (mode === "refresh") {
@@ -111,8 +115,34 @@ export function AdminSystemStatus() {
       { label: "上传目录容量", value: status.uploadDirectorySize || "未知", note: status.uploadDirectoryReady ? `文件数 ${status.uploadFileCount}` : "上传目录异常", icon: HardDriveDownload },
       { label: "AI 配置", value: status.aiEnabled ? "已启用" : "未启用", note: status.aiKeyConfigured ? "密钥已配置" : "密钥未配置", icon: Sparkles },
       { label: "最近备份", value: status.latestBackupPresent ? status.latestBackupName : "暂无", note: "用于升级前回滚和恢复", icon: KeyRound },
+      { label: "操作日志", value: status.operationLogCount, note: `保留策略 ${status.operationLogRetentionDays} 天`, icon: Archive },
     ];
   }, [status]);
+
+  const openArchiveModal = useCallback(() => {
+    const suggested = status?.operationLogArchiveBefore ? status.operationLogArchiveBefore.slice(0, 10) : "";
+    setArchiveBefore(suggested);
+    setArchiveModalOpen(true);
+  }, [status?.operationLogArchiveBefore]);
+
+  const handleArchive = useCallback(async () => {
+    if (!archiveBefore) {
+      message.warning("请选择归档截止日期");
+      return;
+    }
+    setArchiving(true);
+    try {
+      const result = await archiveAdminOperationLogs(`${archiveBefore}T00:00:00`);
+      setLatestArchiveResult(result);
+      setArchiveModalOpen(false);
+      message.success(`已归档 ${result.archivedCount} 条操作日志`);
+      await loadStatus("refresh");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "操作日志归档失败");
+    } finally {
+      setArchiving(false);
+    }
+  }, [archiveBefore, loadStatus]);
 
   if (loading) {
     return (
@@ -304,8 +334,72 @@ export function AdminSystemStatus() {
               </div>
             </div>
           </div>
+
+          <div className="admin-panel p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="section-eyebrow">日志归档</p>
+                <h3 className="admin-section-title mt-2 text-xl">操作日志保留策略</h3>
+              </div>
+              <Button type="primary" icon={<Archive size={16} />} onClick={openArchiveModal}>
+                手动归档
+              </Button>
+            </div>
+            <div className="mt-5 space-y-4 text-sm">
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">当前日志数量</p>
+                <p className="mt-2 text-muted">{status.operationLogCount} 条</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">保留策略</p>
+                <p className="mt-2 text-muted">默认保留 {status.operationLogRetentionDays} 天，超出范围的历史日志建议归档后清理。</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">建议归档截止时间</p>
+                <p className="mt-2 text-muted">{status.operationLogArchiveBefore || "暂无可归档建议时间"}</p>
+              </div>
+              {latestArchiveResult ? (
+                <Alert
+                  showIcon
+                  type="success"
+                  message={`最近一次归档：${latestArchiveResult.archivedCount} 条`}
+                  description={`归档文件 ${latestArchiveResult.archiveFilename}，归档截止 ${latestArchiveResult.archiveBefore}`}
+                />
+              ) : null}
+            </div>
+          </div>
         </div>
       </section>
+
+      <Modal
+        title="归档历史操作日志"
+        open={archiveModalOpen}
+        onCancel={() => {
+          if (archiving) return;
+          setArchiveModalOpen(false);
+        }}
+        onOk={() => void handleArchive()}
+        okText="确认归档"
+        cancelText="取消"
+        okButtonProps={{ danger: true, disabled: !archiveBefore }}
+        confirmLoading={archiving}
+      >
+        <div className="space-y-3">
+          <Alert
+            showIcon
+            type="warning"
+            message="归档会导出并删除截止日期之前的操作日志"
+            description="归档文件会写入备份目录下的 operation-logs 子目录。该操作适用于控制日志表体积，执行前请确认截止日期。"
+          />
+          <div>
+            <p className="mb-2 text-sm text-muted">归档截止日期</p>
+            <Input type="date" value={archiveBefore} onChange={(event) => setArchiveBefore(event.target.value)} />
+          </div>
+          <p className="text-sm leading-6 text-muted">
+            当前建议值：{status.operationLogArchiveBefore || "暂无"}。确认后会归档该日期 00:00:00 之前的日志。
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }

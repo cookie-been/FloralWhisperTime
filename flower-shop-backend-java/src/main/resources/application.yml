@@ -40,6 +40,9 @@ app:
     public-base-url: ${PUBLIC_BASE_URL:http://localhost:${server.port}}
   backup:
     dir: ${BACKUP_DIR:../backups}
+  operation-log:
+    retention-days: ${OPERATION_LOG_RETENTION_DAYS:180}
+    archive-dir: ${OPERATION_LOG_ARCHIVE_DIR:operation-logs}
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:*}
     allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}

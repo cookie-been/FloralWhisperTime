@@ -7,6 +7,7 @@ export type {
   Category,
   ContactForm,
   ContactMessage,
+  OperationLogArchiveResult,
   OperationLogDetail,
   OperationLogItem,
   OperationLogQuery,

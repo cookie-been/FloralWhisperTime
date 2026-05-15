@@ -9,6 +9,7 @@ import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.LoginRequest;
 import com.floralwhisper.dto.LoginResponse;
+import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.OperationLogRestoreRequest;
@@ -85,6 +86,12 @@ public class AdminController {
     response.setContentType("application/gzip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
     siteService.writeLatestBackupArchive(response.getOutputStream());
+  }
+
+  @PostMapping("/system/operation-logs/archive")
+  public OperationLogArchiveResponse archiveOperationLogs(
+      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime before) {
+    return siteService.archiveOperationLogs(before);
   }
 
   @GetMapping("/system/ai-settings")

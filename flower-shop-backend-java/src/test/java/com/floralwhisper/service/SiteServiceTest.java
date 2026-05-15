@@ -3,19 +3,23 @@ package com.floralwhisper.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.entity.AiSettings;
+import com.floralwhisper.entity.OperationLog;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
+import com.floralwhisper.mapper.OperationLogMapper;
 import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
@@ -24,6 +28,7 @@ import com.floralwhisper.mapper.TeamMemberMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -53,6 +58,9 @@ class SiteServiceTest {
 
     AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
     when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(true, "volcengine", "secret-key", "doubao-image", "doubao-text"));
+    OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    when(operationLogMapper.selectCount(any())).thenReturn(128L);
+    when(operationLogMapper.selectOne(any())).thenReturn(operationLogAt(LocalDateTime.of(2026, 5, 15, 8, 15)));
 
     DataSource dataSource = mock(DataSource.class);
     Connection connection = mock(Connection.class);
@@ -88,6 +96,7 @@ class SiteServiceTest {
             mock(BrandStoryMapper.class),
             mock(BrandStoryImageMapper.class),
             mock(CategoryMapper.class),
+            operationLogMapper,
             mock(TeamMemberMapper.class),
             appProperties(uploadsDir, backupsDir),
             dataSource,
@@ -122,6 +131,9 @@ class SiteServiceTest {
     assertEquals("2026-05-15 09:01:01", response.getLatestBackupModifiedAt());
     assertEquals("/api/admin/system/backups/latest/download", response.getLatestBackupDownloadUrl());
     assertEquals("15分钟", response.getUptimeLabel());
+    assertEquals(128L, response.getOperationLogCount());
+    assertEquals(180, response.getOperationLogRetentionDays());
+    assertEquals("2025-11-16 08:15:00", response.getOperationLogArchiveBefore());
   }
 
   @Test
@@ -131,6 +143,9 @@ class SiteServiceTest {
 
     AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
     when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(false, "volcengine", "", "doubao-image", "doubao-text"));
+    OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    when(operationLogMapper.selectCount(any())).thenReturn(0L);
+    when(operationLogMapper.selectOne(any())).thenReturn(null);
 
     DataSource dataSource = mock(DataSource.class);
     when(dataSource.getConnection()).thenThrow(new SQLException("down"));
@@ -147,6 +162,7 @@ class SiteServiceTest {
             mock(BrandStoryMapper.class),
             mock(BrandStoryImageMapper.class),
             mock(CategoryMapper.class),
+            operationLogMapper,
             mock(TeamMemberMapper.class),
             appProperties(uploadsDir, backupsDir),
             dataSource,
@@ -175,6 +191,59 @@ class SiteServiceTest {
     assertEquals("", response.getLatestBackupModifiedAt());
     assertEquals("", response.getLatestBackupDownloadUrl());
     assertEquals("未知", response.getUptimeLabel());
+    assertEquals(0L, response.getOperationLogCount());
+    assertEquals(180, response.getOperationLogRetentionDays());
+    assertEquals("", response.getOperationLogArchiveBefore());
+  }
+
+  @Test
+  void archiveOperationLogsWritesCsvAndDeletesArchivedRows() throws Exception {
+    Path uploadsDir = Files.createDirectories(tempDir.resolve("uploads"));
+    Path backupsDir = Files.createDirectories(tempDir.resolve("backups"));
+    Path archiveDir = Files.createDirectories(backupsDir.resolve("operation-logs"));
+
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(false, "volcengine", "", "doubao-image", "doubao-text"));
+
+    OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    when(operationLogMapper.selectList(any())).thenReturn(java.util.List.of(
+        operationLog(7L, "FLOWER", "UPDATE", "FLOWER", "daily-001", LocalDateTime.of(2025, 10, 1, 10, 0)),
+        operationLog(8L, "SITE", "UPDATE", "SITE_CONFIG", "1", LocalDateTime.of(2025, 10, 2, 11, 30))));
+    when(operationLogMapper.delete(any())).thenReturn(2);
+
+    SiteService siteService =
+        new SiteService(
+            mock(SiteConfigMapper.class),
+            mock(SiteConfigStatMapper.class),
+            mock(ShopInfoMapper.class),
+            mock(ShopHourMapper.class),
+            mock(AboutPageMapper.class),
+            mock(AboutTimelineEntryMapper.class),
+            aiSettingsMapper,
+            mock(BrandStoryMapper.class),
+            mock(BrandStoryImageMapper.class),
+            mock(CategoryMapper.class),
+            operationLogMapper,
+            mock(TeamMemberMapper.class),
+            appProperties(uploadsDir, backupsDir),
+            mock(DataSource.class),
+            null,
+            mock(AuditLogService.class),
+            Instant.parse("2026-05-15T00:45:00Z"),
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+
+    var archive = siteService.archiveOperationLogs(LocalDateTime.of(2025, 12, 1, 0, 0));
+
+    assertTrue(archive.getArchiveFilename().startsWith("operation-logs-archive-"));
+    assertTrue(archive.getArchiveFilename().endsWith(".csv"));
+    assertEquals(2, archive.getArchivedCount());
+    Path archivedFile = archiveDir.resolve(archive.getArchiveFilename());
+    assertTrue(Files.exists(archivedFile));
+    String content = Files.readString(archivedFile);
+    assertTrue(content.contains("daily-001"));
+    assertTrue(content.contains("SITE_CONFIG"));
+    verify(operationLogMapper).delete(any());
   }
 
   private AppProperties appProperties(Path uploadsDir, Path backupsDir) {
@@ -185,6 +254,10 @@ class SiteServiceTest {
     AppProperties.Backup backup = new AppProperties.Backup();
     backup.setDir(backupsDir.toString());
     properties.setBackup(backup);
+    AppProperties.OperationLog operationLog = new AppProperties.OperationLog();
+    operationLog.setRetentionDays(180);
+    operationLog.setArchiveDir("operation-logs");
+    properties.setOperationLog(operationLog);
     return properties;
   }
 
@@ -228,5 +301,26 @@ class SiteServiceTest {
     }
     double usedRate = ((double) (total - usable) / (double) total) * 100D;
     return String.format(java.util.Locale.US, "%.2f%%", usedRate);
+  }
+
+  private OperationLog operationLogAt(LocalDateTime createdAt) {
+    OperationLog log = new OperationLog();
+    log.setId(99L);
+    log.setCreatedAt(createdAt);
+    return log;
+  }
+
+  private OperationLog operationLog(Long id, String module, String action, String targetType, String targetId, LocalDateTime createdAt) {
+    OperationLog log = new OperationLog();
+    log.setId(id);
+    log.setModule(module);
+    log.setAction(action);
+    log.setTargetType(targetType);
+    log.setTargetId(targetId);
+    log.setOperatorName("admin");
+    log.setRequestSummary("{\"id\":\"" + targetId + "\"}");
+    log.setSuccess(true);
+    log.setCreatedAt(createdAt);
+    return log;
   }
 }

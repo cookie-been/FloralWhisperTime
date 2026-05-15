@@ -169,6 +169,16 @@ export interface SystemStatus {
   latestBackupModifiedAt: string;
   latestBackupDownloadUrl: string;
   latestBackupPresent: boolean;
+  operationLogCount: number;
+  operationLogRetentionDays: number;
+  operationLogArchiveBefore: string;
+}
+
+export interface OperationLogArchiveResult {
+  archivedCount: number;
+  archiveFilename: string;
+  archivePath: string;
+  archiveBefore: string;
 }
 
 export interface OperationLogItem {

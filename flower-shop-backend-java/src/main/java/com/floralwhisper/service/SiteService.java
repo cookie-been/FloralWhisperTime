@@ -13,6 +13,7 @@ import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.BusinessHoursResponse;
+import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
@@ -27,6 +28,7 @@ import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.entity.Category;
 import com.floralwhisper.entity.BrandStory;
 import com.floralwhisper.entity.BrandStoryImage;
+import com.floralwhisper.entity.OperationLog;
 import com.floralwhisper.entity.ShopHour;
 import com.floralwhisper.entity.ShopInfo;
 import com.floralwhisper.entity.SiteConfig;
@@ -38,6 +40,7 @@ import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
+import com.floralwhisper.mapper.OperationLogMapper;
 import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
@@ -54,6 +57,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -84,6 +88,7 @@ public class SiteService {
   private final BrandStoryMapper brandStoryMapper;
   private final BrandStoryImageMapper brandStoryImageMapper;
   private final CategoryMapper categoryMapper;
+  private final OperationLogMapper operationLogMapper;
   private final TeamMemberMapper teamMemberMapper;
   private final AppProperties appProperties;
   private final DataSource dataSource;
@@ -105,6 +110,7 @@ public class SiteService {
       BrandStoryMapper brandStoryMapper,
       BrandStoryImageMapper brandStoryImageMapper,
       CategoryMapper categoryMapper,
+      OperationLogMapper operationLogMapper,
       TeamMemberMapper teamMemberMapper,
       AppProperties appProperties,
       DataSource dataSource,
@@ -121,6 +127,7 @@ public class SiteService {
         brandStoryMapper,
         brandStoryImageMapper,
         categoryMapper,
+        operationLogMapper,
         teamMemberMapper,
         appProperties,
         dataSource,
@@ -142,6 +149,7 @@ public class SiteService {
       BrandStoryMapper brandStoryMapper,
       BrandStoryImageMapper brandStoryImageMapper,
       CategoryMapper categoryMapper,
+      OperationLogMapper operationLogMapper,
       TeamMemberMapper teamMemberMapper,
       AppProperties appProperties,
       DataSource dataSource,
@@ -160,6 +168,7 @@ public class SiteService {
     this.brandStoryMapper = brandStoryMapper;
     this.brandStoryImageMapper = brandStoryImageMapper;
     this.categoryMapper = categoryMapper;
+    this.operationLogMapper = operationLogMapper;
     this.teamMemberMapper = teamMemberMapper;
     this.appProperties = appProperties;
     this.dataSource = dataSource;
@@ -223,6 +232,49 @@ public class SiteService {
     response.setLatestBackupPath(latestBackup == null ? "" : latestBackup.getAbsolutePath());
     response.setLatestBackupModifiedAt(formatBackupModifiedAt(latestBackup));
     response.setLatestBackupDownloadUrl(latestBackup == null ? "" : "/api/admin/system/backups/latest/download");
+    response.setOperationLogCount(resolveOperationLogCount());
+    response.setOperationLogRetentionDays(resolveOperationLogRetentionDays());
+    response.setOperationLogArchiveBefore(resolveOperationLogArchiveBefore());
+    return response;
+  }
+
+  @Transactional
+  public OperationLogArchiveResponse archiveOperationLogs(LocalDateTime before) {
+    if (before == null) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "请提供归档截止时间");
+    }
+
+    List<OperationLog> logs = operationLogMapper.selectList(new LambdaQueryWrapper<OperationLog>()
+        .lt(OperationLog::getCreatedAt, before)
+        .orderByAsc(OperationLog::getCreatedAt)
+        .orderByAsc(OperationLog::getId));
+    if (logs.isEmpty()) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "当前没有可归档的操作日志");
+    }
+
+    File backupDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
+    File archiveDir = resolveDirectory(
+        backupDir.toPath().resolve(appProperties.getOperationLog().getArchiveDir()).toString(),
+        backupDir.toPath().resolve("operation-logs").toString());
+    if (!archiveDir.exists() && !archiveDir.mkdirs()) {
+      throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "操作日志归档目录创建失败");
+    }
+
+    String filename = "operation-logs-archive-" + DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now(clock)) + ".csv";
+    File archiveFile = new File(archiveDir, filename);
+    try {
+      java.nio.file.Files.writeString(archiveFile.toPath(), buildOperationLogCsv(logs));
+    } catch (IOException exception) {
+      throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "写入操作日志归档文件失败");
+    }
+
+    operationLogMapper.delete(new LambdaQueryWrapper<OperationLog>().lt(OperationLog::getCreatedAt, before));
+
+    OperationLogArchiveResponse response = new OperationLogArchiveResponse();
+    response.setArchivedCount(logs.size());
+    response.setArchiveFilename(filename);
+    response.setArchivePath(archiveFile.getAbsolutePath());
+    response.setArchiveBefore(DATE_TIME_FORMATTER.format(before));
     return response;
   }
 
@@ -1005,6 +1057,56 @@ public class SiteService {
     }
     return DATE_TIME_FORMATTER.format(
         Instant.ofEpochMilli(backupDirectory.lastModified()).atZone(zoneId == null ? ZoneId.systemDefault() : zoneId));
+  }
+
+  private long resolveOperationLogCount() {
+    return operationLogMapper.selectCount(new LambdaQueryWrapper<>());
+  }
+
+  private int resolveOperationLogRetentionDays() {
+    Integer retentionDays = appProperties.getOperationLog() == null ? null : appProperties.getOperationLog().getRetentionDays();
+    return retentionDays == null || retentionDays < 1 ? 180 : retentionDays;
+  }
+
+  private String resolveOperationLogArchiveBefore() {
+    OperationLog earliest = operationLogMapper.selectOne(new LambdaQueryWrapper<OperationLog>()
+        .orderByAsc(OperationLog::getCreatedAt)
+        .orderByAsc(OperationLog::getId)
+        .last("limit 1"));
+    if (earliest == null || earliest.getCreatedAt() == null) {
+      return "";
+    }
+    return DATE_TIME_FORMATTER.format(earliest.getCreatedAt().minusDays(resolveOperationLogRetentionDays()));
+  }
+
+  private String buildOperationLogCsv(List<OperationLog> logs) {
+    StringBuilder builder = new StringBuilder("\uFEFF");
+    builder.append("ID,模块,动作,目标类型,目标ID,操作人,结果,请求摘要,失败原因,IP,恢复来源日志ID,创建时间\n");
+    for (OperationLog item : logs) {
+      builder
+          .append(csv(item.getId()))
+          .append(',').append(csv(item.getModule()))
+          .append(',').append(csv(item.getAction()))
+          .append(',').append(csv(item.getTargetType()))
+          .append(',').append(csv(item.getTargetId()))
+          .append(',').append(csv(item.getOperatorName()))
+          .append(',').append(csv(Boolean.TRUE.equals(item.getSuccess()) ? "SUCCESS" : "FAILED"))
+          .append(',').append(csv(item.getRequestSummary()))
+          .append(',').append(csv(item.getErrorMessage()))
+          .append(',').append(csv(item.getIpAddress()))
+          .append(',').append(csv(item.getRestoredFromLogId()))
+          .append(',').append(csv(item.getCreatedAt()))
+          .append('\n');
+    }
+    return builder.toString();
+  }
+
+  private String csv(Object value) {
+    if (value == null) {
+      return "\"\"";
+    }
+    String raw = String.valueOf(value).replace("\"", "\"\"");
+    return "\"" + raw + "\"";
   }
 
   private long countFiles(File directory) {
