@@ -92,6 +92,15 @@ async function copyText(value: string, successText: string) {
 
 type ResultFilter = "all" | "true" | "false";
 type QuickView = "all" | "failed" | "restorable" | "restore";
+type FilterPreset = "todayFailed" | "todayRestore" | "flowerOps" | "contactOps" | "aiOps" | "none";
+
+function getTodayDateValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function formatRangeBoundary(value?: string, mode: "start" | "end" = "start") {
   if (!value) return undefined;
@@ -326,6 +335,71 @@ export function AdminOperationLogs() {
     Boolean(createdFrom) ||
     Boolean(createdTo);
 
+  const currentPreset = useMemo<FilterPreset>(() => {
+    const today = getTodayDateValue();
+    if (
+      success === "false" &&
+      !module &&
+      !action &&
+      restorable === undefined &&
+      !keyword.trim() &&
+      !operatorName.trim() &&
+      createdFrom === today &&
+      createdTo === today
+    ) {
+      return "todayFailed";
+    }
+    if (
+      success === "all" &&
+      action === "RESTORE" &&
+      !module &&
+      restorable === undefined &&
+      !keyword.trim() &&
+      !operatorName.trim() &&
+      createdFrom === today &&
+      createdTo === today
+    ) {
+      return "todayRestore";
+    }
+    if (
+      module === "FLOWER" &&
+      !keyword.trim() &&
+      !operatorName.trim() &&
+      !action &&
+      success === "all" &&
+      restorable === undefined &&
+      !createdFrom &&
+      !createdTo
+    ) {
+      return "flowerOps";
+    }
+    if (
+      module === "CONTACT" &&
+      !keyword.trim() &&
+      !operatorName.trim() &&
+      !action &&
+      success === "all" &&
+      restorable === undefined &&
+      !createdFrom &&
+      !createdTo
+    ) {
+      return "contactOps";
+    }
+    if (
+      module === "AI" &&
+      !keyword.trim() &&
+      !operatorName.trim() &&
+      !action &&
+      success === "all" &&
+      restorable === undefined &&
+      !createdFrom &&
+      !createdTo
+    ) {
+      return "aiOps";
+    }
+    return "none";
+  }, [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success]);
+
   const snapshotDiff = useMemo(
     () => buildSnapshotDiff(activeDetail?.beforeSnapshot, activeDetail?.afterSnapshot),
     [activeDetail?.afterSnapshot, activeDetail?.beforeSnapshot],
@@ -393,6 +467,69 @@ export function AdminOperationLogs() {
     setAction("RESTORE");
     setRestorable(undefined);
     void load(1, pageSize, keyword, module, operatorName, "all", "RESTORE", undefined, createdFrom, createdTo);
+  };
+
+  const applyPreset = (preset: FilterPreset) => {
+    const today = getTodayDateValue();
+    if (preset === "todayFailed") {
+      setKeyword("");
+      setModule(undefined);
+      setOperatorName("");
+      setSuccess("false");
+      setAction(undefined);
+      setRestorable(undefined);
+      setCreatedFrom(today);
+      setCreatedTo(today);
+      void load(1, pageSize, "", undefined, "", "false", undefined, undefined, today, today);
+      return;
+    }
+    if (preset === "todayRestore") {
+      setKeyword("");
+      setModule(undefined);
+      setOperatorName("");
+      setSuccess("all");
+      setAction("RESTORE");
+      setRestorable(undefined);
+      setCreatedFrom(today);
+      setCreatedTo(today);
+      void load(1, pageSize, "", undefined, "", "all", "RESTORE", undefined, today, today);
+      return;
+    }
+    if (preset === "flowerOps") {
+      setKeyword("");
+      setModule("FLOWER");
+      setOperatorName("");
+      setSuccess("all");
+      setAction(undefined);
+      setRestorable(undefined);
+      setCreatedFrom("");
+      setCreatedTo("");
+      void load(1, pageSize, "", "FLOWER", "", "all", undefined, undefined, "", "");
+      return;
+    }
+    if (preset === "contactOps") {
+      setKeyword("");
+      setModule("CONTACT");
+      setOperatorName("");
+      setSuccess("all");
+      setAction(undefined);
+      setRestorable(undefined);
+      setCreatedFrom("");
+      setCreatedTo("");
+      void load(1, pageSize, "", "CONTACT", "", "all", undefined, undefined, "", "");
+      return;
+    }
+    if (preset === "aiOps") {
+      setKeyword("");
+      setModule("AI");
+      setOperatorName("");
+      setSuccess("all");
+      setAction(undefined);
+      setRestorable(undefined);
+      setCreatedFrom("");
+      setCreatedTo("");
+      void load(1, pageSize, "", "AI", "", "all", undefined, undefined, "", "");
+    }
   };
 
   const resetFilters = () => {
@@ -560,6 +697,26 @@ export function AdminOperationLogs() {
           </Button>
           <Button type={currentQuickView === "restore" ? "primary" : "default"} onClick={() => applyQuickView("restore")}>
             恢复记录
+          </Button>
+        </div>
+        <div className="mt-5">
+          <p className="admin-filter-caption">常用预设</p>
+        </div>
+        <div className="admin-filter-presets">
+          <Button type={currentPreset === "todayFailed" ? "primary" : "default"} onClick={() => applyPreset("todayFailed")}>
+            今日失败
+          </Button>
+          <Button type={currentPreset === "todayRestore" ? "primary" : "default"} onClick={() => applyPreset("todayRestore")}>
+            今日恢复
+          </Button>
+          <Button type={currentPreset === "flowerOps" ? "primary" : "default"} onClick={() => applyPreset("flowerOps")}>
+            作品变更
+          </Button>
+          <Button type={currentPreset === "contactOps" ? "primary" : "default"} onClick={() => applyPreset("contactOps")}>
+            留言处理
+          </Button>
+          <Button type={currentPreset === "aiOps" ? "primary" : "default"} onClick={() => applyPreset("aiOps")}>
+            AI 配置
           </Button>
         </div>
         <div className="admin-filter-grid lg:grid-cols-[minmax(0,1fr)_180px_160px_180px_180px_150px_150px_auto_auto]">

@@ -326,6 +326,13 @@ a {
   margin-top: 14px;
 }
 
+.admin-filter-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .admin-row-unread td {
   background: rgba(237, 244, 235, 0.55) !important;
 }
