@@ -62,6 +62,10 @@ function formatTargetType(value: string) {
   return mapping[value] ?? value;
 }
 
+function formatTargetIdentifier(value?: string) {
+  return value?.trim() ? value : "系统级记录";
+}
+
 function shouldIgnoreRowClick(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   return Boolean(target.closest("button, .ant-btn, .ant-popover, .ant-popconfirm"));
@@ -604,7 +608,7 @@ export function AdminOperationLogs() {
       render: (_: unknown, record) => (
         <div>
           <p className="font-semibold text-[#1b281e]">{formatTargetType(record.targetType)}</p>
-          <p className="mt-1 break-all text-xs text-muted">{record.targetId || "暂无"}</p>
+          <p className="mt-1 break-all text-xs text-muted">{formatTargetIdentifier(record.targetId)}</p>
         </div>
       ),
     },
@@ -741,7 +745,7 @@ export function AdminOperationLogs() {
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             onPressEnter={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
-            placeholder="按目标 ID、错误信息或请求摘要搜索"
+            placeholder="按记录标识、错误信息或请求摘要搜索"
             prefix={<Search size={16} className="text-muted" />}
           />
           <Select
@@ -933,7 +937,7 @@ export function AdminOperationLogs() {
               <div className="mt-3 space-y-2 text-muted">
                 <p>模块：{formatModule(activeDetail.module)}</p>
                 <p>动作：{formatAction(activeDetail.action)}</p>
-                <p>目标：{formatTargetType(activeDetail.targetType)} / {activeDetail.targetId || "暂无"}</p>
+                <p>目标：{formatTargetType(activeDetail.targetType)} / {formatTargetIdentifier(activeDetail.targetId)}</p>
                 <p>操作人：{activeDetail.operatorName || "系统"}</p>
                 <p>结果：{activeDetail.success ? "成功" : "失败"}</p>
                 <p>时间：{formatDateTime(activeDetail.createdAt)}</p>
@@ -991,7 +995,7 @@ export function AdminOperationLogs() {
                           </Space>
                         </div>
                         <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted">
-                          {item.errorMessage || item.requestSummary || item.targetId || "关联日志"}
+                          {item.errorMessage || item.requestSummary || formatTargetIdentifier(item.targetId)}
                         </p>
                       </div>
                     </button>
@@ -1159,8 +1163,8 @@ export function AdminOperationLogs() {
                   <strong>{formatTargetType(pendingRestoreContext.targetType)}</strong>
                 </div>
                 <div>
-                  <p>目标标识</p>
-                  <strong>{pendingRestoreContext.targetId || "暂无"}</strong>
+                  <p>记录标识</p>
+                  <strong>{formatTargetIdentifier(pendingRestoreContext.targetId)}</strong>
                 </div>
                 <div>
                   <p>原日志时间</p>

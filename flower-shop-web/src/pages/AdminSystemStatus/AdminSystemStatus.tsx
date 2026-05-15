@@ -7,6 +7,28 @@ import type { OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus }
 const AUTO_REFRESH_INTERVAL_MS = 60000;
 const AUTO_REFRESH_ERROR_THRESHOLD = 3;
 
+function formatDateTime(value?: string) {
+  if (!value) return "暂无";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(date);
+}
+
+function formatServiceName(value?: string) {
+  const mapping: Record<string, string> = {
+    "flower-shop-backend-java": "Java 主线后端",
+    "flower-shop-backend": "Node 兼容后端",
+  };
+  return value ? (mapping[value] ?? value) : "未知服务";
+}
+
 export function AdminSystemStatus() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -242,8 +264,9 @@ export function AdminSystemStatus() {
 
           <div className="mt-5 space-y-4 text-sm">
             <div className="admin-subpanel px-4 py-4">
-              <p className="font-semibold text-[#1b281e]">服务标识</p>
-              <p className="mt-2 text-muted">{status.service}</p>
+              <p className="font-semibold text-[#1b281e]">当前服务</p>
+              <p className="mt-2 text-muted">{formatServiceName(status.service)}</p>
+              {status.service ? <p className="mt-2 break-all text-xs text-muted">{status.service}</p> : null}
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>
@@ -333,7 +356,7 @@ export function AdminSystemStatus() {
               </div>
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">最近更新时间</p>
-                <p className="mt-2 text-muted">{status.latestBackupModifiedAt || "暂无"}</p>
+                <p className="mt-2 text-muted">{formatDateTime(status.latestBackupModifiedAt)}</p>
               </div>
             </div>
           </div>
