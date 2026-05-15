@@ -17,6 +17,8 @@ flower-shop-mini/project.private.config.json
 flower-shop-backend-java/uploads/
 backups/
 logs/
+tmp/
+docs/superpowers/
 
 *.zip
 *:Zone.Identifier

@@ -13,18 +13,14 @@
 - `flower-shop-backend-java`：Spring Boot 3 + MyBatis-Plus + Flyway
 - `flower-shop-web`：Nginx 托管静态站点并反向代理 `/api` 与 `/uploads`
 
-`flower-shop-backend/` 仍保留为历史兼容版 Node/Express 后端，但不是默认运行主线。
-
 ## 目录
 
 - `flower-shop-backend-java/`：Java 主线后端
 - `flower-shop-web/`：React + TypeScript + Vite + Ant Design Web
 - `flower-shop-mini/`：微信小程序原生工程
-- `flower-shop-backend/`：历史兼容 Node/Express 后端
 - `shared/`：Web 共享类型与数据结构
 - `scripts/catalog/`：作品批量生成与导入脚本
 - `logo/`：品牌 Logo 原始文件
-- `docs/superpowers/`：设计、计划、迁移与验收文档
 
 ## 一键部署
 
@@ -127,8 +123,6 @@ docker compose up -d --build
 - 上传文件：`flower-shop-backend-java/uploads:/app/uploads`
 
 浏览器只需要访问 Web 端口。Web 容器会把 `/api` 和 `/uploads` 反向代理到 Java 后端容器。
-
-完整容器验收手册见 [docs/superpowers/migration-checklists/2026-05-13-docker-cutover-runbook.md](/workspace/FloralWhisperTime/docs/superpowers/migration-checklists/2026-05-13-docker-cutover-runbook.md)。
 
 ## 本地开发
 

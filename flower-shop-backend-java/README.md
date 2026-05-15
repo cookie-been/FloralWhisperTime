@@ -1,6 +1,6 @@
 # 花语时光 Java 后端
 
-这是 `flower-shop-backend` 的 Java + MySQL 重构版本，使用 Spring Boot 3、MyBatis-Plus、Flyway 和 JWT，接口保持兼容现有 Web 和小程序。
+这是系统当前唯一主线后端，使用 Spring Boot 3、MyBatis-Plus、Flyway 和 JWT，接口服务于现有 Web 和小程序。
 
 补充说明：
 
@@ -137,11 +137,11 @@ mvn spring-boot:run
 
 ## 旧 JSON 导入 MySQL
 
-默认不会在启动时导入旧版 `db.json`。只有显式打开下面的变量时，应用启动后才会执行一次受控导入：
+默认不会在启动时导入样例 `db.json`。只有显式打开下面的变量时，应用启动后才会执行一次受控导入：
 
 ```bash
 JSON_IMPORT_ENABLED=true \
-JSON_IMPORT_PATH=../flower-shop-backend/data/db.json \
+JSON_IMPORT_PATH=src/main/resources/seed/legacy-db.json \
 JSON_IMPORT_REPLACE_EXISTING=true \
 mvn spring-boot:run
 ```
@@ -149,7 +149,7 @@ mvn spring-boot:run
 说明：
 
 - `JSON_IMPORT_ENABLED=true`：开启导入模式
-- `JSON_IMPORT_PATH`：旧版 `db.json` 路径
+- `JSON_IMPORT_PATH`：样例 `db.json` 路径
 - `JSON_IMPORT_REPLACE_EXISTING=true`：允许先清空现有数据再导入；未开启时，库里已有数据会直接失败退出
 
 导入内容包括：

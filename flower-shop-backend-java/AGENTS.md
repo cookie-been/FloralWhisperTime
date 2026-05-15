@@ -26,7 +26,7 @@ mvn test
 | `PUBLIC_BASE_URL` | `http://localhost:${server.port}` |
 | `UPLOAD_DIR` | `uploads` |
 | `JSON_IMPORT_ENABLED` | `false` |
-| `JSON_IMPORT_PATH` | `../flower-shop-backend/data/db.json` |
+| `JSON_IMPORT_PATH` | `src/main/resources/seed/legacy-db.json` |
 
 ## STRUCTURE
 

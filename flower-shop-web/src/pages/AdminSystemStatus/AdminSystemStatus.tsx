@@ -24,7 +24,6 @@ function formatDateTime(value?: string) {
 function formatServiceName(value?: string) {
   const mapping: Record<string, string> = {
     "flower-shop-backend-java": "Java 主线后端",
-    "flower-shop-backend": "Node 兼容后端",
   };
   return value ? (mapping[value] ?? value) : "未知服务";
 }

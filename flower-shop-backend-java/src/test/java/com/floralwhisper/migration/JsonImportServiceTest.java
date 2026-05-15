@@ -47,6 +47,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(MockitoExtension.class)
 class JsonImportServiceTest {
+  private static final Path LEGACY_JSON_PATH = Path.of("src/main/resources/seed/legacy-db.json");
+
   @Mock
   private CategoryMapper categoryMapper;
   @Mock
@@ -102,7 +104,7 @@ class JsonImportServiceTest {
   @Test
   void importsLegacyJsonIntoNormalizedWrites() {
     JsonImportService.ImportSummary summary =
-        jsonImportService.importFromJson(Path.of("../flower-shop-backend/data/db.json"), false);
+        jsonImportService.importFromJson(LEGACY_JSON_PATH, false);
 
     assertEquals(7, summary.categories());
     assertEquals(4, summary.flowers());
@@ -147,7 +149,7 @@ class JsonImportServiceTest {
 
     IllegalStateException error =
         assertThrows(IllegalStateException.class,
-            () -> jsonImportService.importFromJson(Path.of("../flower-shop-backend/data/db.json"), false));
+            () -> jsonImportService.importFromJson(LEGACY_JSON_PATH, false));
 
     assertTrue(error.getMessage().contains("数据库已存在数据"));
     verify(categoryMapper, never()).insert(any(Category.class));

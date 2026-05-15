@@ -7,8 +7,6 @@
 - `flower-shop-web`：React 19 + Vite 7 + Ant Design 6，产物由 Nginx 托管并反代 `/api`、`/uploads`
 - `flower-shop-mini`：微信小程序原生（TypeScript + WXML + WXSS）
 
-`flower-shop-backend/` 仍保留为历史兼容实现，但不是默认运行主线。
-
 ## QUICK START
 
 ```bash

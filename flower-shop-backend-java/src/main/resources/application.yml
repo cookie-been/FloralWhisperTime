@@ -65,5 +65,5 @@ app:
     watermark: ${AI_IMAGE_WATERMARK:false}
   importer:
     enabled: ${JSON_IMPORT_ENABLED:false}
-    json-path: ${JSON_IMPORT_PATH:../flower-shop-backend/data/db.json}
+    json-path: ${JSON_IMPORT_PATH:src/main/resources/seed/legacy-db.json}
     replace-existing: ${JSON_IMPORT_REPLACE_EXISTING:false}

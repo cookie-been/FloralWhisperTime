@@ -74,14 +74,13 @@ Browser / WeChat Mini Program
 ├── shared/
 ├── flower-shop-web/
 ├── flower-shop-backend-java/
-├── flower-shop-mini/
-└── flower-shop-backend/   # 历史兼容实现
+└── flower-shop-mini/
 ```
 
 说明：
 
 - `flower-shop-backend-java/` 是当前默认后端主线
-- `flower-shop-backend/` 保留为历史兼容 Node/Express 实现，用于旧版 JSON 数据参考和导入
+- `flower-shop-mini/` 保留为独立小程序端，使用本地 `shared/` 副本
 
 ## 5. Web 架构
 
@@ -241,16 +240,11 @@ Web 通过 `src/services/api.ts` 发起请求：
 
 - 实际访问端口以 `deploy.sh` / `upgrade.sh` 输出的 `Site URL` 为准
 
-## 11. 历史兼容与迁移
+## 11. 历史数据导入
 
-仓库仍保留：
+Java 后端仍保留受控 JSON 导入能力，用于初始化或迁移历史样例数据：
 
-- `flower-shop-backend/`
-- `flower-shop-backend/data/db.json`
+- 默认样例路径：`flower-shop-backend-java/src/main/resources/seed/legacy-db.json`
+- 启用方式：通过 `JSON_IMPORT_ENABLED=true` 显式开启
 
-用途：
-
-- 对照旧版接口和数据
-- 通过 Java 后端的 JSON 导入能力，将旧数据迁移到 MySQL
-
-这部分不应再视为当前主线运行架构。
+这部分仅作为初始化工具，不属于线上运行主链路。
