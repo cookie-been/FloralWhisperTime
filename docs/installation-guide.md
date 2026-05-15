@@ -58,6 +58,13 @@ cp .env.production.example .env
 ./deploy.sh --env-file .env --branch main --remote origin
 ```
 
+如果同机需要并行部署多套环境，建议显式指定项目名：
+
+```bash
+./deploy.sh --project-name floralwhispertime-prod --env-file .env --branch main --remote origin
+./deploy.sh --project-name floralwhispertime-staging --env-file .env.staging --web-port 18080 --no-git-pull
+```
+
 脚本会自动：
 
 - 拉取最新代码
@@ -65,6 +72,11 @@ cp .env.production.example .env
 - 启动 `mysql + backend + web`
 - 写入当前部署提交号与部署时间
 - 校验健康检查与后台登录
+
+说明：
+
+- 未指定 `--project-name` 时，Docker Compose 会使用默认项目名，容器、网络和数据卷也会共用该命名空间
+- 在测试部署、预发部署、正式部署并存的场景下，应固定不同的 `--project-name`
 
 当前版本默认还会带上：
 

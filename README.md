@@ -47,6 +47,8 @@
 
 ```bash
 ./deploy.sh --env-file .env.production --web-port 8081
+./deploy.sh --project-name floralwhispertime-prod
+./deploy.sh --project-name floralwhispertime-staging --env-file .env.staging --web-port 18080
 ./deploy.sh --env-file .env.production --env-template .env.production.example
 ./deploy.sh --branch main
 ./deploy.sh --remote origin --branch main
@@ -61,6 +63,7 @@
 - 默认会阻止使用 `.env.example` 中的默认弱密码直接部署
 - 仅开发或演示环境可使用 `--allow-insecure-env` 显式跳过这层保护
 - 生产环境建议基于 `.env.production.example` 生成正式 `.env`
+- 如果同一台机器需要并行跑测试、预发、正式多套环境，建议显式传 `--project-name`，避免复用默认 compose 容器名、网络名和数据卷
 - 环境变量说明可参考 [docs/env-reference.md](/workspace/FloralWhisperTime/docs/env-reference.md)
 - 部署前后可按 [docs/deployment-checklist.md](/workspace/FloralWhisperTime/docs/deployment-checklist.md) 执行人工巡检
 - 如需接入企业域名与 HTTPS 入口，可参考 [docs/nginx-https-example.md](/workspace/FloralWhisperTime/docs/nginx-https-example.md)

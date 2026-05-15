@@ -3,6 +3,7 @@ package com.floralwhisper.protection;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.ConcurrencyProtectionProperties;
 import java.util.concurrent.Semaphore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,6 +15,7 @@ public class HeavyOperationGuard {
   private final Semaphore configImportSemaphore;
   private final ProtectionMetrics protectionMetrics;
 
+  @Autowired
   public HeavyOperationGuard(AppProperties properties, ProtectionMetrics protectionMetrics) {
     this(
         createSemaphore(properties.getProtection().getConcurrency().getAi()),

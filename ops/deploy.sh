@@ -8,6 +8,7 @@ COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 ENV_EXAMPLE_FILE="$REPO_ROOT/.env.example"
 ENV_TEMPLATE_FILE="$ENV_EXAMPLE_FILE"
 ENV_FILE="$REPO_ROOT/.env"
+COMPOSE_PROJECT_NAME_OVERRIDE=""
 WEB_PORT_OVERRIDE=""
 SKIP_BUILD=0
 PULL_BASE=0
@@ -35,6 +36,7 @@ usage() {
 Usage: ./deploy.sh [options]
 
 Options:
+  --project-name NAME  Use a custom docker compose project name
   --env-file PATH      Use a custom compose env file
   --env-template PATH  Use a custom env template when initializing env file
   --web-port PORT      Override WEB_PORT for this deployment
@@ -64,7 +66,14 @@ package_backend_artifact() {
 }
 
 compose_cmd() {
-  local -a cmd=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+  local -a cmd=(docker compose)
+
+  if [[ -n "$COMPOSE_PROJECT_NAME_OVERRIDE" ]]; then
+    cmd+=(--project-name "$COMPOSE_PROJECT_NAME_OVERRIDE")
+  fi
+
+  cmd+=(--env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+
   if [[ -n "$WEB_PORT_OVERRIDE" ]]; then
     WEB_PORT="$WEB_PORT_OVERRIDE" "${cmd[@]}" "$@"
   else
@@ -356,6 +365,11 @@ while [[ $# -gt 0 ]]; do
       ENV_FILE="$2"
       shift 2
       ;;
+    --project-name)
+      [[ $# -ge 2 ]] || fail "--project-name requires a value"
+      COMPOSE_PROJECT_NAME_OVERRIDE="$2"
+      shift 2
+      ;;
     --env-template)
       [[ $# -ge 2 ]] || fail "--env-template requires a value"
       ENV_TEMPLATE_FILE="$2"
@@ -437,6 +451,9 @@ WEB_PORT="${WEB_PORT_OVERRIDE:-$(read_env_value "$ENV_FILE" "WEB_PORT")}"
 WEB_PORT="${WEB_PORT:-8080}"
 
 log "Using env file: $ENV_FILE"
+if [[ -n "$COMPOSE_PROJECT_NAME_OVERRIDE" ]]; then
+  log "Compose project name: $COMPOSE_PROJECT_NAME_OVERRIDE"
+fi
 log "Web port: $WEB_PORT"
 if (( GIT_PULL == 1 )); then
   log "Git source: $(git -C "$REPO_ROOT" remote get-url "$GIT_REMOTE")"
