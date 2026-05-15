@@ -539,7 +539,7 @@ export function AdminFlowers() {
           <div>
             <p className="section-eyebrow">作品工作区</p>
             <h3 className="admin-section-title mt-2 text-xl">作品工作台</h3>
-            <p className="mt-2 text-sm leading-6 text-muted">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
+            <p className="admin-shell-copy mt-2 text-sm">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
           </div>
           <Space wrap className="w-full justify-end sm:w-auto">
             <Button size="large" icon={<Sparkles size={16} />} onClick={() => setAiDialogOpen(true)} block={!screens.sm}>

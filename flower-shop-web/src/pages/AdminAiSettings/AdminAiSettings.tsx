@@ -57,7 +57,7 @@ export function AdminAiSettings() {
           <div>
             <p className="section-eyebrow">AI 生成配置</p>
             <h3 className="admin-section-title mt-2 text-xl">AI 生图工作区</h3>
-            <p className="mt-2 text-sm leading-6 text-muted">这里单独维护 AI 生图与作品信息建议能力，保存后作品管理中的 AI 工作台会立即使用最新配置。</p>
+            <p className="admin-shell-copy mt-2 text-sm">这里单独维护 AI 生图与作品信息建议能力，保存后作品管理中的 AI 工作台会立即使用最新配置。</p>
           </div>
           <Button type="primary" size="large" loading={saving} onClick={save}>
             保存 AI 配置
@@ -66,12 +66,12 @@ export function AdminAiSettings() {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="admin-panel p-5">
+        <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <KeyRound size={16} className="text-forest" />
             AI 生图配置
           </div>
-          <p className="mt-2 text-sm leading-6 text-muted">建议按环境使用独立密钥，模型与接口地址都支持后台动态切换，方便后续更换服务商或升级版本。</p>
+          <p className="admin-shell-copy mt-2 text-sm">建议按环境使用独立密钥，模型与接口地址都支持后台动态切换，方便后续更换服务商或升级版本。</p>
           <Form form={form} layout="vertical" className="mt-4">
             <div className="grid gap-x-4 md:grid-cols-2">
               <Form.Item name="enabled" label="启用状态" valuePropName="checked">
@@ -113,12 +113,12 @@ export function AdminAiSettings() {
         </div>
 
         <div className="space-y-6">
-          <div className="admin-panel p-5">
+          <div className="admin-panel admin-shell-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">配置摘要</p>
             <p className="mt-3 text-base font-semibold text-[#1b281e]">{aiEnabled ? "AI 生图已启用" : "AI 生图未启用"}</p>
-            <p className="mt-2 text-sm leading-6 text-muted">{summaryText}</p>
+            <p className="admin-shell-copy mt-2 text-sm">{summaryText}</p>
           </div>
-          <div className="admin-panel p-5">
+          <div className="admin-panel admin-shell-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">维护建议</p>
             <div className="mt-4 space-y-3 text-sm leading-6 text-muted">
               <p>建议正式环境和测试环境使用不同 API Key，避免调试内容混入生产资产。</p>

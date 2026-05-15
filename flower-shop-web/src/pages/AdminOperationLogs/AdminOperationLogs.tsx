@@ -720,7 +720,7 @@ export function AdminOperationLogs() {
         <div>
           <p className="section-eyebrow">日志筛选</p>
           <h3 className="admin-section-title mt-2 text-xl">操作日志工作台</h3>
-          <p className="mt-2 text-sm leading-6 text-muted">集中排查后台写操作、登录异常与可恢复数据变更，适合定位误操作与恢复依据。</p>
+          <p className="admin-shell-copy mt-2 text-sm">集中排查后台写操作、登录异常与可恢复数据变更，适合定位误操作与恢复依据。</p>
         </div>
         <div className="mt-5">
           <p className="admin-filter-caption">快捷视图</p>
@@ -850,7 +850,7 @@ export function AdminOperationLogs() {
         </div>
       </section>
 
-      <section className="admin-panel p-5">
+      <section className="admin-panel admin-shell-card p-5">
         <Alert
           showIcon
           type="warning"

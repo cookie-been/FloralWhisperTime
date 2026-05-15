@@ -281,7 +281,7 @@ export function AdminContacts() {
         <div>
           <p className="section-eyebrow">留言筛选</p>
           <h3 className="admin-section-title mt-2 text-xl">留言筛选</h3>
-          <p className="mt-2 text-sm leading-6 text-muted">按访客、联系方式和已读状态快速定位需要优先处理的留言。</p>
+          <p className="admin-shell-copy mt-2 text-sm">按访客、联系方式和已读状态快速定位需要优先处理的留言。</p>
         </div>
         <div className="mt-5">
           <p className="admin-filter-caption">筛选条件</p>
