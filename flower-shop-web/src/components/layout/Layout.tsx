@@ -27,7 +27,7 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-white text-ink">
       <header className="sticky top-0 z-50 border-b border-black/5 bg-white/92 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="site-shell-section flex h-16 items-center justify-between sm:h-[4.25rem]">
           <NavLink to="/" className="flex items-center gap-2 font-semibold text-forest">
             <img src="/brand-logo.png" alt="花语时光" className="h-10 w-10 rounded-xl object-cover shadow-sm" />
             <span className="max-w-[11rem] truncate text-base sm:max-w-none sm:text-lg">{siteConfig?.brandName ?? "花语时光"}</span>
@@ -70,24 +70,24 @@ export function Layout() {
       </main>
 
       <footer className="bg-[#f7fbf7]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.2fr_1fr_1fr] lg:px-8">
+        <div className="site-shell-section grid gap-7 py-9 sm:py-10 md:grid-cols-[1.2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2 font-semibold text-forest">
               <img src="/brand-logo.png" alt="花语时光" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
               {siteConfig?.brandName ?? "花语时光"}
             </div>
-            <p className="mt-3 max-w-md text-sm leading-7 text-muted">
+            <p className="site-shell-copy mt-3 max-w-md">
               {siteConfig?.footerDescription ?? "纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。"}
             </p>
           </div>
-          <div className="text-sm text-muted">
+          <div className="site-shell-copy text-sm">
             <p className="font-semibold text-ink">门店</p>
             <p className="mt-3 flex items-start gap-2">
               <MapPin size={16} className="mt-1 text-forest" />
               {shop?.address ?? "上海市徐汇区衡山路 88 号 1 层"}
             </p>
           </div>
-          <div className="text-sm text-muted">
+          <div className="site-shell-copy text-sm">
             <p className="font-semibold text-ink">营业时间</p>
             <p className="mt-3">{siteConfig?.businessHoursText ?? "周一至周五 09:30-21:00，周末 10:00-21:30"}</p>
           </div>

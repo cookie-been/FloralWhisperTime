@@ -61,7 +61,7 @@ export function FlowerDetail() {
   if (!flower) return <div className="mx-auto max-w-7xl px-4 py-20 text-muted">正在加载作品...</div>;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <section className="site-shell-section py-8 sm:py-10">
       <Breadcrumb
         className="mb-6 overflow-hidden"
         items={[
@@ -77,8 +77,8 @@ export function FlowerDetail() {
           <p className="section-eyebrow">作品详情</p>
           <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl">{flower.name}</h1>
           <p className="mt-4 text-xl font-semibold text-forest sm:text-2xl">参考价 ¥{flower.price}</p>
-          <p className="mt-4 leading-7 text-muted sm:mt-5 sm:leading-8">{flower.description}</p>
-          <p className="mt-3 leading-7 text-muted sm:mt-4 sm:leading-8">{flower.meaning}</p>
+          <p className="site-shell-copy mt-4 sm:mt-5">{flower.description}</p>
+          <p className="site-shell-copy mt-3 sm:mt-4">{flower.meaning}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             {flower.tags.map((tag) => (
               <Tag key={tag} color="green" className="m-0">

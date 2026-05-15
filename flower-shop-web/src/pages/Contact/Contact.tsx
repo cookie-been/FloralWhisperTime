@@ -34,17 +34,17 @@ export function Contact() {
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+    <section className="site-shell-section site-shell-block">
       <div className="mb-8 sm:mb-10">
         <p className="section-eyebrow">联系咨询</p>
         <h1 className="section-title section-title-accent mt-2 text-3xl sm:text-4xl">联系我们</h1>
-        <p className="mt-3 max-w-2xl leading-7 text-muted">
+        <p className="site-shell-copy mt-3 max-w-2xl">
           {siteConfig?.contactIntro ?? "欢迎预约花束、婚礼花艺、商业空间花艺和节日定制服务。"}
         </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-        <div className="surface-card p-5 sm:p-6">
+        <div className="surface-card site-shell-card sm:p-6">
           <h2 className="section-title text-xl">门店信息</h2>
           <div className="mt-6 space-y-5 text-muted">
             <p className="flex items-start gap-3 leading-7">
@@ -73,7 +73,7 @@ export function Contact() {
           </div>
         </div>
 
-        <div className="surface-card p-5 sm:p-6">
+        <div className="surface-card site-shell-card sm:p-6">
           <h2 className="section-title text-xl">预约咨询</h2>
           <Form form={form} layout="vertical" className="mt-6" onFinish={onFinish}>
             <Form.Item name="name" label="姓名" rules={[{ required: true, message: "请输入姓名" }]}>

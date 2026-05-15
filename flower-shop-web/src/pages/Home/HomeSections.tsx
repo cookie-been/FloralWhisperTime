@@ -14,7 +14,7 @@ function PlaceholderCard({ className = "", height = "h-48" }: { className?: stri
 
 export function HomeStatsSection({ stats, loading }: { stats: SiteStat[]; loading: boolean }) {
   return (
-    <section className="relative z-10 -mt-6 mx-auto max-w-7xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
+    <section className="site-shell-section relative z-10 -mt-6 sm:-mt-10">
       <div className="grid gap-3 sm:gap-4 md:grid-cols-3 lg:gap-6">
         {loading
           ? Array.from({ length: 3 }).map((_, index) => <PlaceholderCard key={index} className="border-none" height="h-36" />)
@@ -52,12 +52,12 @@ export function HomeFeaturedSection({
   loading: boolean;
 }) {
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 sm:pt-16 lg:px-8">
+    <section className="site-shell-section site-shell-block pb-16 pt-14 sm:pt-16">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="section-eyebrow">精选作品</p>
           <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">精选作品</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-muted sm:text-base">
+          <p className="site-shell-copy mt-3 max-w-2xl text-sm sm:text-base">
             首页保留一组更完整的精选作品视图，覆盖礼赠、婚礼、空间陈设等主要场景，方便快速判断整体风格。
           </p>
         </div>
@@ -90,11 +90,11 @@ export function HomeFeaturedSection({
                   loading="lazy"
                 />
               </div>
-              <div className="flex flex-col justify-between p-6 sm:p-8">
+              <div className="site-shell-card flex flex-col justify-between sm:p-8">
                 <div>
                   <p className="section-eyebrow">主推作品</p>
                   <h3 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">{featuredPrimary.name}</h3>
-                  <p className="mt-4 text-base leading-8 text-muted">{featuredPrimary.description}</p>
+                  <p className="site-shell-copy mt-4 text-base">{featuredPrimary.description}</p>
                   <div className="mt-5 flex flex-wrap gap-2">
                     {featuredPrimary.tags.slice(0, 4).map((tag) => (
                       <span key={tag} className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-forest">
@@ -131,12 +131,12 @@ export function HomeServiceScenesSection({ categories, loading }: { categories: 
   const visibleCategories = categories.filter((category) => category.id !== "all").slice(0, 6);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+    <section className="site-shell-section pb-16">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
           <p className="section-eyebrow">服务场景</p>
           <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">服务场景</h2>
-          <p className="mt-3 text-sm leading-7 text-muted sm:text-base">
+          <p className="site-shell-copy mt-3 text-sm sm:text-base">
             用更明确的分类入口，把婚礼、日常赠礼、开业和空间定制等常用浏览路径提前放到首页，减少访客进入画廊后的筛选成本。
           </p>
         </div>
@@ -168,7 +168,7 @@ export function HomeServiceScenesSection({ categories, loading }: { categories: 
                   <ArrowRight size={16} />
                 </span>
               </div>
-              <p className="mt-4 text-sm leading-7 text-muted">{category.description || "进入该主题查看更完整的花艺作品与场景内容。"}</p>
+              <p className="site-shell-copy mt-4 text-sm">{category.description || "进入该主题查看更完整的花艺作品与场景内容。"}</p>
             </Link>
           ))}
         </div>
@@ -188,12 +188,12 @@ export function HomeBrandStorySection({
 }) {
   return (
     <section className="bg-[#f7fbf7]">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="site-shell-section site-shell-block">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <p className="section-eyebrow">品牌故事</p>
             <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">品牌故事</h2>
-            <p className="mt-3 text-sm leading-7 text-muted sm:text-base">
+            <p className="site-shell-copy mt-3 text-sm sm:text-base">
               把品牌气质、服务方式和到店感受压缩进首页一屏，让访问者在浏览作品之外，也能快速理解这家店的表达方式。
             </p>
           </div>
@@ -219,7 +219,7 @@ export function HomeBrandStorySection({
                     <div className="rounded-lg border border-black/6 bg-white/78 p-4 sm:p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">品牌气质</p>
                       <p className="mt-3 text-lg font-semibold text-ink">自然、克制、适合长期被记住</p>
-                      <p className="mt-3 text-sm leading-7 text-muted">
+                  <p className="site-shell-copy mt-3 text-sm">
                         以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。
                       </p>
                     </div>
@@ -227,26 +227,26 @@ export function HomeBrandStorySection({
                 ) : null}
               </div>
 
-              <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+              <div className="site-shell-card flex flex-col justify-between sm:p-8 lg:p-10">
                 <div>
                   <p className="section-eyebrow">品牌叙事</p>
                   <h3 className="section-title section-title-accent mt-3 text-2xl leading-tight sm:text-3xl">{story.title}</h3>
-                  {story.subtitle ? <p className="mt-4 text-base leading-7 text-muted sm:text-lg sm:leading-8">{story.subtitle}</p> : null}
-                  <p className="mt-5 leading-8 text-muted">{story.content}</p>
+                  {story.subtitle ? <p className="site-shell-copy mt-4 text-base sm:text-lg">{story.subtitle}</p> : null}
+                  <p className="site-shell-copy mt-5">{story.content}</p>
                 </div>
 
                 <div className="mt-10 grid gap-4 border-t border-black/6 pt-6 sm:grid-cols-3">
                   <div className="rounded-lg bg-[#f8fbf7] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">服务方式</p>
-                    <p className="mt-3 text-sm leading-7 text-muted">门店零售、场景花礼、婚礼与空间陈设同步提供。</p>
+                    <p className="site-shell-copy mt-3 text-sm">门店零售、场景花礼、婚礼与空间陈设同步提供。</p>
                   </div>
                   <div className="rounded-lg bg-[#f8fbf7] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">到店体验</p>
-                    <p className="mt-3 text-sm leading-7 text-muted">更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。</p>
+                    <p className="site-shell-copy mt-3 text-sm">更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。</p>
                   </div>
                   <div className="rounded-lg bg-[#f8fbf7] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">门店信息</p>
-                    <p className="mt-3 inline-flex items-start gap-2 text-sm leading-7 text-muted">
+                    <p className="site-shell-copy mt-3 inline-flex items-start gap-2 text-sm">
                       <MapPin size={16} className="mt-1 shrink-0 text-forest" />
                       <span>{shop?.address}</span>
                     </p>

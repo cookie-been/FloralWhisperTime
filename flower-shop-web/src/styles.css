@@ -183,7 +183,7 @@ a {
   border: 1px solid rgba(31, 49, 38, 0.08);
   border-radius: 8px;
   background: #fbfaf8;
-  box-shadow: 0 10px 30px rgba(88, 69, 48, 0.05);
+  box-shadow: 0 12px 28px rgba(88, 69, 48, 0.05);
 }
 
 .section-eyebrow {
@@ -198,6 +198,7 @@ a {
   color: #1f2d24;
   font-weight: 600;
   letter-spacing: 0;
+  line-height: 1.12;
   text-wrap: balance;
 }
 
@@ -232,6 +233,37 @@ a {
   background-image:
     linear-gradient(90deg, rgba(16, 38, 22, 0.62), rgba(16, 38, 22, 0.1)),
     url("https://picsum.photos/seed/floral-hero/1920/1080");
+}
+
+.site-shell-section {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.site-shell-copy {
+  color: #6d7e72;
+  font-size: 0.95rem;
+  line-height: 1.85;
+}
+
+.site-shell-panel {
+  border: 1px solid rgba(31, 49, 38, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 14px 32px rgba(88, 69, 48, 0.06);
+}
+
+.site-shell-card {
+  padding: 1.25rem;
+}
+
+.site-shell-block {
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
 }
 
 .admin-sidebar {
@@ -721,6 +753,32 @@ a {
 }
 
 @media (max-width: 767px) {
+  .surface-card {
+    box-shadow: 0 10px 24px rgba(88, 69, 48, 0.05);
+  }
+
+  .section-eyebrow {
+    letter-spacing: 0.2em;
+  }
+
+  .section-title {
+    line-height: 1.16;
+  }
+
+  .site-shell-copy {
+    font-size: 0.92rem;
+    line-height: 1.8;
+  }
+
+  .site-shell-card {
+    padding: 1rem;
+  }
+
+  .site-shell-block {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
   .ant-segmented {
     width: 100%;
   }
