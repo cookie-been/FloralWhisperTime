@@ -89,7 +89,7 @@ export function FlowerDetail() {
           <Descriptions className="mt-8" column={1} bordered size="middle">
             <Descriptions.Item label="主要花材">{flower.materials.join(" / ")}</Descriptions.Item>
             <Descriptions.Item label="适用场景">{flower.tags.join("、")}</Descriptions.Item>
-            <Descriptions.Item label="作品编号">{flower.id}</Descriptions.Item>
+            <Descriptions.Item label="参考说明">作品图片与价格用于沟通参考，实际搭配会随季节花材与制作需求微调。</Descriptions.Item>
           </Descriptions>
         </div>
       </div>
