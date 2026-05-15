@@ -166,7 +166,6 @@ Authorization: Bearer <token>
 - `heroImage`
 - `primaryCtaText`
 - `secondaryCtaText`
-- `stats`
 - `contactIntro`
 - `businessHoursText`
 - `footerDescription`
@@ -642,7 +641,6 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
 - `heroImage`
 - `primaryCtaText`
 - `secondaryCtaText`
-- `stats`
 - `contactIntro`
 - `businessHoursText`
 - `footerDescription`

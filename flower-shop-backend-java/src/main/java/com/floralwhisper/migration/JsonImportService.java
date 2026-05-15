@@ -13,7 +13,6 @@ import com.floralwhisper.entity.FlowerTag;
 import com.floralwhisper.entity.ShopHour;
 import com.floralwhisper.entity.ShopInfo;
 import com.floralwhisper.entity.SiteConfig;
-import com.floralwhisper.entity.SiteConfigStat;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
@@ -26,7 +25,6 @@ import com.floralwhisper.mapper.FlowerTagMapper;
 import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
-import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -54,7 +52,6 @@ public class JsonImportService {
   private final FlowerMaterialMapper flowerMaterialMapper;
   private final FlowerTagMapper flowerTagMapper;
   private final SiteConfigMapper siteConfigMapper;
-  private final SiteConfigStatMapper siteConfigStatMapper;
   private final ShopInfoMapper shopInfoMapper;
   private final ShopHourMapper shopHourMapper;
   private final BrandStoryMapper brandStoryMapper;
@@ -70,7 +67,6 @@ public class JsonImportService {
       FlowerMaterialMapper flowerMaterialMapper,
       FlowerTagMapper flowerTagMapper,
       SiteConfigMapper siteConfigMapper,
-      SiteConfigStatMapper siteConfigStatMapper,
       ShopInfoMapper shopInfoMapper,
       ShopHourMapper shopHourMapper,
       BrandStoryMapper brandStoryMapper,
@@ -84,7 +80,6 @@ public class JsonImportService {
     this.flowerMaterialMapper = flowerMaterialMapper;
     this.flowerTagMapper = flowerTagMapper;
     this.siteConfigMapper = siteConfigMapper;
-    this.siteConfigStatMapper = siteConfigStatMapper;
     this.shopInfoMapper = shopInfoMapper;
     this.shopHourMapper = shopHourMapper;
     this.brandStoryMapper = brandStoryMapper;
@@ -114,19 +109,17 @@ public class JsonImportService {
         flowerCounts.images(),
         flowerCounts.materials(),
         flowerCounts.tags(),
-        siteCounts.stats(),
         siteCounts.storyImages(),
         siteCounts.teamMembers(),
         siteCounts.shopHours(),
         contacts);
     log.info(
-        "JSON import completed: categories={}, flowers={}, images={}, materials={}, tags={}, stats={}, storyImages={}, teamMembers={}, shopHours={}, contacts={}",
+        "JSON import completed: categories={}, flowers={}, images={}, materials={}, tags={}, storyImages={}, teamMembers={}, shopHours={}, contacts={}",
         summary.categories(),
         summary.flowers(),
         summary.images(),
         summary.materials(),
         summary.tags(),
-        summary.stats(),
         summary.storyImages(),
         summary.teamMembers(),
         summary.shopHours(),
@@ -163,7 +156,6 @@ public class JsonImportService {
     flowerMaterialMapper.delete(null);
     flowerTagMapper.delete(null);
     brandStoryImageMapper.delete(null);
-    siteConfigStatMapper.delete(null);
     shopHourMapper.delete(null);
     contactMapper.delete(null);
     teamMemberMapper.delete(null);
@@ -264,14 +256,14 @@ public class JsonImportService {
   }
 
   private SiteContentCounts importSiteContent(JsonImportModels.LegacyDb legacyDb) {
-    int stats = importSiteConfig(legacyDb.getSiteConfig(), legacyDb.getShopInfo());
+    importSiteConfig(legacyDb.getSiteConfig(), legacyDb.getShopInfo());
     int shopHours = importShopInfo(legacyDb.getShopInfo());
     int storyImages = importBrandStory(legacyDb.getBrandStory());
     int teamMembers = importTeamMembers(legacyDb.getTeamMembers());
-    return new SiteContentCounts(stats, storyImages, teamMembers, shopHours);
+    return new SiteContentCounts(storyImages, teamMembers, shopHours);
   }
 
-  private int importSiteConfig(JsonImportModels.SiteConfigRecord record, JsonImportModels.ShopInfoRecord shopInfoRecord) {
+  private void importSiteConfig(JsonImportModels.SiteConfigRecord record, JsonImportModels.ShopInfoRecord shopInfoRecord) {
     JsonImportModels.SiteConfigRecord source = record == null ? new JsonImportModels.SiteConfigRecord() : record;
     SiteConfig entity = new SiteConfig();
     entity.setId(SINGLETON_ID);
@@ -286,22 +278,6 @@ public class JsonImportService {
     entity.setBusinessHoursText(fallback(source.getBusinessHoursText(), "周一至周五 09:30-21:00，周末 10:00-21:30"));
     entity.setFooterDescription(fallback(source.getFooterDescription(), "纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。"));
     siteConfigMapper.insert(entity);
-
-    int count = 0;
-    List<JsonImportModels.SiteStatRecord> stats = safeList(source.getStats());
-    for (int i = 0; i < stats.size(); i++) {
-      JsonImportModels.SiteStatRecord stat = stats.get(i);
-      if (blank(stat.getValue()) || blank(stat.getLabel())) {
-        continue;
-      }
-      SiteConfigStat statEntity = new SiteConfigStat();
-      statEntity.setValue(stat.getValue().trim());
-      statEntity.setLabel(stat.getLabel().trim());
-      statEntity.setSort(i);
-      siteConfigStatMapper.insert(statEntity);
-      count++;
-    }
-    return count;
   }
 
   private int importShopInfo(JsonImportModels.ShopInfoRecord record) {
@@ -454,7 +430,6 @@ public class JsonImportService {
       int images,
       int materials,
       int tags,
-      int stats,
       int storyImages,
       int teamMembers,
       int shopHours,
@@ -462,5 +437,5 @@ public class JsonImportService {
 
   private record FlowerCounts(int flowers, int images, int materials, int tags) {}
 
-  private record SiteContentCounts(int stats, int storyImages, int teamMembers, int shopHours) {}
+  private record SiteContentCounts(int storyImages, int teamMembers, int shopHours) {}
 }

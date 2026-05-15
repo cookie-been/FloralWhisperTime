@@ -32,7 +32,6 @@ import com.floralwhisper.mapper.FlowerTagMapper;
 import com.floralwhisper.mapper.OperationLogMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
-import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -117,7 +116,6 @@ class OperationLogRecoveryServiceTest {
         flowerMaterialMapper,
         flowerTagMapper,
         mock(SiteConfigMapper.class),
-        mock(SiteConfigStatMapper.class),
         mock(ShopInfoMapper.class),
         mock(BrandStoryMapper.class),
         mock(BrandStoryImageMapper.class),
@@ -190,7 +188,6 @@ class OperationLogRecoveryServiceTest {
         mock(FlowerMaterialMapper.class),
         mock(FlowerTagMapper.class),
         mock(SiteConfigMapper.class),
-        mock(SiteConfigStatMapper.class),
         mock(ShopInfoMapper.class),
         mock(BrandStoryMapper.class),
         mock(BrandStoryImageMapper.class),

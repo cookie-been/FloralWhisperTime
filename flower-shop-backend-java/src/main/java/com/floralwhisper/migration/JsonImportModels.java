@@ -120,16 +120,8 @@ public final class JsonImportModels {
     private String heroImage;
     private String primaryCtaText;
     private String secondaryCtaText;
-    private List<SiteStatRecord> stats = new ArrayList<>();
     private String contactIntro;
     private String businessHoursText;
     private String footerDescription;
-  }
-
-  @Data
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class SiteStatRecord {
-    private String value;
-    private String label;
   }
 }

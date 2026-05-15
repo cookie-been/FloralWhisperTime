@@ -25,9 +25,9 @@ import com.floralwhisper.dto.TimeRangeResponse;
 import com.floralwhisper.entity.AboutPage;
 import com.floralwhisper.entity.AboutTimelineEntry;
 import com.floralwhisper.entity.AiSettings;
-import com.floralwhisper.entity.Category;
 import com.floralwhisper.entity.BrandStory;
 import com.floralwhisper.entity.BrandStoryImage;
+import com.floralwhisper.entity.Category;
 import com.floralwhisper.entity.OperationLog;
 import com.floralwhisper.entity.ShopHour;
 import com.floralwhisper.entity.ShopInfo;
@@ -43,7 +43,6 @@ import com.floralwhisper.mapper.OperationLogMapper;
 import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
-import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.math.BigDecimal;
 import java.io.File;
@@ -79,7 +78,6 @@ public class SiteService {
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private final SiteConfigMapper siteConfigMapper;
-  private final SiteConfigStatMapper siteConfigStatMapper;
   private final ShopInfoMapper shopInfoMapper;
   private final ShopHourMapper shopHourMapper;
   private final AboutPageMapper aboutPageMapper;
@@ -101,7 +99,6 @@ public class SiteService {
   @Autowired
   public SiteService(
       SiteConfigMapper siteConfigMapper,
-      SiteConfigStatMapper siteConfigStatMapper,
       ShopInfoMapper shopInfoMapper,
       ShopHourMapper shopHourMapper,
       AboutPageMapper aboutPageMapper,
@@ -118,7 +115,6 @@ public class SiteService {
       AuditLogService auditLogService) {
     this(
         siteConfigMapper,
-        siteConfigStatMapper,
         shopInfoMapper,
         shopHourMapper,
         aboutPageMapper,
@@ -140,7 +136,6 @@ public class SiteService {
 
   SiteService(
       SiteConfigMapper siteConfigMapper,
-      SiteConfigStatMapper siteConfigStatMapper,
       ShopInfoMapper shopInfoMapper,
       ShopHourMapper shopHourMapper,
       AboutPageMapper aboutPageMapper,
@@ -159,7 +154,6 @@ public class SiteService {
       ZoneId zoneId,
       Clock clock) {
     this.siteConfigMapper = siteConfigMapper;
-    this.siteConfigStatMapper = siteConfigStatMapper;
     this.shopInfoMapper = shopInfoMapper;
     this.shopHourMapper = shopHourMapper;
     this.aboutPageMapper = aboutPageMapper;

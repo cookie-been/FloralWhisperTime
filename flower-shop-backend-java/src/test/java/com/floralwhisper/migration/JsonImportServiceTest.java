@@ -22,7 +22,6 @@ import com.floralwhisper.entity.FlowerTag;
 import com.floralwhisper.entity.ShopHour;
 import com.floralwhisper.entity.ShopInfo;
 import com.floralwhisper.entity.SiteConfig;
-import com.floralwhisper.entity.SiteConfigStat;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
@@ -35,7 +34,6 @@ import com.floralwhisper.mapper.FlowerTagMapper;
 import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
-import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,8 +59,6 @@ class JsonImportServiceTest {
   private FlowerTagMapper flowerTagMapper;
   @Mock
   private SiteConfigMapper siteConfigMapper;
-  @Mock
-  private SiteConfigStatMapper siteConfigStatMapper;
   @Mock
   private ShopInfoMapper shopInfoMapper;
   @Mock
@@ -95,7 +91,6 @@ class JsonImportServiceTest {
         flowerMaterialMapper,
         flowerTagMapper,
         siteConfigMapper,
-        siteConfigStatMapper,
         shopInfoMapper,
         shopHourMapper,
         brandStoryMapper,
@@ -114,7 +109,6 @@ class JsonImportServiceTest {
     assertEquals(9, summary.images());
     assertEquals(16, summary.materials());
     assertEquals(13, summary.tags());
-    assertEquals(3, summary.stats());
     assertEquals(2, summary.storyImages());
     assertEquals(2, summary.teamMembers());
     assertEquals(7, summary.shopHours());
@@ -128,7 +122,6 @@ class JsonImportServiceTest {
     verify(flowerMaterialMapper, times(16)).insert(any(FlowerMaterial.class));
     verify(flowerTagMapper, times(13)).insert(any(FlowerTag.class));
     verify(siteConfigMapper, times(1)).insert(any(SiteConfig.class));
-    verify(siteConfigStatMapper, times(3)).insert(any(SiteConfigStat.class));
     verify(shopInfoMapper, times(1)).insert(any(ShopInfo.class));
     verify(shopHourMapper, times(7)).insert(any(ShopHour.class));
     verify(brandStoryMapper, times(1)).insert(any(BrandStory.class));

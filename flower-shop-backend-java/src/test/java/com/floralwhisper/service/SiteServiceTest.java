@@ -21,7 +21,6 @@ import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.entity.OperationLog;
 import com.floralwhisper.entity.ShopInfo;
 import com.floralwhisper.entity.SiteConfig;
-import com.floralwhisper.entity.SiteConfigStat;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
@@ -32,7 +31,6 @@ import com.floralwhisper.mapper.OperationLogMapper;
 import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
-import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +55,6 @@ class SiteServiceTest {
   @Test
   void updateSiteConfigNoLongerWritesLegacyStatsTable() {
     SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
-    SiteConfigStatMapper siteConfigStatMapper = mock(SiteConfigStatMapper.class);
     ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
     BrandStoryMapper brandStoryMapper = mock(BrandStoryMapper.class);
     BrandStoryImageMapper brandStoryImageMapper = mock(BrandStoryImageMapper.class);
@@ -83,7 +80,6 @@ class SiteServiceTest {
     SiteService siteService =
         new SiteService(
             siteConfigMapper,
-            siteConfigStatMapper,
             shopInfoMapper,
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
@@ -108,8 +104,6 @@ class SiteServiceTest {
     siteService.updateSiteConfig(request);
 
     verify(siteConfigMapper).updateById(any(SiteConfig.class));
-    verify(siteConfigStatMapper, never()).delete(any());
-    verify(siteConfigStatMapper, never()).insert(any(SiteConfigStat.class));
     verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
   }
 
@@ -155,7 +149,6 @@ class SiteServiceTest {
     SiteService siteService =
         new SiteService(
             mock(SiteConfigMapper.class),
-            mock(SiteConfigStatMapper.class),
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
@@ -221,7 +214,6 @@ class SiteServiceTest {
     SiteService siteService =
         new SiteService(
             mock(SiteConfigMapper.class),
-            mock(SiteConfigStatMapper.class),
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
@@ -284,7 +276,6 @@ class SiteServiceTest {
     SiteService siteService =
         new SiteService(
             mock(SiteConfigMapper.class),
-            mock(SiteConfigStatMapper.class),
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
@@ -335,7 +326,6 @@ class SiteServiceTest {
     SiteService siteService =
         new SiteService(
             mock(SiteConfigMapper.class),
-            mock(SiteConfigStatMapper.class),
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),

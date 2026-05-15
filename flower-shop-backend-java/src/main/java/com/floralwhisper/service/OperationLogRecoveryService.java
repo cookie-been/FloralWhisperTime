@@ -42,7 +42,6 @@ import com.floralwhisper.mapper.FlowerTagMapper;
 import com.floralwhisper.mapper.OperationLogMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
-import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -67,7 +66,6 @@ public class OperationLogRecoveryService {
   private final FlowerMaterialMapper flowerMaterialMapper;
   private final FlowerTagMapper flowerTagMapper;
   private final SiteConfigMapper siteConfigMapper;
-  private final SiteConfigStatMapper siteConfigStatMapper;
   private final ShopInfoMapper shopInfoMapper;
   private final BrandStoryMapper brandStoryMapper;
   private final BrandStoryImageMapper brandStoryImageMapper;
@@ -89,7 +87,6 @@ public class OperationLogRecoveryService {
       FlowerMaterialMapper flowerMaterialMapper,
       FlowerTagMapper flowerTagMapper,
       SiteConfigMapper siteConfigMapper,
-      SiteConfigStatMapper siteConfigStatMapper,
       ShopInfoMapper shopInfoMapper,
       BrandStoryMapper brandStoryMapper,
       BrandStoryImageMapper brandStoryImageMapper,
@@ -109,7 +106,6 @@ public class OperationLogRecoveryService {
     this.flowerMaterialMapper = flowerMaterialMapper;
     this.flowerTagMapper = flowerTagMapper;
     this.siteConfigMapper = siteConfigMapper;
-    this.siteConfigStatMapper = siteConfigStatMapper;
     this.shopInfoMapper = shopInfoMapper;
     this.brandStoryMapper = brandStoryMapper;
     this.brandStoryImageMapper = brandStoryImageMapper;
