@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Empty, Spin, Timeline, message } from "antd";
-import { getAboutPage, getAboutTimeline, getShopInfo, getTeamMembers } from "@/services/api";
-import type { AboutPageContent, AboutTimelineEntry, ShopInfo, TeamMember } from "@/types";
+import { getAboutPage, getAboutTimeline, getShopInfo, getSiteConfig, getTeamMembers } from "@/services/api";
+import type { AboutPageContent, AboutTimelineEntry, ShopInfo, SiteConfig, TeamMember } from "@/types";
 
 export function About() {
   const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth < 768 : false));
@@ -9,25 +9,28 @@ export function About() {
   const [timeline, setTimeline] = useState<AboutTimelineEntry[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
+  const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([getAboutPage(), getAboutTimeline(), getTeamMembers(), getShopInfo()])
-      .then(([pageResult, timelineResult, teamResult, shopResult]) => {
+    Promise.allSettled([getAboutPage(), getAboutTimeline(), getTeamMembers(), getShopInfo(), getSiteConfig()])
+      .then(([pageResult, timelineResult, teamResult, shopResult, siteConfigResult]) => {
         if (!active) return;
 
         if (pageResult.status === "fulfilled") setAboutPage(pageResult.value);
         if (timelineResult.status === "fulfilled") setTimeline(timelineResult.value);
         if (teamResult.status === "fulfilled") setTeam(teamResult.value);
         if (shopResult.status === "fulfilled") setShop(shopResult.value);
+        if (siteConfigResult.status === "fulfilled") setSiteConfig(siteConfigResult.value);
 
         if (
           pageResult.status === "rejected" &&
           timelineResult.status === "rejected" &&
           teamResult.status === "rejected" &&
-          shopResult.status === "rejected"
+          shopResult.status === "rejected" &&
+          siteConfigResult.status === "rejected"
         ) {
           message.error("关于页加载失败");
         }
@@ -99,7 +102,7 @@ export function About() {
 
       <div className="site-shell-section site-shell-block grid gap-10 xl:grid-cols-[0.96fr_1.04fr] xl:gap-12">
         <div>
-          <p className="section-eyebrow">品牌故事</p>
+          <p className="section-eyebrow">{siteConfig?.aboutStorySectionEyebrow || "品牌故事"}</p>
           <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">{storyTitle}</h2>
           <p className="site-shell-copy mt-5 whitespace-pre-line">{storyContent}</p>
 
@@ -112,8 +115,8 @@ export function About() {
         </div>
 
         <div className="surface-card site-shell-card sm:p-8">
-          <p className="section-eyebrow">发展历程</p>
-          <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">发展历程</h2>
+          <p className="section-eyebrow">{siteConfig?.aboutTimelineSectionEyebrow || "发展历程"}</p>
+          <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">{siteConfig?.aboutTimelineSectionTitle || "发展历程"}</h2>
           <div className="mt-8">
             {timelineItems.length ? (
               <Timeline mode={isMobile ? "left" : timelineItems.length > 3 ? "alternate" : "left"} items={timelineItems} />
@@ -128,9 +131,9 @@ export function About() {
         <div className="site-shell-section site-shell-block">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-2xl">
-              <p className="section-eyebrow !text-[#456451]">团队成员</p>
-              <h2 className="section-title section-title-accent mt-2 text-2xl !text-[#1f2d24] sm:text-3xl">花艺师团队</h2>
-              <p className="site-shell-copy mt-3 text-sm">团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。</p>
+              <p className="section-eyebrow !text-[#456451]">{siteConfig?.aboutTeamSectionEyebrow || "团队成员"}</p>
+              <h2 className="section-title section-title-accent mt-2 text-2xl !text-[#1f2d24] sm:text-3xl">{siteConfig?.aboutTeamSectionTitle || "花艺师团队"}</h2>
+              <p className="site-shell-copy mt-3 text-sm">{siteConfig?.aboutTeamSectionIntro || "团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。"}</p>
             </div>
           </div>
           <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">

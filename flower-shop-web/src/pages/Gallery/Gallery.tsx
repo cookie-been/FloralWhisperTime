@@ -3,14 +3,15 @@ import { Button, Empty, Input, Pagination, Select, Segmented } from "antd";
 import { Search } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { FlowerCard } from "@/components/common/FlowerCard";
-import { getCategories, getFlowers, isAbortError } from "@/services/api";
-import type { Category, Flower, FlowerQuery } from "@/types";
+import { getCategories, getFlowers, getSiteConfig, isAbortError } from "@/services/api";
+import type { Category, Flower, FlowerQuery, SiteConfig } from "@/types";
 
 export function Gallery() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCategory = searchParams.get("category") ?? "all";
   const [categories, setCategories] = useState<Category[]>([]);
   const [flowers, setFlowers] = useState<Flower[]>([]);
+  const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -23,6 +24,7 @@ export function Gallery() {
 
   useEffect(() => {
     getCategories().then(setCategories).catch(() => undefined);
+    getSiteConfig().then(setSiteConfig).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -94,8 +96,9 @@ export function Gallery() {
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr] xl:items-end">
             <div>
               <p className="section-eyebrow">作品浏览</p>
-              <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">作品画廊</h1>
-              <p className="site-shell-copy mt-3 max-w-2xl">按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。</p>
+              <p className="section-eyebrow">{siteConfig?.galleryPageEyebrow || "作品浏览"}</p>
+              <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">{siteConfig?.galleryPageTitle || "作品画廊"}</h1>
+              <p className="site-shell-copy mt-3 max-w-2xl">{siteConfig?.galleryPageIntro || "按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。"}</p>
             </div>
             <div className="site-shell-panel grid gap-3 p-3.5 backdrop-blur sm:gap-4 sm:p-4 md:grid-cols-[minmax(0,1fr)_220px]">
               <Select
@@ -126,7 +129,7 @@ export function Gallery() {
                 <Input
                   allowClear
                   value={keywordInput}
-                  placeholder="搜索花束、花材或标签"
+                  placeholder={siteConfig?.gallerySearchPlaceholder || "搜索花束、花材或标签"}
                   onChange={(event) => setKeywordInput(event.target.value)}
                   onPressEnter={submitKeyword}
                 />
@@ -153,7 +156,7 @@ export function Gallery() {
           <div className="rounded-lg border border-black/6 bg-white/72 py-20 text-center text-muted">正在加载作品...</div>
         ) : loadError ? (
           <div className="rounded-lg border border-black/6 bg-white/72 py-20">
-            <Empty description="作品列表加载失败，请稍后刷新重试" />
+            <Empty description={siteConfig?.galleryLoadErrorText || "作品列表加载失败，请稍后刷新重试"} />
           </div>
         ) : flowers.length > 0 ? (
           <>
@@ -178,7 +181,7 @@ export function Gallery() {
           </>
         ) : (
           <div className="rounded-lg border border-black/6 bg-white/72 py-20">
-            <Empty description="没有找到匹配的花束作品" />
+            <Empty description={siteConfig?.galleryEmptyText || "没有找到匹配的花束作品"} />
           </div>
         )}
       </div>

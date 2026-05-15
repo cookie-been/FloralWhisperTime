@@ -186,6 +186,9 @@ export function AdminSystemStatus() {
   const [archiveFiles, setArchiveFiles] = useState<OperationLogArchiveFile[]>([]);
   const [backupFiles, setBackupFiles] = useState<AdminBackupFile[]>([]);
   const [opsTasks, setOpsTasks] = useState<AdminOpsTask[]>([]);
+  const [archiveFilesError, setArchiveFilesError] = useState("");
+  const [backupFilesError, setBackupFilesError] = useState("");
+  const [opsTasksError, setOpsTasksError] = useState("");
   const [taskTypeFilter, setTaskTypeFilter] = useState<"all" | "backup" | "inspection">("all");
   const [taskStatusFilter, setTaskStatusFilter] = useState<"all" | "success" | "failed">("all");
   const [selectedTask, setSelectedTask] = useState<AdminOpsTask | null>(null);
@@ -204,16 +207,44 @@ export function AdminSystemStatus() {
       setLoading(true);
     }
     try {
-      const [nextStatus, nextArchiveFiles, nextTasks, nextBackups] = await Promise.all([
+      const [statusResult, archiveFilesResult, tasksResult, backupsResult] = await Promise.allSettled([
         getAdminSystemStatus({ signal: controller.signal }),
         getAdminOperationLogArchiveFiles({ signal: controller.signal }),
         getAdminOpsTasks({ signal: controller.signal }),
         getAdminBackups({ signal: controller.signal }),
       ]);
-      setStatus(nextStatus);
-      setArchiveFiles(nextArchiveFiles);
-      setOpsTasks(nextTasks.list);
-      setBackupFiles(nextBackups.list);
+
+      if (statusResult.status !== "fulfilled") {
+        const reason = statusResult.reason;
+        throw reason instanceof Error ? reason : new Error("系统状态加载失败");
+      }
+
+      setStatus(statusResult.value);
+
+      if (archiveFilesResult.status === "fulfilled") {
+        setArchiveFiles(archiveFilesResult.value);
+        setArchiveFilesError("");
+      } else {
+        setArchiveFiles([]);
+        setArchiveFilesError(archiveFilesResult.reason instanceof Error ? archiveFilesResult.reason.message : "日志归档文件加载失败");
+      }
+
+      if (tasksResult.status === "fulfilled") {
+        setOpsTasks(tasksResult.value.list);
+        setOpsTasksError("");
+      } else {
+        setOpsTasks([]);
+        setOpsTasksError(tasksResult.reason instanceof Error ? tasksResult.reason.message : "运维任务加载失败");
+      }
+
+      if (backupsResult.status === "fulfilled") {
+        setBackupFiles(backupsResult.value.list);
+        setBackupFilesError("");
+      } else {
+        setBackupFiles([]);
+        setBackupFilesError(backupsResult.reason instanceof Error ? backupsResult.reason.message : "备份资产加载失败");
+      }
+
       setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
       setRefreshErrorCount(0);
       setLastRefreshError("");
@@ -852,7 +883,7 @@ export function AdminSystemStatus() {
                 ))
               ) : (
                 <div className="admin-empty-inline">
-                  <p>{opsTasks.length ? "当前筛选条件下没有匹配的运维任务。" : "当前还没有后台触发的运维任务记录。"}</p>
+                  <p>{opsTasksError ? opsTasksError : opsTasks.length ? "当前筛选条件下没有匹配的运维任务。" : "当前还没有后台触发的运维任务记录。"}</p>
                 </div>
               )}
             </div>
@@ -967,6 +998,14 @@ export function AdminSystemStatus() {
                 <p className="font-semibold text-[#1b281e]">备份目录</p>
                 <p className="mt-2 break-all text-muted">{status.latestBackupPath || "当前未发现备份目录记录"}</p>
               </div>
+              {backupFilesError ? (
+                <Alert
+                  showIcon
+                  type="warning"
+                  message="备份资产列表加载失败"
+                  description={backupFilesError}
+                />
+              ) : null}
               {backupFiles.length ? (
                 <div className="space-y-3">
                   {backupFiles.slice(0, 6).map((item) => (
@@ -1041,6 +1080,15 @@ export function AdminSystemStatus() {
                   </div>
                   <Tag color={archiveFiles.length ? "green" : "default"}>{archiveFiles.length} 份</Tag>
                 </div>
+                {archiveFilesError ? (
+                  <Alert
+                    className="mt-4"
+                    showIcon
+                    type="warning"
+                    message="归档文件列表加载失败"
+                    description={archiveFilesError}
+                  />
+                ) : null}
                 {archiveFiles.length ? (
                   <div className="mt-4 space-y-3">
                     {archiveFiles.slice(0, 5).map((item) => (

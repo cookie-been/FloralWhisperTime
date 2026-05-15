@@ -21,13 +21,15 @@ export function AdminLogin() {
 
   const backgroundSlides = useMemo(
     () =>
-      [
-        siteConfig?.heroImage,
-        "/admin-login/florist-counter.jpg",
-        "/admin-login/floral-arrangement.jpg",
-        "/admin-login/bouquet-display.jpg",
-      ].filter((item): item is string => Boolean(item)),
-    [siteConfig?.heroImage],
+      (siteConfig?.adminLoginSlides?.length
+        ? siteConfig.adminLoginSlides
+        : [
+            siteConfig?.heroImage,
+            "/admin-login/florist-counter.jpg",
+            "/admin-login/floral-arrangement.jpg",
+            "/admin-login/bouquet-display.jpg",
+          ]).filter((item): item is string => Boolean(item)),
+    [siteConfig?.adminLoginSlides, siteConfig?.heroImage],
   );
 
   useEffect(() => {
@@ -81,7 +83,7 @@ export function AdminLogin() {
 
       <div className="relative z-10 flex min-h-screen flex-col px-5 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
         <div className="flex items-center gap-3 text-white">
-          <img src="/brand-logo.png" alt="花语时光" className="h-12 w-12 rounded-2xl border border-white/14 bg-[#f4ede3]/12 object-cover p-1 shadow-[0_12px_24px_rgba(0,0,0,0.16)] backdrop-blur" />
+          <img src={siteConfig?.brandLogo || "/brand-logo.png"} alt="花语时光" className="h-12 w-12 rounded-2xl border border-white/14 bg-[#f4ede3]/12 object-cover p-1 shadow-[0_12px_24px_rgba(0,0,0,0.16)] backdrop-blur" />
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">管理入口</p>
             <p className="mt-1 text-lg font-semibold">{siteConfig?.brandName ?? "花语时光"}</p>

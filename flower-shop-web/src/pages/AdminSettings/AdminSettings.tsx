@@ -21,6 +21,9 @@ type SettingsForm = Omit<SiteConfig, "licenseExpiresAt"> & {
   storySubtitle: string;
   storyContent: string;
   storyImages: string;
+  heroSlidesText: string;
+  adminLoginSlidesText: string;
+  contactImagesText: string;
   licenseExpiresAt?: dayjs.Dayjs;
 };
 
@@ -52,11 +55,74 @@ export function AdminSettings() {
   const heroTitle = Form.useWatch("heroTitle", form) ?? "";
   const heroDescription = Form.useWatch("heroDescription", form) ?? "";
   const heroImage = Form.useWatch("heroImage", form) ?? "";
+  const adminBrandTitle = Form.useWatch("adminBrandTitle", form) ?? "";
+  const adminBrandSubtitle = Form.useWatch("adminBrandSubtitle", form) ?? "";
+  const adminBrandDescription = Form.useWatch("adminBrandDescription", form) ?? "";
+  const homeStorySectionTitle = Form.useWatch("homeStorySectionTitle", form) ?? "";
+  const homeStorySectionIntro = Form.useWatch("homeStorySectionIntro", form) ?? "";
+  const homeStoryPrimaryLabel = Form.useWatch("homeStoryPrimaryLabel", form) ?? "";
+  const homeStoryPrimaryTitle = Form.useWatch("homeStoryPrimaryTitle", form) ?? "";
+  const homeStoryPrimaryDescription = Form.useWatch("homeStoryPrimaryDescription", form) ?? "";
+  const homeStoryServiceLabel = Form.useWatch("homeStoryServiceLabel", form) ?? "";
+  const homeStoryServiceDescription = Form.useWatch("homeStoryServiceDescription", form) ?? "";
+  const homeStoryExperienceLabel = Form.useWatch("homeStoryExperienceLabel", form) ?? "";
+  const homeStoryExperienceDescription = Form.useWatch("homeStoryExperienceDescription", form) ?? "";
+  const homeStoryStoreLabel = Form.useWatch("homeStoryStoreLabel", form) ?? "";
+  const homeStoryDetailLinkText = Form.useWatch("homeStoryDetailLinkText", form) ?? "";
+  const homeFeaturedSectionEyebrow = Form.useWatch("homeFeaturedSectionEyebrow", form) ?? "";
+  const homeFeaturedSectionTitle = Form.useWatch("homeFeaturedSectionTitle", form) ?? "";
+  const homeFeaturedSectionIntro = Form.useWatch("homeFeaturedSectionIntro", form) ?? "";
+  const homeFeaturedSectionLinkText = Form.useWatch("homeFeaturedSectionLinkText", form) ?? "";
+  const homeServiceSectionEyebrow = Form.useWatch("homeServiceSectionEyebrow", form) ?? "";
+  const homeServiceSectionTitle = Form.useWatch("homeServiceSectionTitle", form) ?? "";
+  const homeServiceSectionIntro = Form.useWatch("homeServiceSectionIntro", form) ?? "";
+  const homeServiceSectionLinkText = Form.useWatch("homeServiceSectionLinkText", form) ?? "";
+  const aboutStorySectionEyebrow = Form.useWatch("aboutStorySectionEyebrow", form) ?? "";
+  const aboutTimelineSectionEyebrow = Form.useWatch("aboutTimelineSectionEyebrow", form) ?? "";
+  const aboutTimelineSectionTitle = Form.useWatch("aboutTimelineSectionTitle", form) ?? "";
+  const aboutTeamSectionEyebrow = Form.useWatch("aboutTeamSectionEyebrow", form) ?? "";
+  const aboutTeamSectionTitle = Form.useWatch("aboutTeamSectionTitle", form) ?? "";
+  const aboutTeamSectionIntro = Form.useWatch("aboutTeamSectionIntro", form) ?? "";
+  const galleryPageEyebrow = Form.useWatch("galleryPageEyebrow", form) ?? "";
+  const galleryPageTitle = Form.useWatch("galleryPageTitle", form) ?? "";
+  const galleryPageIntro = Form.useWatch("galleryPageIntro", form) ?? "";
+  const gallerySearchPlaceholder = Form.useWatch("gallerySearchPlaceholder", form) ?? "";
+  const galleryEmptyText = Form.useWatch("galleryEmptyText", form) ?? "";
+  const galleryLoadErrorText = Form.useWatch("galleryLoadErrorText", form) ?? "";
+  const contactPageTitle = Form.useWatch("contactPageTitle", form) ?? "";
+  const contactPageSubmitText = Form.useWatch("contactPageSubmitText", form) ?? "";
+  const contactSubmitSuccessText = Form.useWatch("contactSubmitSuccessText", form) ?? "";
+  const consultButtonText = Form.useWatch("consultButtonText", form) ?? "";
+  const adminDashboardEyebrow = Form.useWatch("adminDashboardEyebrow", form) ?? "";
+  const adminDashboardTitle = Form.useWatch("adminDashboardTitle", form) ?? "";
+  const adminDashboardDescription = Form.useWatch("adminDashboardDescription", form) ?? "";
+  const adminFlowersEyebrow = Form.useWatch("adminFlowersEyebrow", form) ?? "";
+  const adminFlowersTitle = Form.useWatch("adminFlowersTitle", form) ?? "";
+  const adminFlowersDescription = Form.useWatch("adminFlowersDescription", form) ?? "";
+  const adminSettingsEyebrow = Form.useWatch("adminSettingsEyebrow", form) ?? "";
+  const adminSettingsTitle = Form.useWatch("adminSettingsTitle", form) ?? "";
+  const adminSettingsDescription = Form.useWatch("adminSettingsDescription", form) ?? "";
+  const adminAiEyebrow = Form.useWatch("adminAiEyebrow", form) ?? "";
+  const adminAiTitle = Form.useWatch("adminAiTitle", form) ?? "";
+  const adminAiDescription = Form.useWatch("adminAiDescription", form) ?? "";
+  const adminContactsEyebrow = Form.useWatch("adminContactsEyebrow", form) ?? "";
+  const adminContactsTitle = Form.useWatch("adminContactsTitle", form) ?? "";
+  const adminContactsDescription = Form.useWatch("adminContactsDescription", form) ?? "";
+  const adminSystemEyebrow = Form.useWatch("adminSystemEyebrow", form) ?? "";
+  const adminSystemTitle = Form.useWatch("adminSystemTitle", form) ?? "";
+  const adminSystemDescription = Form.useWatch("adminSystemDescription", form) ?? "";
+  const adminOperationLogsEyebrow = Form.useWatch("adminOperationLogsEyebrow", form) ?? "";
+  const adminOperationLogsTitle = Form.useWatch("adminOperationLogsTitle", form) ?? "";
+  const adminOperationLogsDescription = Form.useWatch("adminOperationLogsDescription", form) ?? "";
   const phone = Form.useWatch("phone", form) ?? "";
   const address = Form.useWatch("address", form) ?? "";
   const storyTitle = Form.useWatch("storyTitle", form) ?? "";
   const storyContent = Form.useWatch("storyContent", form) ?? "";
   const storyImages = Form.useWatch("storyImages", form) ?? "";
+  const brandLogo = Form.useWatch("brandLogo", form) ?? "";
+  const heroSlidesText = Form.useWatch("heroSlidesText", form) ?? "";
+  const adminLoginSlidesText = Form.useWatch("adminLoginSlidesText", form) ?? "";
+  const contactImagesText = Form.useWatch("contactImagesText", form) ?? "";
   const licenseCustomerName = Form.useWatch("licenseCustomerName", form) ?? "";
   const licenseCode = Form.useWatch("licenseCode", form) ?? "";
   const licenseType = Form.useWatch("licenseType", form) ?? "";
@@ -71,6 +137,9 @@ export function AdminSettings() {
   };
 
   const storyPreviewImages = useMemo(() => splitText(storyImages), [storyImages]);
+  const heroPreviewSlides = useMemo(() => splitText(heroSlidesText), [heroSlidesText]);
+  const adminLoginPreviewSlides = useMemo(() => splitText(adminLoginSlidesText), [adminLoginSlidesText]);
+  const contactPreviewImages = useMemo(() => splitText(contactImagesText), [contactImagesText]);
 
   useEffect(() => {
     Promise.all([getAdminSiteConfig(), getShopInfo(), getBrandStory()])
@@ -87,6 +156,9 @@ export function AdminSettings() {
           storySubtitle: story.subtitle ?? "",
           storyContent: story.content,
           storyImages: joinText(story.images),
+          heroSlidesText: joinText(siteConfig.heroSlides ?? []),
+          adminLoginSlidesText: joinText(siteConfig.adminLoginSlides ?? []),
+          contactImagesText: joinText(siteConfig.contactImages ?? []),
         });
       })
       .catch((error) => message.error(error.message))
@@ -102,6 +174,9 @@ export function AdminSettings() {
         ...values,
         licenseExpiresAt: values.licenseExpiresAt ? values.licenseExpiresAt.format("YYYY-MM-DDTHH:mm:ss") : undefined,
         storyImages: splitText(values.storyImages),
+        heroSlides: splitText(values.heroSlidesText),
+        adminLoginSlides: splitText(values.adminLoginSlidesText),
+        contactImages: splitText(values.contactImagesText),
       });
       message.success("站点配置已保存");
     } catch (error) {
@@ -130,6 +205,13 @@ export function AdminSettings() {
     return false;
   };
 
+  const uploadImageToField = async (file: RcFile, field: keyof SettingsForm, successMessage: string) => {
+    const result = await uploadFlowerImage(file);
+    form.setFieldValue(field, result.url);
+    message.success(successMessage);
+    return false;
+  };
+
   if (booting) {
     return <div className="admin-panel px-6 py-16 text-center text-muted">正在载入站点配置...</div>;
   }
@@ -144,6 +226,26 @@ export function AdminSettings() {
           </div>
           <div className="mt-4 grid gap-x-4 md:grid-cols-2">
             <Form.Item name="brandName" label="品牌名称" rules={[{ required: true, message: "请输入品牌名称" }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminBrandTitle" label="后台品牌标题">
+              <Input />
+            </Form.Item>
+            <Form.Item label="网站 Logo">
+              <div className="space-y-3">
+                <Form.Item name="brandLogo" noStyle>
+                  <Input placeholder="可直接粘贴 Logo 图片 URL，或使用上传按钮" />
+                </Form.Item>
+                <Upload
+                  beforeUpload={(file) => uploadImageToField(file, "brandLogo", "Logo 已上传")}
+                  showUploadList={false}
+                  accept="image/*"
+                >
+                  <Button>上传 Logo</Button>
+                </Upload>
+              </div>
+            </Form.Item>
+            <Form.Item name="adminBrandSubtitle" label="后台品牌副标题">
               <Input />
             </Form.Item>
             <Form.Item name="heroEyebrow" label="首屏小标语">
@@ -163,6 +265,9 @@ export function AdminSettings() {
               </div>
             </Form.Item>
           </div>
+          <Form.Item name="adminBrandDescription" label="后台品牌简介">
+            <Input.TextArea rows={2} />
+          </Form.Item>
           <Form.Item name="heroDescription" label="首页简介">
             <Input.TextArea rows={4} />
           </Form.Item>
@@ -172,6 +277,78 @@ export function AdminSettings() {
             </Form.Item>
             <Form.Item name="secondaryCtaText" label="副按钮文字">
               <Input />
+            </Form.Item>
+            <Form.Item name="consultButtonText" label="咨询按钮文字">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeStoryDetailLinkText" label="首页品牌故事按钮">
+              <Input />
+            </Form.Item>
+          </div>
+          <Form.Item name="heroSlidesText" label="首页轮播图 URL">
+            <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
+          </Form.Item>
+          <Form.Item name="adminLoginSlidesText" label="后台登录轮播图 URL">
+            <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
+          </Form.Item>
+          <div className="grid gap-x-4 md:grid-cols-2">
+            <Form.Item name="homeStorySectionTitle" label="首页品牌故事标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeFeaturedSectionEyebrow" label="首页精选区眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeFeaturedSectionTitle" label="首页精选区标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeFeaturedSectionLinkText" label="首页精选区按钮">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeServiceSectionEyebrow" label="首页服务区眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeServiceSectionTitle" label="首页服务区标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeServiceSectionLinkText" label="首页服务区按钮">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeStoryPrimaryLabel" label="首页品牌卡片标签">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeStoryPrimaryTitle" label="首页品牌卡片标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeStoryServiceLabel" label="首页服务方式标签">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeStoryExperienceLabel" label="首页到店体验标签">
+              <Input />
+            </Form.Item>
+            <Form.Item name="homeStoryStoreLabel" label="首页门店信息标签">
+              <Input />
+            </Form.Item>
+          </div>
+          <Form.Item name="homeStorySectionIntro" label="首页品牌故事导语">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Form.Item name="homeFeaturedSectionIntro" label="首页精选区导语">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="homeServiceSectionIntro" label="首页服务区导语">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+          </div>
+          <Form.Item name="homeStoryPrimaryDescription" label="首页品牌卡片说明">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Form.Item name="homeStoryServiceDescription" label="首页服务方式说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="homeStoryExperienceDescription" label="首页到店体验说明">
+              <Input.TextArea rows={3} />
             </Form.Item>
           </div>
         </div>
@@ -193,8 +370,72 @@ export function AdminSettings() {
               <Building2 size={16} className="text-forest" />
               品牌提示
             </div>
-            <p className="mt-3 text-base font-semibold text-[#1b281e]">{brandName || "花语时光"}</p>
-            <p className="mt-2 text-sm leading-6 text-muted">品牌名、主标题和主图会直接影响管理后台首页预览和前台第一屏的识别速度。</p>
+            {brandLogo ? (
+              <div className="mt-4 flex items-center gap-3">
+                <img src={brandLogo} alt="Logo 预览" className="h-12 w-12 rounded-xl object-cover shadow-sm" />
+                <span className="text-sm text-muted">当前网站 Logo</span>
+              </div>
+            ) : null}
+            <p className="mt-3 text-base font-semibold text-[#1b281e]">{adminBrandTitle || brandName || "花语时光"}</p>
+            {adminBrandSubtitle ? <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#6d7e72]">{adminBrandSubtitle}</p> : null}
+            <p className="mt-2 text-sm leading-6 text-muted">{adminBrandDescription || "品牌名、主标题和主图会直接影响管理后台首页预览和前台第一屏的识别速度。"}</p>
+          </div>
+          <div className="admin-panel admin-shell-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">轮播图预览</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {heroPreviewSlides.slice(0, 4).map((url) => (
+                <div key={`hero-slide-${url}`} className="admin-subpanel overflow-hidden bg-[#f3efe9]">
+                  <img src={url} alt="" className="h-24 w-full object-cover" />
+                </div>
+              ))}
+              {adminLoginPreviewSlides.slice(0, 4).map((url) => (
+                <div key={`admin-slide-${url}`} className="admin-subpanel overflow-hidden bg-[#f3efe9]">
+                  <img src={url} alt="" className="h-24 w-full object-cover" />
+                </div>
+              ))}
+            </div>
+            {!heroPreviewSlides.length && !adminLoginPreviewSlides.length ? (
+              <div className="admin-subpanel mt-4 px-4 py-8 text-sm text-muted">暂无首页/登录轮播图预览</div>
+            ) : null}
+          </div>
+          <div className="admin-panel admin-shell-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">首页其他区块预览</p>
+            <div className="mt-4 grid gap-3">
+              <div className="admin-subpanel px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{homeFeaturedSectionEyebrow || "精选作品"}</p>
+                <p className="mt-2 text-base font-semibold text-[#1b281e]">{homeFeaturedSectionTitle || "精选作品"}</p>
+                <p className="mt-2 text-sm text-muted">{homeFeaturedSectionIntro || "首页精选作品区导语预览"}</p>
+                <p className="mt-3 text-xs font-semibold text-forest">{homeFeaturedSectionLinkText || "查看全部"}</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{homeServiceSectionEyebrow || "服务场景"}</p>
+                <p className="mt-2 text-base font-semibold text-[#1b281e]">{homeServiceSectionTitle || "服务场景"}</p>
+                <p className="mt-2 text-sm text-muted">{homeServiceSectionIntro || "首页服务场景区导语预览"}</p>
+                <p className="mt-3 text-xs font-semibold text-forest">{homeServiceSectionLinkText || "浏览全部分类"}</p>
+              </div>
+            </div>
+          </div>
+          <div className="admin-panel admin-shell-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">首页品牌故事预览</p>
+            <p className="mt-3 text-lg font-semibold text-[#1b281e]">{homeStorySectionTitle || "品牌故事"}</p>
+            <p className="mt-2 text-sm leading-6 text-muted">{homeStorySectionIntro || "首页品牌故事区导语预览"}</p>
+            <div className="mt-4 grid gap-3">
+              <div className="admin-subpanel px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{homeStoryPrimaryLabel || "品牌气质"}</p>
+                <p className="mt-2 text-base font-semibold text-[#1b281e]">{homeStoryPrimaryTitle || "品牌卡片标题"}</p>
+                <p className="mt-2 text-sm text-muted">{homeStoryPrimaryDescription || "品牌卡片说明预览"}</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{homeStoryServiceLabel || "服务方式"}</p>
+                  <p className="mt-2 text-sm text-muted">{homeStoryServiceDescription || "服务方式说明预览"}</p>
+                </div>
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{homeStoryExperienceLabel || "到店体验"}</p>
+                  <p className="mt-2 text-sm text-muted">{homeStoryExperienceDescription || "到店体验说明预览"}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -228,19 +469,72 @@ export function AdminSettings() {
           <Form.Item name="contactIntro" label="联系我们页简介">
             <Input.TextArea rows={2} />
           </Form.Item>
+          <div className="grid gap-x-4 md:grid-cols-2">
+            <Form.Item name="contactPageTitle" label="联系页主标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="contactPageSubmitText" label="联系页提交按钮">
+              <Input />
+            </Form.Item>
+            <Form.Item name="contactSubmitSuccessText" label="联系页提交成功提示">
+              <Input />
+            </Form.Item>
+            <Form.Item name="galleryPageEyebrow" label="画廊页眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="galleryPageTitle" label="画廊页标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="gallerySearchPlaceholder" label="画廊搜索占位文案">
+              <Input />
+            </Form.Item>
+          </div>
+          <Form.Item name="galleryPageIntro" label="画廊页简介">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Form.Item name="galleryEmptyText" label="画廊空状态文案">
+              <Input />
+            </Form.Item>
+            <Form.Item name="galleryLoadErrorText" label="画廊加载失败文案">
+              <Input />
+            </Form.Item>
+          </div>
+          <Form.Item name="contactImagesText" label="联系页展示图 URL">
+            <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
+          </Form.Item>
           <Form.Item name="footerDescription" label="页脚简介">
             <Input.TextArea rows={2} />
           </Form.Item>
         </div>
 
-        <div className="admin-panel admin-shell-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">信息预览</p>
-          <p className="mt-3 text-base font-semibold text-[#1b281e]">门店信息预览</p>
-          <div className="admin-subpanel mt-4 px-4 py-4">
+          <div className="admin-panel admin-shell-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">信息预览</p>
+            <p className="mt-3 text-base font-semibold text-[#1b281e]">{contactPageTitle || "联系我们"}</p>
+            <div className="admin-subpanel mt-4 px-4 py-4">
             <p className="text-sm font-semibold text-[#1b281e]">{brandName || "花语时光"}</p>
             <p className="mt-3 text-sm text-muted">{phone || "联系电话将在这里显示"}</p>
             <p className="mt-2 text-sm leading-6 text-muted">{address || "门店地址将在这里显示"}</p>
+            <p className="mt-3 inline-flex rounded-full bg-[#eef5ed] px-3 py-1 text-xs font-semibold text-forest">{contactPageSubmitText || "提交留言"}</p>
+            <p className="mt-2 text-sm text-muted">{contactSubmitSuccessText || "留言已提交，我们会尽快联系你"}</p>
           </div>
+          <div className="admin-subpanel mt-4 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{galleryPageEyebrow || "作品浏览"}</p>
+            <p className="mt-2 text-base font-semibold text-[#1b281e]">{galleryPageTitle || "作品画廊"}</p>
+            <p className="mt-2 text-sm text-muted">{galleryPageIntro || "画廊页简介预览"}</p>
+            <p className="mt-3 text-sm text-muted">搜索框：{gallerySearchPlaceholder || "搜索花束、花材或标签"}</p>
+            <p className="mt-1 text-sm text-muted">空状态：{galleryEmptyText || "没有找到匹配的花束作品"}</p>
+            <p className="mt-1 text-sm text-muted">失败提示：{galleryLoadErrorText || "作品列表加载失败，请稍后刷新重试"}</p>
+          </div>
+          {contactPreviewImages.length ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {contactPreviewImages.slice(0, 4).map((url) => (
+                <div key={`contact-preview-${url}`} className="admin-subpanel overflow-hidden bg-[#f3efe9]">
+                  <img src={url} alt="" className="h-24 w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -262,11 +556,99 @@ export function AdminSettings() {
           <Form.Item name="storyImages" label="故事图片 URL">
             <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
           </Form.Item>
+          <div className="grid gap-x-4 md:grid-cols-2">
+            <Form.Item name="aboutStorySectionEyebrow" label="关于页故事眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="aboutTimelineSectionEyebrow" label="关于页时间轴眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="aboutTimelineSectionTitle" label="关于页时间轴标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="aboutTeamSectionEyebrow" label="关于页团队眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="aboutTeamSectionTitle" label="关于页团队标题">
+              <Input />
+            </Form.Item>
+          </div>
+          <Form.Item name="aboutTeamSectionIntro" label="关于页团队简介">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <div className="grid gap-x-4 md:grid-cols-2">
+            <Form.Item name="adminDashboardEyebrow" label="后台总览眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminDashboardTitle" label="后台总览标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminFlowersEyebrow" label="后台作品页眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminFlowersTitle" label="后台作品页标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminSettingsEyebrow" label="后台站点配置眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminSettingsTitle" label="后台站点配置标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminAiEyebrow" label="后台 AI 页眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminAiTitle" label="后台 AI 页标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminContactsEyebrow" label="后台留言页眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminContactsTitle" label="后台留言页标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminSystemEyebrow" label="后台运维页眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminSystemTitle" label="后台运维页标题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminOperationLogsEyebrow" label="后台日志页眉题">
+              <Input />
+            </Form.Item>
+            <Form.Item name="adminOperationLogsTitle" label="后台日志页标题">
+              <Input />
+            </Form.Item>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Form.Item name="adminDashboardDescription" label="后台总览说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="adminFlowersDescription" label="后台作品页说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="adminSettingsDescription" label="后台站点配置说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="adminAiDescription" label="后台 AI 页说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="adminContactsDescription" label="后台留言页说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="adminSystemDescription" label="后台运维页说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+            <Form.Item name="adminOperationLogsDescription" label="后台日志页说明">
+              <Input.TextArea rows={3} />
+            </Form.Item>
+          </div>
         </div>
 
         <div className="space-y-6">
           <div className="admin-panel admin-shell-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">故事摘要</p>
+            <p className="mt-1 text-sm text-[#58725f]">{aboutStorySectionEyebrow || "品牌故事"}</p>
             <p className="mt-3 text-xl font-semibold text-[#1b281e]">{storyTitle || "品牌故事标题预览"}</p>
             <p className="mt-2 text-sm leading-7 text-muted">{storyContent || "故事正文预览会显示在这里，帮助你在保存前快速确认语气与长度。"} </p>
           </div>
@@ -283,6 +665,40 @@ export function AdminSettings() {
             ) : (
               <div className="admin-subpanel mt-4 px-4 py-8 text-sm text-muted">暂无故事图片预览</div>
             )}
+          </div>
+          <div className="admin-panel admin-shell-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">关于页区块文案预览</p>
+            <div className="mt-4 grid gap-3">
+              <div className="admin-subpanel px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{aboutTimelineSectionEyebrow || "发展历程"}</p>
+                <p className="mt-2 text-base font-semibold text-[#1b281e]">{aboutTimelineSectionTitle || "发展历程"}</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{aboutTeamSectionEyebrow || "团队成员"}</p>
+                <p className="mt-2 text-base font-semibold text-[#1b281e]">{aboutTeamSectionTitle || "花艺师团队"}</p>
+                <p className="mt-2 text-sm text-muted">{aboutTeamSectionIntro || "团队区简介预览"}</p>
+              </div>
+            </div>
+          </div>
+          <div className="admin-panel admin-shell-card p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">后台页头文案预览</p>
+            <div className="mt-4 grid gap-3">
+              {[
+                [adminDashboardEyebrow || "后台概览", adminDashboardTitle || "运营总览", adminDashboardDescription || "先看网站状态，再进入作品与内容编辑。"],
+                [adminFlowersEyebrow || "作品目录", adminFlowersTitle || "作品管理", adminFlowersDescription || "筛选、整理与更新作品内容，保持前台展示一致。"],
+                [adminSettingsEyebrow || "动态配置", adminSettingsTitle || "站点配置", adminSettingsDescription || "统一维护站点首页、门店信息、品牌故事与关于我们内容。"],
+                [adminAiEyebrow || "AI 工作台", adminAiTitle || "AI 生图配置", adminAiDescription || "统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。"],
+                [adminContactsEyebrow || "访客留言", adminContactsTitle || "用户留言", adminContactsDescription || "查看访客提交的预约、咨询与定制需求。"],
+                [adminSystemEyebrow || "运维状态", adminSystemTitle || "运维中心", adminSystemDescription || "统一查看系统状态，并执行备份、巡检和配置迁移。"],
+                [adminOperationLogsEyebrow || "审计恢复", adminOperationLogsTitle || "操作日志", adminOperationLogsDescription || "记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。"],
+              ].map(([eyebrow, title, description]) => (
+                <div key={`${String(eyebrow)}-${String(title)}`} className="admin-subpanel px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">{eyebrow}</p>
+                  <p className="mt-2 text-base font-semibold text-[#1b281e]">{title}</p>
+                  <p className="mt-2 text-sm text-muted">{description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

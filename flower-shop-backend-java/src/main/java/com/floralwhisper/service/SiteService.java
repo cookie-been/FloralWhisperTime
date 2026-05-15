@@ -74,11 +74,14 @@ import java.util.List;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.LinkOption;
+import java.util.HashSet;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import javax.sql.DataSource;
@@ -92,11 +95,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class SiteService {
   private static final long SINGLETON_ID = 1L;
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  private static final Logger log = LoggerFactory.getLogger(SiteService.class);
 
   private final SiteConfigMapper siteConfigMapper;
   private final ShopInfoMapper shopInfoMapper;
@@ -317,6 +323,69 @@ public class SiteService {
     response.setContactIntro(config.getContactIntro());
     response.setBusinessHoursText(config.getBusinessHoursText());
     response.setFooterDescription(config.getFooterDescription());
+    response.setBrandLogo(nullToEmpty(config.getBrandLogo()));
+    response.setHeroSlides(readJsonStringList(config.getHeroSlidesJson()));
+    response.setAdminLoginSlides(readJsonStringList(config.getAdminLoginSlidesJson()));
+    response.setContactImages(readJsonStringList(config.getContactImagesJson()));
+    response.setAdminBrandTitle(nullToEmpty(config.getAdminBrandTitle()));
+    response.setAdminBrandSubtitle(nullToEmpty(config.getAdminBrandSubtitle()));
+    response.setAdminBrandDescription(nullToEmpty(config.getAdminBrandDescription()));
+    response.setHomeStorySectionTitle(nullToEmpty(config.getHomeStorySectionTitle()));
+    response.setHomeStorySectionIntro(nullToEmpty(config.getHomeStorySectionIntro()));
+    response.setHomeStoryPrimaryLabel(nullToEmpty(config.getHomeStoryPrimaryLabel()));
+    response.setHomeStoryPrimaryTitle(nullToEmpty(config.getHomeStoryPrimaryTitle()));
+    response.setHomeStoryPrimaryDescription(nullToEmpty(config.getHomeStoryPrimaryDescription()));
+    response.setHomeStoryServiceLabel(nullToEmpty(config.getHomeStoryServiceLabel()));
+    response.setHomeStoryServiceDescription(nullToEmpty(config.getHomeStoryServiceDescription()));
+    response.setHomeStoryExperienceLabel(nullToEmpty(config.getHomeStoryExperienceLabel()));
+    response.setHomeStoryExperienceDescription(nullToEmpty(config.getHomeStoryExperienceDescription()));
+    response.setHomeStoryStoreLabel(nullToEmpty(config.getHomeStoryStoreLabel()));
+    response.setHomeStoryDetailLinkText(nullToEmpty(config.getHomeStoryDetailLinkText()));
+    response.setHomeFeaturedSectionEyebrow(nullToEmpty(config.getHomeFeaturedSectionEyebrow()));
+    response.setHomeFeaturedSectionTitle(nullToEmpty(config.getHomeFeaturedSectionTitle()));
+    response.setHomeFeaturedSectionIntro(nullToEmpty(config.getHomeFeaturedSectionIntro()));
+    response.setHomeFeaturedSectionLinkText(nullToEmpty(config.getHomeFeaturedSectionLinkText()));
+    response.setHomeServiceSectionEyebrow(nullToEmpty(config.getHomeServiceSectionEyebrow()));
+    response.setHomeServiceSectionTitle(nullToEmpty(config.getHomeServiceSectionTitle()));
+    response.setHomeServiceSectionIntro(nullToEmpty(config.getHomeServiceSectionIntro()));
+    response.setHomeServiceSectionLinkText(nullToEmpty(config.getHomeServiceSectionLinkText()));
+    response.setAboutStorySectionEyebrow(nullToEmpty(config.getAboutStorySectionEyebrow()));
+    response.setAboutTimelineSectionEyebrow(nullToEmpty(config.getAboutTimelineSectionEyebrow()));
+    response.setAboutTimelineSectionTitle(nullToEmpty(config.getAboutTimelineSectionTitle()));
+    response.setAboutTeamSectionEyebrow(nullToEmpty(config.getAboutTeamSectionEyebrow()));
+    response.setAboutTeamSectionTitle(nullToEmpty(config.getAboutTeamSectionTitle()));
+    response.setAboutTeamSectionIntro(nullToEmpty(config.getAboutTeamSectionIntro()));
+    response.setGalleryPageEyebrow(nullToEmpty(config.getGalleryPageEyebrow()));
+    response.setGalleryPageTitle(nullToEmpty(config.getGalleryPageTitle()));
+    response.setGalleryPageIntro(nullToEmpty(config.getGalleryPageIntro()));
+    response.setGallerySearchPlaceholder(nullToEmpty(config.getGallerySearchPlaceholder()));
+    response.setGalleryEmptyText(nullToEmpty(config.getGalleryEmptyText()));
+    response.setGalleryLoadErrorText(nullToEmpty(config.getGalleryLoadErrorText()));
+    response.setContactPageTitle(nullToEmpty(config.getContactPageTitle()));
+    response.setContactPageSubmitText(nullToEmpty(config.getContactPageSubmitText()));
+    response.setContactSubmitSuccessText(nullToEmpty(config.getContactSubmitSuccessText()));
+    response.setConsultButtonText(nullToEmpty(config.getConsultButtonText()));
+    response.setAdminDashboardEyebrow(nullToEmpty(config.getAdminDashboardEyebrow()));
+    response.setAdminDashboardTitle(nullToEmpty(config.getAdminDashboardTitle()));
+    response.setAdminDashboardDescription(nullToEmpty(config.getAdminDashboardDescription()));
+    response.setAdminFlowersEyebrow(nullToEmpty(config.getAdminFlowersEyebrow()));
+    response.setAdminFlowersTitle(nullToEmpty(config.getAdminFlowersTitle()));
+    response.setAdminFlowersDescription(nullToEmpty(config.getAdminFlowersDescription()));
+    response.setAdminSettingsEyebrow(nullToEmpty(config.getAdminSettingsEyebrow()));
+    response.setAdminSettingsTitle(nullToEmpty(config.getAdminSettingsTitle()));
+    response.setAdminSettingsDescription(nullToEmpty(config.getAdminSettingsDescription()));
+    response.setAdminAiEyebrow(nullToEmpty(config.getAdminAiEyebrow()));
+    response.setAdminAiTitle(nullToEmpty(config.getAdminAiTitle()));
+    response.setAdminAiDescription(nullToEmpty(config.getAdminAiDescription()));
+    response.setAdminContactsEyebrow(nullToEmpty(config.getAdminContactsEyebrow()));
+    response.setAdminContactsTitle(nullToEmpty(config.getAdminContactsTitle()));
+    response.setAdminContactsDescription(nullToEmpty(config.getAdminContactsDescription()));
+    response.setAdminSystemEyebrow(nullToEmpty(config.getAdminSystemEyebrow()));
+    response.setAdminSystemTitle(nullToEmpty(config.getAdminSystemTitle()));
+    response.setAdminSystemDescription(nullToEmpty(config.getAdminSystemDescription()));
+    response.setAdminOperationLogsEyebrow(nullToEmpty(config.getAdminOperationLogsEyebrow()));
+    response.setAdminOperationLogsTitle(nullToEmpty(config.getAdminOperationLogsTitle()));
+    response.setAdminOperationLogsDescription(nullToEmpty(config.getAdminOperationLogsDescription()));
     return response;
   }
 
@@ -584,7 +653,8 @@ public class SiteService {
             Comparator.comparingLong(File::lastModified)
                 .reversed()
                 .thenComparing(File::getName, Comparator.reverseOrder()))
-        .map(file -> toAdminBackupFileResponse(file, latestBackup != null && file.getName().equals(latestBackup.getName())))
+        .map(file -> safeAdminBackupFileResponse(file, latestBackup != null && file.getName().equals(latestBackup.getName())))
+        .filter(java.util.Objects::nonNull)
         .toList();
 
     AdminBackupFileListResponse response = new AdminBackupFileListResponse();
@@ -807,6 +877,75 @@ public class SiteService {
     config.setContactIntro(text(request.getContactIntro(), config.getContactIntro()));
     config.setBusinessHoursText(text(request.getBusinessHoursText(), config.getBusinessHoursText()));
     config.setFooterDescription(text(request.getFooterDescription(), config.getFooterDescription()));
+    config.setBrandLogo(text(request.getBrandLogo(), config.getBrandLogo()));
+    if (request.getHeroSlides() != null) {
+      config.setHeroSlidesJson(writeJsonStringList(request.getHeroSlides()));
+    }
+    if (request.getAdminLoginSlides() != null) {
+      config.setAdminLoginSlidesJson(writeJsonStringList(request.getAdminLoginSlides()));
+    }
+    if (request.getContactImages() != null) {
+      config.setContactImagesJson(writeJsonStringList(request.getContactImages()));
+    }
+    config.setAdminBrandTitle(text(request.getAdminBrandTitle(), config.getAdminBrandTitle()));
+    config.setAdminBrandSubtitle(text(request.getAdminBrandSubtitle(), config.getAdminBrandSubtitle()));
+    config.setAdminBrandDescription(text(request.getAdminBrandDescription(), config.getAdminBrandDescription()));
+    config.setHomeStorySectionTitle(text(request.getHomeStorySectionTitle(), config.getHomeStorySectionTitle()));
+    config.setHomeStorySectionIntro(text(request.getHomeStorySectionIntro(), config.getHomeStorySectionIntro()));
+    config.setHomeStoryPrimaryLabel(text(request.getHomeStoryPrimaryLabel(), config.getHomeStoryPrimaryLabel()));
+    config.setHomeStoryPrimaryTitle(text(request.getHomeStoryPrimaryTitle(), config.getHomeStoryPrimaryTitle()));
+    config.setHomeStoryPrimaryDescription(text(request.getHomeStoryPrimaryDescription(), config.getHomeStoryPrimaryDescription()));
+    config.setHomeStoryServiceLabel(text(request.getHomeStoryServiceLabel(), config.getHomeStoryServiceLabel()));
+    config.setHomeStoryServiceDescription(text(request.getHomeStoryServiceDescription(), config.getHomeStoryServiceDescription()));
+    config.setHomeStoryExperienceLabel(text(request.getHomeStoryExperienceLabel(), config.getHomeStoryExperienceLabel()));
+    config.setHomeStoryExperienceDescription(text(request.getHomeStoryExperienceDescription(), config.getHomeStoryExperienceDescription()));
+    config.setHomeStoryStoreLabel(text(request.getHomeStoryStoreLabel(), config.getHomeStoryStoreLabel()));
+    config.setHomeStoryDetailLinkText(text(request.getHomeStoryDetailLinkText(), config.getHomeStoryDetailLinkText()));
+    config.setHomeFeaturedSectionEyebrow(text(request.getHomeFeaturedSectionEyebrow(), config.getHomeFeaturedSectionEyebrow()));
+    config.setHomeFeaturedSectionTitle(text(request.getHomeFeaturedSectionTitle(), config.getHomeFeaturedSectionTitle()));
+    config.setHomeFeaturedSectionIntro(text(request.getHomeFeaturedSectionIntro(), config.getHomeFeaturedSectionIntro()));
+    config.setHomeFeaturedSectionLinkText(text(request.getHomeFeaturedSectionLinkText(), config.getHomeFeaturedSectionLinkText()));
+    config.setHomeServiceSectionEyebrow(text(request.getHomeServiceSectionEyebrow(), config.getHomeServiceSectionEyebrow()));
+    config.setHomeServiceSectionTitle(text(request.getHomeServiceSectionTitle(), config.getHomeServiceSectionTitle()));
+    config.setHomeServiceSectionIntro(text(request.getHomeServiceSectionIntro(), config.getHomeServiceSectionIntro()));
+    config.setHomeServiceSectionLinkText(text(request.getHomeServiceSectionLinkText(), config.getHomeServiceSectionLinkText()));
+    config.setAboutStorySectionEyebrow(text(request.getAboutStorySectionEyebrow(), config.getAboutStorySectionEyebrow()));
+    config.setAboutTimelineSectionEyebrow(text(request.getAboutTimelineSectionEyebrow(), config.getAboutTimelineSectionEyebrow()));
+    config.setAboutTimelineSectionTitle(text(request.getAboutTimelineSectionTitle(), config.getAboutTimelineSectionTitle()));
+    config.setAboutTeamSectionEyebrow(text(request.getAboutTeamSectionEyebrow(), config.getAboutTeamSectionEyebrow()));
+    config.setAboutTeamSectionTitle(text(request.getAboutTeamSectionTitle(), config.getAboutTeamSectionTitle()));
+    config.setAboutTeamSectionIntro(text(request.getAboutTeamSectionIntro(), config.getAboutTeamSectionIntro()));
+    config.setGalleryPageEyebrow(text(request.getGalleryPageEyebrow(), config.getGalleryPageEyebrow()));
+    config.setGalleryPageTitle(text(request.getGalleryPageTitle(), config.getGalleryPageTitle()));
+    config.setGalleryPageIntro(text(request.getGalleryPageIntro(), config.getGalleryPageIntro()));
+    config.setGallerySearchPlaceholder(text(request.getGallerySearchPlaceholder(), config.getGallerySearchPlaceholder()));
+    config.setGalleryEmptyText(text(request.getGalleryEmptyText(), config.getGalleryEmptyText()));
+    config.setGalleryLoadErrorText(text(request.getGalleryLoadErrorText(), config.getGalleryLoadErrorText()));
+    config.setContactPageTitle(text(request.getContactPageTitle(), config.getContactPageTitle()));
+    config.setContactPageSubmitText(text(request.getContactPageSubmitText(), config.getContactPageSubmitText()));
+    config.setContactSubmitSuccessText(text(request.getContactSubmitSuccessText(), config.getContactSubmitSuccessText()));
+    config.setConsultButtonText(text(request.getConsultButtonText(), config.getConsultButtonText()));
+    config.setAdminDashboardEyebrow(text(request.getAdminDashboardEyebrow(), config.getAdminDashboardEyebrow()));
+    config.setAdminDashboardTitle(text(request.getAdminDashboardTitle(), config.getAdminDashboardTitle()));
+    config.setAdminDashboardDescription(text(request.getAdminDashboardDescription(), config.getAdminDashboardDescription()));
+    config.setAdminFlowersEyebrow(text(request.getAdminFlowersEyebrow(), config.getAdminFlowersEyebrow()));
+    config.setAdminFlowersTitle(text(request.getAdminFlowersTitle(), config.getAdminFlowersTitle()));
+    config.setAdminFlowersDescription(text(request.getAdminFlowersDescription(), config.getAdminFlowersDescription()));
+    config.setAdminSettingsEyebrow(text(request.getAdminSettingsEyebrow(), config.getAdminSettingsEyebrow()));
+    config.setAdminSettingsTitle(text(request.getAdminSettingsTitle(), config.getAdminSettingsTitle()));
+    config.setAdminSettingsDescription(text(request.getAdminSettingsDescription(), config.getAdminSettingsDescription()));
+    config.setAdminAiEyebrow(text(request.getAdminAiEyebrow(), config.getAdminAiEyebrow()));
+    config.setAdminAiTitle(text(request.getAdminAiTitle(), config.getAdminAiTitle()));
+    config.setAdminAiDescription(text(request.getAdminAiDescription(), config.getAdminAiDescription()));
+    config.setAdminContactsEyebrow(text(request.getAdminContactsEyebrow(), config.getAdminContactsEyebrow()));
+    config.setAdminContactsTitle(text(request.getAdminContactsTitle(), config.getAdminContactsTitle()));
+    config.setAdminContactsDescription(text(request.getAdminContactsDescription(), config.getAdminContactsDescription()));
+    config.setAdminSystemEyebrow(text(request.getAdminSystemEyebrow(), config.getAdminSystemEyebrow()));
+    config.setAdminSystemTitle(text(request.getAdminSystemTitle(), config.getAdminSystemTitle()));
+    config.setAdminSystemDescription(text(request.getAdminSystemDescription(), config.getAdminSystemDescription()));
+    config.setAdminOperationLogsEyebrow(text(request.getAdminOperationLogsEyebrow(), config.getAdminOperationLogsEyebrow()));
+    config.setAdminOperationLogsTitle(text(request.getAdminOperationLogsTitle(), config.getAdminOperationLogsTitle()));
+    config.setAdminOperationLogsDescription(text(request.getAdminOperationLogsDescription(), config.getAdminOperationLogsDescription()));
     config.setLicenseCustomerName(text(request.getLicenseCustomerName(), config.getLicenseCustomerName()));
     config.setLicenseCode(text(request.getLicenseCode(), config.getLicenseCode()));
     config.setLicenseType(text(request.getLicenseType(), config.getLicenseType()));
@@ -1080,6 +1219,69 @@ public class SiteService {
       current.setContactIntro(text(source.getContactIntro(), current.getContactIntro()));
       current.setBusinessHoursText(text(source.getBusinessHoursText(), current.getBusinessHoursText()));
       current.setFooterDescription(text(source.getFooterDescription(), current.getFooterDescription()));
+      current.setBrandLogo(text(source.getBrandLogo(), current.getBrandLogo()));
+      current.setHeroSlidesJson(source.getHeroSlides() == null ? current.getHeroSlidesJson() : writeJsonStringList(source.getHeroSlides()));
+      current.setAdminLoginSlidesJson(source.getAdminLoginSlides() == null ? current.getAdminLoginSlidesJson() : writeJsonStringList(source.getAdminLoginSlides()));
+      current.setContactImagesJson(source.getContactImages() == null ? current.getContactImagesJson() : writeJsonStringList(source.getContactImages()));
+      current.setAdminBrandTitle(text(source.getAdminBrandTitle(), current.getAdminBrandTitle()));
+      current.setAdminBrandSubtitle(text(source.getAdminBrandSubtitle(), current.getAdminBrandSubtitle()));
+      current.setAdminBrandDescription(text(source.getAdminBrandDescription(), current.getAdminBrandDescription()));
+      current.setHomeStorySectionTitle(text(source.getHomeStorySectionTitle(), current.getHomeStorySectionTitle()));
+      current.setHomeStorySectionIntro(text(source.getHomeStorySectionIntro(), current.getHomeStorySectionIntro()));
+      current.setHomeStoryPrimaryLabel(text(source.getHomeStoryPrimaryLabel(), current.getHomeStoryPrimaryLabel()));
+      current.setHomeStoryPrimaryTitle(text(source.getHomeStoryPrimaryTitle(), current.getHomeStoryPrimaryTitle()));
+      current.setHomeStoryPrimaryDescription(text(source.getHomeStoryPrimaryDescription(), current.getHomeStoryPrimaryDescription()));
+      current.setHomeStoryServiceLabel(text(source.getHomeStoryServiceLabel(), current.getHomeStoryServiceLabel()));
+      current.setHomeStoryServiceDescription(text(source.getHomeStoryServiceDescription(), current.getHomeStoryServiceDescription()));
+      current.setHomeStoryExperienceLabel(text(source.getHomeStoryExperienceLabel(), current.getHomeStoryExperienceLabel()));
+      current.setHomeStoryExperienceDescription(text(source.getHomeStoryExperienceDescription(), current.getHomeStoryExperienceDescription()));
+      current.setHomeStoryStoreLabel(text(source.getHomeStoryStoreLabel(), current.getHomeStoryStoreLabel()));
+      current.setHomeStoryDetailLinkText(text(source.getHomeStoryDetailLinkText(), current.getHomeStoryDetailLinkText()));
+      current.setHomeFeaturedSectionEyebrow(text(source.getHomeFeaturedSectionEyebrow(), current.getHomeFeaturedSectionEyebrow()));
+      current.setHomeFeaturedSectionTitle(text(source.getHomeFeaturedSectionTitle(), current.getHomeFeaturedSectionTitle()));
+      current.setHomeFeaturedSectionIntro(text(source.getHomeFeaturedSectionIntro(), current.getHomeFeaturedSectionIntro()));
+      current.setHomeFeaturedSectionLinkText(text(source.getHomeFeaturedSectionLinkText(), current.getHomeFeaturedSectionLinkText()));
+      current.setHomeServiceSectionEyebrow(text(source.getHomeServiceSectionEyebrow(), current.getHomeServiceSectionEyebrow()));
+      current.setHomeServiceSectionTitle(text(source.getHomeServiceSectionTitle(), current.getHomeServiceSectionTitle()));
+      current.setHomeServiceSectionIntro(text(source.getHomeServiceSectionIntro(), current.getHomeServiceSectionIntro()));
+      current.setHomeServiceSectionLinkText(text(source.getHomeServiceSectionLinkText(), current.getHomeServiceSectionLinkText()));
+      current.setAboutStorySectionEyebrow(text(source.getAboutStorySectionEyebrow(), current.getAboutStorySectionEyebrow()));
+      current.setAboutTimelineSectionEyebrow(text(source.getAboutTimelineSectionEyebrow(), current.getAboutTimelineSectionEyebrow()));
+      current.setAboutTimelineSectionTitle(text(source.getAboutTimelineSectionTitle(), current.getAboutTimelineSectionTitle()));
+      current.setAboutTeamSectionEyebrow(text(source.getAboutTeamSectionEyebrow(), current.getAboutTeamSectionEyebrow()));
+      current.setAboutTeamSectionTitle(text(source.getAboutTeamSectionTitle(), current.getAboutTeamSectionTitle()));
+      current.setAboutTeamSectionIntro(text(source.getAboutTeamSectionIntro(), current.getAboutTeamSectionIntro()));
+      current.setGalleryPageEyebrow(text(source.getGalleryPageEyebrow(), current.getGalleryPageEyebrow()));
+      current.setGalleryPageTitle(text(source.getGalleryPageTitle(), current.getGalleryPageTitle()));
+      current.setGalleryPageIntro(text(source.getGalleryPageIntro(), current.getGalleryPageIntro()));
+      current.setGallerySearchPlaceholder(text(source.getGallerySearchPlaceholder(), current.getGallerySearchPlaceholder()));
+      current.setGalleryEmptyText(text(source.getGalleryEmptyText(), current.getGalleryEmptyText()));
+      current.setGalleryLoadErrorText(text(source.getGalleryLoadErrorText(), current.getGalleryLoadErrorText()));
+      current.setContactPageTitle(text(source.getContactPageTitle(), current.getContactPageTitle()));
+      current.setContactPageSubmitText(text(source.getContactPageSubmitText(), current.getContactPageSubmitText()));
+      current.setContactSubmitSuccessText(text(source.getContactSubmitSuccessText(), current.getContactSubmitSuccessText()));
+      current.setConsultButtonText(text(source.getConsultButtonText(), current.getConsultButtonText()));
+      current.setAdminDashboardEyebrow(text(source.getAdminDashboardEyebrow(), current.getAdminDashboardEyebrow()));
+      current.setAdminDashboardTitle(text(source.getAdminDashboardTitle(), current.getAdminDashboardTitle()));
+      current.setAdminDashboardDescription(text(source.getAdminDashboardDescription(), current.getAdminDashboardDescription()));
+      current.setAdminFlowersEyebrow(text(source.getAdminFlowersEyebrow(), current.getAdminFlowersEyebrow()));
+      current.setAdminFlowersTitle(text(source.getAdminFlowersTitle(), current.getAdminFlowersTitle()));
+      current.setAdminFlowersDescription(text(source.getAdminFlowersDescription(), current.getAdminFlowersDescription()));
+      current.setAdminSettingsEyebrow(text(source.getAdminSettingsEyebrow(), current.getAdminSettingsEyebrow()));
+      current.setAdminSettingsTitle(text(source.getAdminSettingsTitle(), current.getAdminSettingsTitle()));
+      current.setAdminSettingsDescription(text(source.getAdminSettingsDescription(), current.getAdminSettingsDescription()));
+      current.setAdminAiEyebrow(text(source.getAdminAiEyebrow(), current.getAdminAiEyebrow()));
+      current.setAdminAiTitle(text(source.getAdminAiTitle(), current.getAdminAiTitle()));
+      current.setAdminAiDescription(text(source.getAdminAiDescription(), current.getAdminAiDescription()));
+      current.setAdminContactsEyebrow(text(source.getAdminContactsEyebrow(), current.getAdminContactsEyebrow()));
+      current.setAdminContactsTitle(text(source.getAdminContactsTitle(), current.getAdminContactsTitle()));
+      current.setAdminContactsDescription(text(source.getAdminContactsDescription(), current.getAdminContactsDescription()));
+      current.setAdminSystemEyebrow(text(source.getAdminSystemEyebrow(), current.getAdminSystemEyebrow()));
+      current.setAdminSystemTitle(text(source.getAdminSystemTitle(), current.getAdminSystemTitle()));
+      current.setAdminSystemDescription(text(source.getAdminSystemDescription(), current.getAdminSystemDescription()));
+      current.setAdminOperationLogsEyebrow(text(source.getAdminOperationLogsEyebrow(), current.getAdminOperationLogsEyebrow()));
+      current.setAdminOperationLogsTitle(text(source.getAdminOperationLogsTitle(), current.getAdminOperationLogsTitle()));
+      current.setAdminOperationLogsDescription(text(source.getAdminOperationLogsDescription(), current.getAdminOperationLogsDescription()));
       current.setLicenseCustomerName(text(source.getLicenseCustomerName(), current.getLicenseCustomerName()));
       current.setLicenseCode(text(source.getLicenseCode(), current.getLicenseCode()));
       current.setLicenseType(text(source.getLicenseType(), current.getLicenseType()));
@@ -1361,7 +1563,269 @@ public class SiteService {
 
   private SiteConfig ensureSiteConfig() {
     SiteConfig current = siteConfigMapper.selectById(SINGLETON_ID);
-    if (current != null) return current;
+    if (current != null) {
+      boolean dirty = false;
+      if (current.getBrandLogo() == null) {
+        current.setBrandLogo("");
+        dirty = true;
+      }
+      if (current.getAdminBrandTitle() == null) {
+        current.setAdminBrandTitle("");
+        dirty = true;
+      }
+      if (current.getAdminBrandSubtitle() == null) {
+        current.setAdminBrandSubtitle("");
+        dirty = true;
+      }
+      if (current.getAdminBrandDescription() == null) {
+        current.setAdminBrandDescription("");
+        dirty = true;
+      }
+      if (current.getHomeStorySectionTitle() == null) {
+        current.setHomeStorySectionTitle("品牌故事");
+        dirty = true;
+      }
+      if (current.getHomeStorySectionIntro() == null) {
+        current.setHomeStorySectionIntro("把品牌气质、服务方式和到店感受压缩进首页一屏，让访问者在浏览作品之外，也能快速理解这家店的表达方式。");
+        dirty = true;
+      }
+      if (current.getHomeStoryPrimaryLabel() == null) {
+        current.setHomeStoryPrimaryLabel("品牌气质");
+        dirty = true;
+      }
+      if (current.getHomeStoryPrimaryTitle() == null) {
+        current.setHomeStoryPrimaryTitle("自然、克制、适合长期被记住");
+        dirty = true;
+      }
+      if (current.getHomeStoryPrimaryDescription() == null) {
+        current.setHomeStoryPrimaryDescription("以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。");
+        dirty = true;
+      }
+      if (current.getHomeStoryServiceLabel() == null) {
+        current.setHomeStoryServiceLabel("服务方式");
+        dirty = true;
+      }
+      if (current.getHomeStoryServiceDescription() == null) {
+        current.setHomeStoryServiceDescription("门店零售、场景花礼、婚礼与空间陈设同步提供。");
+        dirty = true;
+      }
+      if (current.getHomeStoryExperienceLabel() == null) {
+        current.setHomeStoryExperienceLabel("到店体验");
+        dirty = true;
+      }
+      if (current.getHomeStoryExperienceDescription() == null) {
+        current.setHomeStoryExperienceDescription("更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。");
+        dirty = true;
+      }
+      if (current.getHomeStoryStoreLabel() == null) {
+        current.setHomeStoryStoreLabel("门店信息");
+        dirty = true;
+      }
+      if (current.getHomeStoryDetailLinkText() == null) {
+        current.setHomeStoryDetailLinkText("查看完整介绍");
+        dirty = true;
+      }
+      if (current.getHomeFeaturedSectionEyebrow() == null) {
+        current.setHomeFeaturedSectionEyebrow("精选作品");
+        dirty = true;
+      }
+      if (current.getHomeFeaturedSectionTitle() == null) {
+        current.setHomeFeaturedSectionTitle("精选作品");
+        dirty = true;
+      }
+      if (current.getHomeFeaturedSectionIntro() == null) {
+        current.setHomeFeaturedSectionIntro("首页保留一组更完整的精选作品视图，覆盖礼赠、婚礼、空间陈设等主要场景，方便快速判断整体风格。");
+        dirty = true;
+      }
+      if (current.getHomeFeaturedSectionLinkText() == null) {
+        current.setHomeFeaturedSectionLinkText("查看全部");
+        dirty = true;
+      }
+      if (current.getHomeServiceSectionEyebrow() == null) {
+        current.setHomeServiceSectionEyebrow("服务场景");
+        dirty = true;
+      }
+      if (current.getHomeServiceSectionTitle() == null) {
+        current.setHomeServiceSectionTitle("服务场景");
+        dirty = true;
+      }
+      if (current.getHomeServiceSectionIntro() == null) {
+        current.setHomeServiceSectionIntro("用更明确的分类入口，把婚礼、日常赠礼、开业和空间定制等常用浏览路径提前放到首页，减少访客进入画廊后的筛选成本。");
+        dirty = true;
+      }
+      if (current.getHomeServiceSectionLinkText() == null) {
+        current.setHomeServiceSectionLinkText("浏览全部分类");
+        dirty = true;
+      }
+      if (current.getAboutStorySectionEyebrow() == null) {
+        current.setAboutStorySectionEyebrow("品牌故事");
+        dirty = true;
+      }
+      if (current.getAboutTimelineSectionEyebrow() == null) {
+        current.setAboutTimelineSectionEyebrow("发展历程");
+        dirty = true;
+      }
+      if (current.getAboutTimelineSectionTitle() == null) {
+        current.setAboutTimelineSectionTitle("发展历程");
+        dirty = true;
+      }
+      if (current.getAboutTeamSectionEyebrow() == null) {
+        current.setAboutTeamSectionEyebrow("团队成员");
+        dirty = true;
+      }
+      if (current.getAboutTeamSectionTitle() == null) {
+        current.setAboutTeamSectionTitle("花艺师团队");
+        dirty = true;
+      }
+      if (current.getAboutTeamSectionIntro() == null) {
+        current.setAboutTeamSectionIntro("团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。");
+        dirty = true;
+      }
+      if (current.getGalleryPageEyebrow() == null) {
+        current.setGalleryPageEyebrow("作品浏览");
+        dirty = true;
+      }
+      if (current.getGalleryPageTitle() == null) {
+        current.setGalleryPageTitle("作品画廊");
+        dirty = true;
+      }
+      if (current.getGalleryPageIntro() == null) {
+        current.setGalleryPageIntro("按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。");
+        dirty = true;
+      }
+      if (current.getGallerySearchPlaceholder() == null) {
+        current.setGallerySearchPlaceholder("搜索花束、花材或标签");
+        dirty = true;
+      }
+      if (current.getGalleryEmptyText() == null) {
+        current.setGalleryEmptyText("没有找到匹配的花束作品");
+        dirty = true;
+      }
+      if (current.getGalleryLoadErrorText() == null) {
+        current.setGalleryLoadErrorText("作品列表加载失败，请稍后刷新重试");
+        dirty = true;
+      }
+      if (current.getContactPageTitle() == null) {
+        current.setContactPageTitle("联系我们");
+        dirty = true;
+      }
+      if (current.getContactPageSubmitText() == null) {
+        current.setContactPageSubmitText("提交留言");
+        dirty = true;
+      }
+      if (current.getContactSubmitSuccessText() == null) {
+        current.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
+        dirty = true;
+      }
+      if (current.getConsultButtonText() == null) {
+        current.setConsultButtonText("咨询花艺");
+        dirty = true;
+      }
+      if (current.getAdminDashboardEyebrow() == null) {
+        current.setAdminDashboardEyebrow("后台概览");
+        dirty = true;
+      }
+      if (current.getAdminDashboardTitle() == null) {
+        current.setAdminDashboardTitle("运营总览");
+        dirty = true;
+      }
+      if (current.getAdminDashboardDescription() == null) {
+        current.setAdminDashboardDescription("先看网站状态，再进入作品与内容编辑。");
+        dirty = true;
+      }
+      if (current.getAdminFlowersEyebrow() == null) {
+        current.setAdminFlowersEyebrow("作品目录");
+        dirty = true;
+      }
+      if (current.getAdminFlowersTitle() == null) {
+        current.setAdminFlowersTitle("作品管理");
+        dirty = true;
+      }
+      if (current.getAdminFlowersDescription() == null) {
+        current.setAdminFlowersDescription("筛选、整理与更新作品内容，保持前台展示一致。");
+        dirty = true;
+      }
+      if (current.getAdminSettingsEyebrow() == null) {
+        current.setAdminSettingsEyebrow("动态配置");
+        dirty = true;
+      }
+      if (current.getAdminSettingsTitle() == null) {
+        current.setAdminSettingsTitle("站点配置");
+        dirty = true;
+      }
+      if (current.getAdminSettingsDescription() == null) {
+        current.setAdminSettingsDescription("统一维护站点首页、门店信息、品牌故事与关于我们内容。");
+        dirty = true;
+      }
+      if (current.getAdminAiEyebrow() == null) {
+        current.setAdminAiEyebrow("AI 工作台");
+        dirty = true;
+      }
+      if (current.getAdminAiTitle() == null) {
+        current.setAdminAiTitle("AI 生图配置");
+        dirty = true;
+      }
+      if (current.getAdminAiDescription() == null) {
+        current.setAdminAiDescription("统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。");
+        dirty = true;
+      }
+      if (current.getAdminContactsEyebrow() == null) {
+        current.setAdminContactsEyebrow("访客留言");
+        dirty = true;
+      }
+      if (current.getAdminContactsTitle() == null) {
+        current.setAdminContactsTitle("用户留言");
+        dirty = true;
+      }
+      if (current.getAdminContactsDescription() == null) {
+        current.setAdminContactsDescription("查看访客提交的预约、咨询与定制需求。");
+        dirty = true;
+      }
+      if (current.getAdminSystemEyebrow() == null) {
+        current.setAdminSystemEyebrow("运维状态");
+        dirty = true;
+      }
+      if (current.getAdminSystemTitle() == null) {
+        current.setAdminSystemTitle("运维中心");
+        dirty = true;
+      }
+      if (current.getAdminSystemDescription() == null) {
+        current.setAdminSystemDescription("统一查看系统状态，并执行备份、巡检和配置迁移。");
+        dirty = true;
+      }
+      if (current.getAdminOperationLogsEyebrow() == null) {
+        current.setAdminOperationLogsEyebrow("审计恢复");
+        dirty = true;
+      }
+      if (current.getAdminOperationLogsTitle() == null) {
+        current.setAdminOperationLogsTitle("操作日志");
+        dirty = true;
+      }
+      if (current.getAdminOperationLogsDescription() == null) {
+        current.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
+        dirty = true;
+      }
+      if (!notBlank(current.getHeroSlidesJson())) {
+        current.setHeroSlidesJson("[]");
+        dirty = true;
+      }
+      if (!notBlank(current.getAdminLoginSlidesJson())) {
+        current.setAdminLoginSlidesJson("[]");
+        dirty = true;
+      }
+      if (!notBlank(current.getContactImagesJson())) {
+        current.setContactImagesJson("[]");
+        dirty = true;
+      }
+      if (current.getLicenseWarningDays() == null || current.getLicenseWarningDays() <= 0) {
+        current.setLicenseWarningDays(30);
+        dirty = true;
+      }
+      if (dirty) {
+        siteConfigMapper.updateById(current);
+      }
+      return current;
+    }
     SiteConfig created = new SiteConfig();
     created.setId(SINGLETON_ID);
     ShopInfo shopInfo = shopInfoMapper.selectById(SINGLETON_ID);
@@ -1375,9 +1839,99 @@ public class SiteService {
     created.setContactIntro("");
     created.setBusinessHoursText("");
     created.setFooterDescription("");
+    created.setBrandLogo("");
+    created.setHeroSlidesJson("[]");
+    created.setAdminLoginSlidesJson("[]");
+    created.setContactImagesJson("[]");
+    created.setAdminBrandTitle(created.getBrandName() + "后台");
+    created.setAdminBrandSubtitle("Floral Whisper Time");
+    created.setAdminBrandDescription("从作品、站点内容与 AI 能力三个层面维护品牌展示。");
+    created.setHomeStorySectionTitle("品牌故事");
+    created.setHomeStorySectionIntro("把品牌气质、服务方式和到店感受压缩进首页一屏，让访问者在浏览作品之外，也能快速理解这家店的表达方式。");
+    created.setHomeStoryPrimaryLabel("品牌气质");
+    created.setHomeStoryPrimaryTitle("自然、克制、适合长期被记住");
+    created.setHomeStoryPrimaryDescription("以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。");
+    created.setHomeStoryServiceLabel("服务方式");
+    created.setHomeStoryServiceDescription("门店零售、场景花礼、婚礼与空间陈设同步提供。");
+    created.setHomeStoryExperienceLabel("到店体验");
+    created.setHomeStoryExperienceDescription("更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。");
+    created.setHomeStoryStoreLabel("门店信息");
+    created.setHomeStoryDetailLinkText("查看完整介绍");
+    created.setHomeFeaturedSectionEyebrow("精选作品");
+    created.setHomeFeaturedSectionTitle("精选作品");
+    created.setHomeFeaturedSectionIntro("首页保留一组更完整的精选作品视图，覆盖礼赠、婚礼、空间陈设等主要场景，方便快速判断整体风格。");
+    created.setHomeFeaturedSectionLinkText("查看全部");
+    created.setHomeServiceSectionEyebrow("服务场景");
+    created.setHomeServiceSectionTitle("服务场景");
+    created.setHomeServiceSectionIntro("用更明确的分类入口，把婚礼、日常赠礼、开业和空间定制等常用浏览路径提前放到首页，减少访客进入画廊后的筛选成本。");
+    created.setHomeServiceSectionLinkText("浏览全部分类");
+    created.setAboutStorySectionEyebrow("品牌故事");
+    created.setAboutTimelineSectionEyebrow("发展历程");
+    created.setAboutTimelineSectionTitle("发展历程");
+    created.setAboutTeamSectionEyebrow("团队成员");
+    created.setAboutTeamSectionTitle("花艺师团队");
+    created.setAboutTeamSectionIntro("团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。");
+    created.setGalleryPageEyebrow("作品浏览");
+    created.setGalleryPageTitle("作品画廊");
+    created.setGalleryPageIntro("按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。");
+    created.setGallerySearchPlaceholder("搜索花束、花材或标签");
+    created.setGalleryEmptyText("没有找到匹配的花束作品");
+    created.setGalleryLoadErrorText("作品列表加载失败，请稍后刷新重试");
+    created.setContactPageTitle("联系我们");
+    created.setContactPageSubmitText("提交留言");
+    created.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
+    created.setConsultButtonText("咨询花艺");
+    created.setAdminDashboardEyebrow("后台概览");
+    created.setAdminDashboardTitle("运营总览");
+    created.setAdminDashboardDescription("先看网站状态，再进入作品与内容编辑。");
+    created.setAdminFlowersEyebrow("作品目录");
+    created.setAdminFlowersTitle("作品管理");
+    created.setAdminFlowersDescription("筛选、整理与更新作品内容，保持前台展示一致。");
+    created.setAdminSettingsEyebrow("动态配置");
+    created.setAdminSettingsTitle("站点配置");
+    created.setAdminSettingsDescription("统一维护站点首页、门店信息、品牌故事与关于我们内容。");
+    created.setAdminAiEyebrow("AI 工作台");
+    created.setAdminAiTitle("AI 生图配置");
+    created.setAdminAiDescription("统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。");
+    created.setAdminContactsEyebrow("访客留言");
+    created.setAdminContactsTitle("用户留言");
+    created.setAdminContactsDescription("查看访客提交的预约、咨询与定制需求。");
+    created.setAdminSystemEyebrow("运维状态");
+    created.setAdminSystemTitle("运维中心");
+    created.setAdminSystemDescription("统一查看系统状态，并执行备份、巡检和配置迁移。");
+    created.setAdminOperationLogsEyebrow("审计恢复");
+    created.setAdminOperationLogsTitle("操作日志");
+    created.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
     created.setLicenseWarningDays(30);
     siteConfigMapper.insert(created);
     return created;
+  }
+
+  private List<String> readJsonStringList(String value) {
+    if (!notBlank(value)) {
+      return List.of();
+    }
+    try {
+      List<String> items = objectMapper.readValue(value, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+      if (items == null) {
+        return List.of();
+      }
+      return items.stream().filter(this::notBlank).map(String::trim).distinct().toList();
+    } catch (Exception exception) {
+      log.warn("Failed to parse site media json: {}", value, exception);
+      return List.of();
+    }
+  }
+
+  private String writeJsonStringList(List<String> value) {
+    List<String> normalized = value == null
+        ? Collections.emptyList()
+        : value.stream().filter(this::notBlank).map(String::trim).distinct().toList();
+    try {
+      return objectMapper.writeValueAsString(normalized);
+    } catch (Exception exception) {
+      throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "站点媒体配置保存失败");
+    }
   }
 
   private int resolveLicenseWarningDays(SiteConfig config) {
@@ -1638,7 +2192,15 @@ public class SiteService {
   }
 
   private long calculateDirectorySize(File directory) {
+    return calculateDirectorySize(directory, new HashSet<>());
+  }
+
+  private long calculateDirectorySize(File directory, java.util.Set<Path> visitedPaths) {
     if (!directory.exists() || !directory.isDirectory()) {
+      return 0L;
+    }
+    Path directoryPath = directory.toPath().toAbsolutePath().normalize();
+    if (!visitedPaths.add(directoryPath)) {
       return 0L;
     }
     File[] files = directory.listFiles();
@@ -1647,10 +2209,18 @@ public class SiteService {
     }
     long total = 0L;
     for (File file : files) {
-      if (file.isDirectory()) {
-        total += calculateDirectorySize(file);
-      } else {
-        total += file.length();
+      try {
+        Path filePath = file.toPath();
+        if (Files.isSymbolicLink(filePath)) {
+          continue;
+        }
+        if (Files.isDirectory(filePath, LinkOption.NOFOLLOW_LINKS)) {
+          total += calculateDirectorySize(file, visitedPaths);
+        } else {
+          total += Files.size(filePath);
+        }
+      } catch (IOException | SecurityException exception) {
+        log.warn("Skipping backup file while calculating size: {}", file.getAbsolutePath(), exception);
       }
     }
     return total;
@@ -1760,6 +2330,15 @@ public class SiteService {
     response.setDownloadUrl("/api/admin/system/backups/" + backupDir.getName() + "/download");
     response.setLatest(latest);
     return response;
+  }
+
+  private AdminBackupFileResponse safeAdminBackupFileResponse(File backupDir, boolean latest) {
+    try {
+      return toAdminBackupFileResponse(backupDir, latest);
+    } catch (Exception exception) {
+      log.warn("Skipping unreadable backup directory: {}", backupDir.getAbsolutePath(), exception);
+      return null;
+    }
   }
 
   private String csv(Object value) {

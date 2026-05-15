@@ -29,7 +29,7 @@ export function Layout() {
       <header className="sticky top-0 z-50 border-b border-black/5 bg-white/92 backdrop-blur">
         <div className="site-shell-section flex h-16 items-center justify-between sm:h-[4.25rem]">
           <NavLink to="/" className="flex items-center gap-2 font-semibold text-forest">
-            <img src="/brand-logo.png" alt="花语时光" className="h-10 w-10 rounded-xl object-cover shadow-sm" />
+            <img src={siteConfig?.brandLogo || "/brand-logo.png"} alt="花语时光" className="h-10 w-10 rounded-xl object-cover shadow-sm" />
             <span className="max-w-[11rem] truncate text-base sm:max-w-none sm:text-lg">{siteConfig?.brandName ?? "花语时光"}</span>
           </NavLink>
           <nav className="hidden items-center gap-8 md:flex">
@@ -52,7 +52,7 @@ export function Layout() {
               className="hidden items-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white transition hover:bg-[#256b29] md:inline-flex"
             >
               <Phone size={16} />
-              咨询花艺
+              {siteConfig?.consultButtonText || "咨询花艺"}
             </NavLink>
             <Button
               type="text"
@@ -73,7 +73,7 @@ export function Layout() {
         <div className="site-shell-section grid gap-7 py-9 sm:py-10 md:grid-cols-[1.2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2 font-semibold text-forest">
-              <img src="/brand-logo.png" alt="花语时光" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
+              <img src={siteConfig?.brandLogo || "/brand-logo.png"} alt="花语时光" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
               {siteConfig?.brandName ?? "花语时光"}
             </div>
             <p className="site-shell-copy mt-3 max-w-md">
@@ -137,7 +137,7 @@ export function Layout() {
             </div>
             <NavLink to="/contact" onClick={() => setMobileNavOpen(false)}>
               <Button type="primary" size="large" block icon={<Phone size={16} />}>
-                咨询花艺
+                {siteConfig?.consultButtonText || "咨询花艺"}
               </Button>
             </NavLink>
           </div>

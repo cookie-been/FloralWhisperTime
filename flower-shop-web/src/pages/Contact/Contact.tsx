@@ -24,7 +24,7 @@ export function Contact() {
     setSubmitting(true);
     try {
       await submitContact(values);
-      message.success("留言已提交，我们会尽快联系你");
+      message.success(siteConfig?.contactSubmitSuccessText || "留言已提交，我们会尽快联系你");
       form.resetFields();
     } catch (error) {
       message.error(error instanceof Error ? error.message : "提交失败，请稍后再试");
@@ -37,7 +37,7 @@ export function Contact() {
     <section className="site-shell-section site-shell-block">
       <div className="mb-8 sm:mb-10">
         <p className="section-eyebrow">联系咨询</p>
-        <h1 className="section-title section-title-accent mt-2 text-3xl sm:text-4xl">联系我们</h1>
+        <h1 className="section-title section-title-accent mt-2 text-3xl sm:text-4xl">{siteConfig?.contactPageTitle || "联系我们"}</h1>
         <p className="site-shell-copy mt-3 max-w-2xl">
           {siteConfig?.contactIntro ?? "欢迎预约花束、婚礼花艺、商业空间花艺和节日定制服务。"}
         </p>
@@ -71,6 +71,15 @@ export function Contact() {
               src={`https://maps.google.com/maps?q=${shop?.latitude ?? 31.2047},${shop?.longitude ?? 121.4442}&z=15&output=embed`}
             />
           </div>
+          {siteConfig?.contactImages?.length ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {siteConfig.contactImages.slice(0, 4).map((image) => (
+                <div key={image} className="overflow-hidden rounded-lg border border-forest/10 bg-[#f4f7f2]">
+                  <img src={image} alt="" className="h-28 w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="surface-card site-shell-card sm:p-6">
@@ -86,7 +95,7 @@ export function Contact() {
               <Input.TextArea rows={6} placeholder="想咨询的花艺类型、预算或使用场景" />
             </Form.Item>
             <Button type="primary" size="large" htmlType="submit" loading={submitting} block className="sm:!w-auto">
-              提交留言
+              {siteConfig?.contactPageSubmitText || "提交留言"}
             </Button>
           </Form>
         </div>

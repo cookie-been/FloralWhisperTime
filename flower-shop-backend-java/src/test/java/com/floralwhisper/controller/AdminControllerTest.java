@@ -461,6 +461,21 @@ class AdminControllerTest {
     SiteConfigResponse response = new SiteConfigResponse();
     response.setBrandName("花语时光");
     response.setHeroTitle("花语时光");
+    response.setBrandLogo("https://example.com/logo.png");
+    response.setHeroSlides(List.of("https://example.com/home-1.jpg", "https://example.com/home-2.jpg"));
+    response.setAdminLoginSlides(List.of("https://example.com/admin-1.jpg"));
+    response.setContactImages(List.of("https://example.com/contact-1.jpg"));
+    response.setAdminBrandTitle("花语时光后台");
+    response.setHomeStorySectionTitle("品牌故事");
+    response.setHomeFeaturedSectionTitle("精选作品");
+    response.setHomeServiceSectionTitle("服务场景");
+    response.setGalleryPageTitle("作品画廊");
+    response.setGallerySearchPlaceholder("搜索花束、花材或标签");
+    response.setGalleryEmptyText("没有找到匹配的花束作品");
+    response.setGalleryLoadErrorText("作品列表加载失败，请稍后刷新重试");
+    response.setContactPageTitle("联系我们");
+    response.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
+    response.setConsultButtonText("咨询花艺");
     response.setLicenseCustomerName("演示客户");
     response.setLicenseCode("FWT-DEMO-001");
     response.setLicenseType("正式版");
@@ -473,6 +488,21 @@ class AdminControllerTest {
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.brandName").value("花语时光"))
+        .andExpect(jsonPath("$.brandLogo").value("https://example.com/logo.png"))
+        .andExpect(jsonPath("$.heroSlides[0]").value("https://example.com/home-1.jpg"))
+        .andExpect(jsonPath("$.adminLoginSlides[0]").value("https://example.com/admin-1.jpg"))
+        .andExpect(jsonPath("$.contactImages[0]").value("https://example.com/contact-1.jpg"))
+        .andExpect(jsonPath("$.adminBrandTitle").value("花语时光后台"))
+        .andExpect(jsonPath("$.homeStorySectionTitle").value("品牌故事"))
+        .andExpect(jsonPath("$.homeFeaturedSectionTitle").value("精选作品"))
+        .andExpect(jsonPath("$.homeServiceSectionTitle").value("服务场景"))
+        .andExpect(jsonPath("$.galleryPageTitle").value("作品画廊"))
+        .andExpect(jsonPath("$.gallerySearchPlaceholder").value("搜索花束、花材或标签"))
+        .andExpect(jsonPath("$.galleryEmptyText").value("没有找到匹配的花束作品"))
+        .andExpect(jsonPath("$.galleryLoadErrorText").value("作品列表加载失败，请稍后刷新重试"))
+        .andExpect(jsonPath("$.contactPageTitle").value("联系我们"))
+        .andExpect(jsonPath("$.contactSubmitSuccessText").value("留言已提交，我们会尽快联系你"))
+        .andExpect(jsonPath("$.consultButtonText").value("咨询花艺"))
         .andExpect(jsonPath("$.licenseCustomerName").value("演示客户"))
         .andExpect(jsonPath("$.licenseCode").value("FWT-DEMO-001"))
         .andExpect(jsonPath("$.licenseType").value("正式版"))

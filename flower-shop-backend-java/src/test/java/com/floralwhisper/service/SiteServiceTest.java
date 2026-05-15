@@ -1,6 +1,7 @@
 package com.floralwhisper.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -234,6 +235,69 @@ class SiteServiceTest {
     siteConfig.setId(1L);
     siteConfig.setBrandName("花语时光");
     siteConfig.setHeroTitle("花语时光");
+    siteConfig.setBrandLogo("");
+    siteConfig.setHeroSlidesJson("[]");
+    siteConfig.setAdminLoginSlidesJson("[]");
+    siteConfig.setContactImagesJson("[]");
+    siteConfig.setAdminBrandTitle("花语时光后台");
+    siteConfig.setAdminBrandSubtitle("Floral Whisper Time");
+    siteConfig.setAdminBrandDescription("从作品、站点内容与 AI 能力三个层面维护品牌展示。");
+    siteConfig.setHomeStorySectionTitle("品牌故事");
+    siteConfig.setHomeStorySectionIntro("把品牌气质、服务方式和到店感受压缩进首页一屏，让访问者在浏览作品之外，也能快速理解这家店的表达方式。");
+    siteConfig.setHomeStoryPrimaryLabel("品牌气质");
+    siteConfig.setHomeStoryPrimaryTitle("自然、克制、适合长期被记住");
+    siteConfig.setHomeStoryPrimaryDescription("以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。");
+    siteConfig.setHomeStoryServiceLabel("服务方式");
+    siteConfig.setHomeStoryServiceDescription("门店零售、场景花礼、婚礼与空间陈设同步提供。");
+    siteConfig.setHomeStoryExperienceLabel("到店体验");
+    siteConfig.setHomeStoryExperienceDescription("更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。");
+    siteConfig.setHomeStoryStoreLabel("门店信息");
+    siteConfig.setHomeStoryDetailLinkText("查看完整介绍");
+    siteConfig.setHomeFeaturedSectionEyebrow("精选作品");
+    siteConfig.setHomeFeaturedSectionTitle("精选作品");
+    siteConfig.setHomeFeaturedSectionIntro("首页精选区导语");
+    siteConfig.setHomeFeaturedSectionLinkText("查看全部");
+    siteConfig.setHomeServiceSectionEyebrow("服务场景");
+    siteConfig.setHomeServiceSectionTitle("服务场景");
+    siteConfig.setHomeServiceSectionIntro("首页服务区导语");
+    siteConfig.setHomeServiceSectionLinkText("浏览全部分类");
+    siteConfig.setAboutStorySectionEyebrow("品牌故事");
+    siteConfig.setAboutTimelineSectionEyebrow("发展历程");
+    siteConfig.setAboutTimelineSectionTitle("发展历程");
+    siteConfig.setAboutTeamSectionEyebrow("团队成员");
+    siteConfig.setAboutTeamSectionTitle("花艺师团队");
+    siteConfig.setAboutTeamSectionIntro("团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。");
+    siteConfig.setGalleryPageEyebrow("作品浏览");
+    siteConfig.setGalleryPageTitle("作品画廊");
+    siteConfig.setGalleryPageIntro("画廊页导语");
+    siteConfig.setGallerySearchPlaceholder("搜索花束、花材或标签");
+    siteConfig.setGalleryEmptyText("没有找到匹配的花束作品");
+    siteConfig.setGalleryLoadErrorText("作品列表加载失败，请稍后刷新重试");
+    siteConfig.setContactPageTitle("联系我们");
+    siteConfig.setContactPageSubmitText("提交留言");
+    siteConfig.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
+    siteConfig.setConsultButtonText("咨询花艺");
+    siteConfig.setAdminDashboardEyebrow("后台概览");
+    siteConfig.setAdminDashboardTitle("运营总览");
+    siteConfig.setAdminDashboardDescription("先看网站状态，再进入作品与内容编辑。");
+    siteConfig.setAdminFlowersEyebrow("作品目录");
+    siteConfig.setAdminFlowersTitle("作品管理");
+    siteConfig.setAdminFlowersDescription("筛选、整理与更新作品内容，保持前台展示一致。");
+    siteConfig.setAdminSettingsEyebrow("动态配置");
+    siteConfig.setAdminSettingsTitle("站点配置");
+    siteConfig.setAdminSettingsDescription("统一维护站点首页、门店信息、品牌故事与关于我们内容。");
+    siteConfig.setAdminAiEyebrow("AI 工作台");
+    siteConfig.setAdminAiTitle("AI 生图配置");
+    siteConfig.setAdminAiDescription("统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。");
+    siteConfig.setAdminContactsEyebrow("访客留言");
+    siteConfig.setAdminContactsTitle("用户留言");
+    siteConfig.setAdminContactsDescription("查看访客提交的预约、咨询与定制需求。");
+    siteConfig.setAdminSystemEyebrow("运维状态");
+    siteConfig.setAdminSystemTitle("运维中心");
+    siteConfig.setAdminSystemDescription("统一查看系统状态，并执行备份、巡检和配置迁移。");
+    siteConfig.setAdminOperationLogsEyebrow("审计恢复");
+    siteConfig.setAdminOperationLogsTitle("操作日志");
+    siteConfig.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
     siteConfig.setLicenseCustomerName("演示客户");
     siteConfig.setLicenseCode("FWT-DEMO-001");
     siteConfig.setLicenseType("正式版");
@@ -277,6 +341,69 @@ class SiteServiceTest {
 
     SiteConfigUpdateRequest request = new SiteConfigUpdateRequest();
     request.setBrandName("花语时光 Pro");
+    request.setBrandLogo("https://example.com/logo.png");
+    request.setHeroSlides(List.of("https://example.com/home-1.jpg", "https://example.com/home-2.jpg"));
+    request.setAdminLoginSlides(List.of("https://example.com/admin-1.jpg"));
+    request.setContactImages(List.of("https://example.com/contact-1.jpg", "https://example.com/contact-2.jpg"));
+    request.setAdminBrandTitle("花语时光后台");
+    request.setAdminBrandSubtitle("Floral Whisper Time");
+    request.setAdminBrandDescription("统一管理品牌展示内容");
+    request.setHomeStorySectionTitle("品牌故事");
+    request.setHomeStorySectionIntro("首页品牌故事导语");
+    request.setHomeStoryPrimaryLabel("品牌气质");
+    request.setHomeStoryPrimaryTitle("自然克制");
+    request.setHomeStoryPrimaryDescription("品牌主卡说明");
+    request.setHomeStoryServiceLabel("服务方式");
+    request.setHomeStoryServiceDescription("服务方式说明");
+    request.setHomeStoryExperienceLabel("到店体验");
+    request.setHomeStoryExperienceDescription("到店体验说明");
+    request.setHomeStoryStoreLabel("门店信息");
+    request.setHomeStoryDetailLinkText("查看完整介绍");
+    request.setHomeFeaturedSectionEyebrow("精选作品");
+    request.setHomeFeaturedSectionTitle("精选作品");
+    request.setHomeFeaturedSectionIntro("首页精选区导语");
+    request.setHomeFeaturedSectionLinkText("查看全部");
+    request.setHomeServiceSectionEyebrow("服务场景");
+    request.setHomeServiceSectionTitle("服务场景");
+    request.setHomeServiceSectionIntro("首页服务区导语");
+    request.setHomeServiceSectionLinkText("浏览全部分类");
+    request.setAboutStorySectionEyebrow("品牌故事");
+    request.setAboutTimelineSectionEyebrow("发展历程");
+    request.setAboutTimelineSectionTitle("发展历程");
+    request.setAboutTeamSectionEyebrow("团队成员");
+    request.setAboutTeamSectionTitle("花艺师团队");
+    request.setAboutTeamSectionIntro("团队介绍");
+    request.setGalleryPageEyebrow("作品浏览");
+    request.setGalleryPageTitle("作品画廊");
+    request.setGalleryPageIntro("画廊页导语");
+    request.setGallerySearchPlaceholder("搜索花束、花材或标签");
+    request.setGalleryEmptyText("没有找到匹配的花束作品");
+    request.setGalleryLoadErrorText("作品列表加载失败，请稍后刷新重试");
+    request.setContactPageTitle("联系我们");
+    request.setContactPageSubmitText("提交留言");
+    request.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
+    request.setConsultButtonText("咨询花艺");
+    request.setAdminDashboardEyebrow("后台概览");
+    request.setAdminDashboardTitle("运营总览");
+    request.setAdminDashboardDescription("先看网站状态，再进入作品与内容编辑。");
+    request.setAdminFlowersEyebrow("作品目录");
+    request.setAdminFlowersTitle("作品管理");
+    request.setAdminFlowersDescription("筛选、整理与更新作品内容，保持前台展示一致。");
+    request.setAdminSettingsEyebrow("动态配置");
+    request.setAdminSettingsTitle("站点配置");
+    request.setAdminSettingsDescription("统一维护站点首页、门店信息、品牌故事与关于我们内容。");
+    request.setAdminAiEyebrow("AI 工作台");
+    request.setAdminAiTitle("AI 生图配置");
+    request.setAdminAiDescription("统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。");
+    request.setAdminContactsEyebrow("访客留言");
+    request.setAdminContactsTitle("用户留言");
+    request.setAdminContactsDescription("查看访客提交的预约、咨询与定制需求。");
+    request.setAdminSystemEyebrow("运维状态");
+    request.setAdminSystemTitle("运维中心");
+    request.setAdminSystemDescription("统一查看系统状态，并执行备份、巡检和配置迁移。");
+    request.setAdminOperationLogsEyebrow("审计恢复");
+    request.setAdminOperationLogsTitle("操作日志");
+    request.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
 
     siteService.updateSiteConfig(request);
 
@@ -336,6 +463,35 @@ class SiteServiceTest {
     assertEquals("", siteConfig.getContactIntro());
     assertEquals("", siteConfig.getBusinessHoursText());
     assertEquals("", siteConfig.getFooterDescription());
+    assertEquals("", siteConfig.getBrandLogo());
+    assertTrue(siteConfig.getHeroSlides().isEmpty());
+    assertTrue(siteConfig.getAdminLoginSlides().isEmpty());
+    assertTrue(siteConfig.getContactImages().isEmpty());
+    assertEquals("花语时光后台", siteConfig.getAdminBrandTitle());
+    assertEquals("Floral Whisper Time", siteConfig.getAdminBrandSubtitle());
+    assertEquals("从作品、站点内容与 AI 能力三个层面维护品牌展示。", siteConfig.getAdminBrandDescription());
+    assertEquals("品牌故事", siteConfig.getHomeStorySectionTitle());
+    assertEquals("精选作品", siteConfig.getHomeFeaturedSectionTitle());
+    assertEquals("服务场景", siteConfig.getHomeServiceSectionTitle());
+    assertEquals("查看完整介绍", siteConfig.getHomeStoryDetailLinkText());
+    assertEquals("品牌故事", siteConfig.getAboutStorySectionEyebrow());
+    assertEquals("发展历程", siteConfig.getAboutTimelineSectionTitle());
+    assertEquals("花艺师团队", siteConfig.getAboutTeamSectionTitle());
+    assertEquals("作品画廊", siteConfig.getGalleryPageTitle());
+    assertEquals("搜索花束、花材或标签", siteConfig.getGallerySearchPlaceholder());
+    assertEquals("没有找到匹配的花束作品", siteConfig.getGalleryEmptyText());
+    assertEquals("作品列表加载失败，请稍后刷新重试", siteConfig.getGalleryLoadErrorText());
+    assertEquals("联系我们", siteConfig.getContactPageTitle());
+    assertEquals("提交留言", siteConfig.getContactPageSubmitText());
+    assertEquals("留言已提交，我们会尽快联系你", siteConfig.getContactSubmitSuccessText());
+    assertEquals("咨询花艺", siteConfig.getConsultButtonText());
+    assertEquals("运营总览", siteConfig.getAdminDashboardTitle());
+    assertEquals("作品管理", siteConfig.getAdminFlowersTitle());
+    assertEquals("站点配置", siteConfig.getAdminSettingsTitle());
+    assertEquals("AI 生图配置", siteConfig.getAdminAiTitle());
+    assertEquals("用户留言", siteConfig.getAdminContactsTitle());
+    assertEquals("运维中心", siteConfig.getAdminSystemTitle());
+    assertEquals("操作日志", siteConfig.getAdminOperationLogsTitle());
 
     assertEquals("花语时光", shopInfo.getName());
     assertEquals("", shopInfo.getPhone());
@@ -370,6 +526,57 @@ class SiteServiceTest {
     verify(shopHourMapper, never()).insert(any(ShopHour.class));
     verify(aboutTimelineEntryMapper, never()).insert(any(AboutTimelineEntry.class));
     verify(teamMemberMapper, never()).insert(any(TeamMember.class));
+  }
+
+  @Test
+  void getSiteConfigNormalizesLegacyNullMediaFields() {
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    SiteConfig legacyConfig = new SiteConfig();
+    legacyConfig.setId(1L);
+    legacyConfig.setBrandName("花语时光");
+    legacyConfig.setHeroTitle("花语时光");
+    legacyConfig.setBrandLogo(null);
+    legacyConfig.setHeroSlidesJson(null);
+    legacyConfig.setAdminLoginSlidesJson(null);
+    legacyConfig.setContactImagesJson(null);
+    legacyConfig.setLicenseWarningDays(null);
+    when(siteConfigMapper.selectById(1L)).thenReturn(legacyConfig);
+
+    SiteService siteService = createSiteService(
+        siteConfigMapper,
+        mock(ShopInfoMapper.class),
+        mock(ShopHourMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        mock(AiSettingsMapper.class),
+        mock(BrandStoryMapper.class),
+        mock(BrandStoryImageMapper.class),
+        mock(OperationLogMapper.class),
+        mock(TeamMemberMapper.class),
+        mock(AuditLogService.class));
+
+    SiteConfigResponse response = siteService.getSiteConfig();
+    SiteConfigResponse adminResponse = siteService.getAdminSiteConfig();
+
+    assertEquals("", response.getBrandLogo());
+    assertTrue(response.getHeroSlides().isEmpty());
+    assertTrue(response.getAdminLoginSlides().isEmpty());
+    assertTrue(response.getContactImages().isEmpty());
+    assertEquals("品牌故事", response.getHomeStorySectionTitle());
+    assertEquals("精选作品", response.getHomeFeaturedSectionTitle());
+    assertEquals("服务场景", response.getHomeServiceSectionTitle());
+    assertEquals("查看完整介绍", response.getHomeStoryDetailLinkText());
+    assertEquals("作品画廊", response.getGalleryPageTitle());
+    assertEquals("搜索花束、花材或标签", response.getGallerySearchPlaceholder());
+    assertEquals("没有找到匹配的花束作品", response.getGalleryEmptyText());
+    assertEquals("作品列表加载失败，请稍后刷新重试", response.getGalleryLoadErrorText());
+    assertEquals("联系我们", response.getContactPageTitle());
+    assertEquals("留言已提交，我们会尽快联系你", response.getContactSubmitSuccessText());
+    assertEquals("咨询花艺", response.getConsultButtonText());
+    assertEquals("运营总览", response.getAdminDashboardTitle());
+    assertEquals("操作日志", response.getAdminOperationLogsTitle());
+    assertEquals(30, adminResponse.getLicenseWarningDays());
+    verify(siteConfigMapper, times(1)).updateById(legacyConfig);
   }
 
   @Test
@@ -793,6 +1000,46 @@ class SiteServiceTest {
   }
 
   @Test
+  void listBackupFilesIgnoresRecursiveSymlinkInsideBackupDirectory() throws Exception {
+    Path uploadsDir = Files.createDirectories(tempDir.resolve("uploads"));
+    Path backupsDir = Files.createDirectories(tempDir.resolve("backups"));
+    Path backupDir = Files.createDirectories(backupsDir.resolve("20260515-090000"));
+    Files.writeString(backupDir.resolve("metadata.txt"), "latest");
+    Files.createSymbolicLink(backupDir.resolve("self"), backupDir);
+
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(false, "volcengine", "", "doubao-image", "doubao-text"));
+
+    SiteService siteService =
+        new SiteService(
+            mock(SiteConfigMapper.class),
+            mock(ShopInfoMapper.class),
+            mock(ShopHourMapper.class),
+            mock(AboutPageMapper.class),
+            mock(AdminSecurityStateMapper.class),
+            mock(AboutTimelineEntryMapper.class),
+            aiSettingsMapper,
+            mock(BrandStoryMapper.class),
+            mock(BrandStoryImageMapper.class),
+            mock(CategoryMapper.class),
+            mock(OperationLogMapper.class),
+            mock(TeamMemberMapper.class),
+            appProperties(uploadsDir, backupsDir, "local", "dev", ""),
+            mock(DataSource.class),
+            null,
+            mock(AuditLogService.class),
+            Instant.parse("2026-05-15T00:45:00Z"),
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+
+    var backups = assertDoesNotThrow(siteService::listBackupFiles);
+
+    assertEquals(1, backups.getTotal());
+    assertEquals("20260515-090000", backups.getList().get(0).getBackupName());
+    assertTrue(backups.getList().get(0).isLatest());
+  }
+
+  @Test
   void configExportWritesCompleteSnapshotJson() throws Exception {
     SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
     ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
@@ -836,6 +1083,9 @@ class SiteServiceTest {
     assertTrue(filename.endsWith(".json"));
     assertTrue(payload.contains("\"version\""));
     assertTrue(payload.contains("\"siteConfig\""));
+    assertTrue(payload.contains("\"heroSlides\""));
+    assertTrue(payload.contains("\"adminLoginSlides\""));
+    assertTrue(payload.contains("\"contactImages\""));
     assertTrue(payload.contains("\"aboutPage\""));
     assertTrue(payload.contains("\"timeline\""));
     assertTrue(payload.contains("\"team\""));
@@ -974,7 +1224,7 @@ class SiteServiceTest {
     assertEquals(2, result.getTimelineCount());
     assertEquals(2, result.getTeamCount());
     assertTrue(result.isIncludedAiSettings());
-    verify(siteConfigMapper, times(1)).updateById(any(SiteConfig.class));
+    verify(siteConfigMapper, atLeast(1)).updateById(any(SiteConfig.class));
     verify(shopInfoMapper, times(1)).updateById(any(ShopInfo.class));
     verify(aboutPageMapper, times(1)).updateById(any(AboutPage.class));
     verify(brandStoryMapper, times(1)).updateById(any(BrandStory.class));
@@ -1104,6 +1354,33 @@ class SiteServiceTest {
     config.setContactIntro("欢迎预约");
     config.setBusinessHoursText("每天 09:00-22:00");
     config.setFooterDescription("页脚文案");
+    config.setBrandLogo("https://example.com/logo.png");
+    config.setHeroSlidesJson("[\"https://example.com/home-1.jpg\",\"https://example.com/home-2.jpg\"]");
+    config.setAdminLoginSlidesJson("[\"https://example.com/admin-1.jpg\",\"https://example.com/admin-2.jpg\"]");
+    config.setContactImagesJson("[\"https://example.com/contact-1.jpg\",\"https://example.com/contact-2.jpg\"]");
+    config.setAdminBrandTitle("花语时光后台");
+    config.setAdminBrandSubtitle("Floral Whisper Time");
+    config.setAdminBrandDescription("统一管理品牌展示内容");
+    config.setHomeStorySectionTitle("品牌故事");
+    config.setHomeStorySectionIntro("首页品牌故事导语");
+    config.setHomeStoryPrimaryLabel("品牌气质");
+    config.setHomeStoryPrimaryTitle("自然克制");
+    config.setHomeStoryPrimaryDescription("品牌主卡说明");
+    config.setHomeStoryServiceLabel("服务方式");
+    config.setHomeStoryServiceDescription("服务方式说明");
+    config.setHomeStoryExperienceLabel("到店体验");
+    config.setHomeStoryExperienceDescription("到店体验说明");
+    config.setHomeStoryStoreLabel("门店信息");
+    config.setHomeStoryDetailLinkText("查看完整介绍");
+    config.setAboutStorySectionEyebrow("品牌故事");
+    config.setAboutTimelineSectionEyebrow("发展历程");
+    config.setAboutTimelineSectionTitle("发展历程");
+    config.setAboutTeamSectionEyebrow("团队成员");
+    config.setAboutTeamSectionTitle("花艺师团队");
+    config.setAboutTeamSectionIntro("团队介绍");
+    config.setContactPageTitle("联系我们");
+    config.setContactPageSubmitText("提交留言");
+    config.setConsultButtonText("咨询花艺");
     config.setLicenseCustomerName("演示客户");
     config.setLicenseCode("FWT-DEMO-001");
     config.setLicenseType("正式版");

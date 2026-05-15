@@ -40,20 +40,33 @@ export function Home() {
   );
 
   const heroSlides = useMemo(
-    () =>
-      [
-        siteConfig?.heroImage
-          ? {
-              image: siteConfig.heroImage,
-              label: siteConfig.heroEyebrow || "品牌主视觉",
-              note: siteConfig.heroDescription || "以花艺空间、礼赠氛围和门店陈列表达品牌第一印象。",
-            }
-          : null,
-        ...fallbackHeroSlides,
-      ].filter((value, index, array): value is { image: string; label: string; note: string } =>
+    () => {
+      const configuredSlides = (siteConfig?.heroSlides ?? [])
+        .filter(Boolean)
+        .map((image, index) => ({
+          image,
+          label: index === 0 ? siteConfig?.heroEyebrow || "品牌主视觉" : "首页轮播",
+          note: index === 0 ? siteConfig?.heroDescription || "以花艺空间、礼赠氛围和门店陈列表达品牌第一印象。" : "由后台维护的首页轮播画面。",
+        }));
+
+      const sourceSlides = configuredSlides.length
+        ? configuredSlides
+        : [
+            siteConfig?.heroImage
+              ? {
+                  image: siteConfig.heroImage,
+                  label: siteConfig.heroEyebrow || "品牌主视觉",
+                  note: siteConfig.heroDescription || "以花艺空间、礼赠氛围和门店陈列表达品牌第一印象。",
+                }
+              : null,
+            ...fallbackHeroSlides,
+          ];
+
+      return sourceSlides.filter((value, index, array): value is { image: string; label: string; note: string } =>
         Boolean(value) && array.findIndex((item) => item?.image === value?.image) === index,
-      ),
-    [siteConfig?.heroDescription, siteConfig?.heroEyebrow, siteConfig?.heroImage],
+      );
+    },
+    [siteConfig?.heroDescription, siteConfig?.heroEyebrow, siteConfig?.heroImage, siteConfig?.heroSlides],
   );
 
   useEffect(() => {
@@ -194,9 +207,9 @@ export function Home() {
       </section>
 
       <HomeStatsSection stats={stats} loading={loading} />
-      <HomeFeaturedSection featuredPrimary={featuredPrimary} featuredSecondary={featuredSecondary} loading={loading} />
-      <HomeServiceScenesSection categories={categories} loading={loading} />
-      <HomeBrandStorySection story={story} shop={shop} loading={loading} />
+      <HomeFeaturedSection featuredPrimary={featuredPrimary} featuredSecondary={featuredSecondary} siteConfig={siteConfig} loading={loading} />
+      <HomeServiceScenesSection categories={categories} siteConfig={siteConfig} loading={loading} />
+      <HomeBrandStorySection story={story} shop={shop} siteConfig={siteConfig} loading={loading} />
     </>
   );
 }

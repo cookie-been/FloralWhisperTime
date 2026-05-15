@@ -1,9 +1,10 @@
-import { Button, Drawer, Form, Grid, Input, Modal, message } from "antd";
-import { ArrowUpRight, LogOut, Menu } from "lucide-react";
+import { Button, Dropdown, Drawer, Form, Grid, Input, Modal, message } from "antd";
+import { ArrowUpRight, LogOut, Menu, MoreHorizontal, X } from "lucide-react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { changeAdminPassword, clearAdminToken, getAdminSession, getCurrentAdmin } from "@/services/api";
-import { adminNavItems, adminPageMeta, adminPublicLink } from "./adminMeta";
+import { changeAdminPassword, clearAdminToken, getAdminSession, getCurrentAdmin, getSiteConfig } from "@/services/api";
+import { adminNavItems, adminPublicLink, resolveAdminPageMeta } from "./adminMeta";
+import type { SiteConfig } from "@/types";
 
 const adminRoutePreloaders: Record<string, () => Promise<unknown>> = {
   "/admin": () => import("@/pages/AdminDashboard/AdminDashboard"),
@@ -19,8 +20,51 @@ function preloadAdminRoute(path: string) {
   void adminRoutePreloaders[path]?.();
 }
 
-function resolveMeta(pathname: string) {
-  return adminPageMeta[pathname as keyof typeof adminPageMeta] ?? adminPageMeta["/admin"];
+const ADMIN_TAB_STORAGE_KEY = "flower_shop_admin_open_tabs";
+const ADMIN_ACTIVE_TAB_STORAGE_KEY = "flower_shop_admin_active_tab";
+const ADMIN_FIXED_TAB_PATH = "/admin";
+
+type AdminTabItem = {
+  path: string;
+  label: string;
+};
+
+function resolveTabLabel(pathname: string) {
+  const navItem = adminNavItems.find((item) => item.path === pathname);
+  if (navItem) return navItem.label;
+  return resolveAdminPageMeta(pathname, null).title;
+}
+
+function sanitizeAdminTabs(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [{ path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) }];
+  }
+  const deduped = new Map<string, AdminTabItem>();
+  deduped.set(ADMIN_FIXED_TAB_PATH, { path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) });
+  value.forEach((item) => {
+    if (!item || typeof item !== "object") return;
+    const path = "path" in item && typeof item.path === "string" ? item.path : "";
+    if (!path.startsWith("/admin")) return;
+    deduped.set(path, { path, label: resolveTabLabel(path) });
+  });
+  return Array.from(deduped.values());
+}
+
+function readStoredAdminTabs() {
+  if (typeof window === "undefined") {
+    return [{ path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) }];
+  }
+  try {
+    return sanitizeAdminTabs(JSON.parse(window.localStorage.getItem(ADMIN_TAB_STORAGE_KEY) ?? "[]"));
+  } catch {
+    return [{ path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) }];
+  }
+}
+
+function readStoredActiveAdminTab() {
+  if (typeof window === "undefined") return ADMIN_FIXED_TAB_PATH;
+  const value = window.localStorage.getItem(ADMIN_ACTIVE_TAB_STORAGE_KEY) ?? "";
+  return value.startsWith("/admin") ? value : ADMIN_FIXED_TAB_PATH;
 }
 
 type AdminShellContextValue = {
@@ -84,15 +128,20 @@ export function AdminShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const screens = Grid.useBreakpoint();
-  const meta = resolveMeta(location.pathname);
   const [passwordForm] = Form.useForm<{ currentPassword: string; newPassword: string; confirmPassword: string }>();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [session, setSession] = useState(() => getAdminSession());
+  const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [openTabs, setOpenTabs] = useState<AdminTabItem[]>(() => readStoredAdminTabs());
+  const [activeTabPath, setActiveTabPath] = useState(() => readStoredActiveAdminTab());
+  const meta = useMemo(() => resolveAdminPageMeta(location.pathname, siteConfig), [location.pathname, siteConfig]);
 
   const logout = () => {
     clearAdminToken();
+    window.localStorage.removeItem(ADMIN_TAB_STORAGE_KEY);
+    window.localStorage.removeItem(ADMIN_ACTIVE_TAB_STORAGE_KEY);
     message.success("已退出管理后台");
     navigate("/admin/login", { replace: true });
   };
@@ -104,6 +153,89 @@ export function AdminShell() {
   useEffect(() => {
     getCurrentAdmin().then(setSession).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    getSiteConfig().then(setSiteConfig).catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/admin")) return;
+    const nextPath = location.pathname;
+    setOpenTabs((previous) => {
+      const nextTabs = sanitizeAdminTabs([
+        ...previous,
+        { path: nextPath, label: resolveTabLabel(nextPath) },
+      ]);
+      window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+      return nextTabs;
+    });
+    setActiveTabPath(nextPath);
+    window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, nextPath);
+  }, [location.pathname]);
+
+  const closeTab = (targetPath: string) => {
+    if (targetPath === ADMIN_FIXED_TAB_PATH) return;
+    setOpenTabs((previous) => {
+      const nextTabs = previous.filter((tab) => tab.path !== targetPath);
+      const activeIndex = previous.findIndex((tab) => tab.path === targetPath);
+      const fallbackTab =
+        nextTabs[Math.max(0, activeIndex - 1)] ??
+        nextTabs[activeIndex] ??
+        nextTabs[nextTabs.length - 1] ??
+        { path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) };
+      window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+      if (activeTabPath === targetPath) {
+        setActiveTabPath(fallbackTab.path);
+        window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, fallbackTab.path);
+        navigate(fallbackTab.path);
+      }
+      return nextTabs;
+    });
+  };
+
+  const closeOtherTabs = (targetPath: string) => {
+    const nextTabs = sanitizeAdminTabs([
+      { path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) },
+      { path: targetPath, label: resolveTabLabel(targetPath) },
+    ]);
+    setOpenTabs(nextTabs);
+    setActiveTabPath(targetPath);
+    window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+    window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, targetPath);
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
+  };
+
+  const closeAllTabs = () => {
+    const nextTabs = [{ path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) }];
+    setOpenTabs(nextTabs);
+    setActiveTabPath(ADMIN_FIXED_TAB_PATH);
+    window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+    window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, ADMIN_FIXED_TAB_PATH);
+    if (location.pathname !== ADMIN_FIXED_TAB_PATH) {
+      navigate(ADMIN_FIXED_TAB_PATH);
+    }
+  };
+
+  const tabActionMenuItems = (tab: AdminTabItem) => [
+    {
+      key: "close-current",
+      label: "关闭当前",
+      disabled: tab.path === ADMIN_FIXED_TAB_PATH,
+      onClick: () => closeTab(tab.path),
+    },
+    {
+      key: "close-others",
+      label: "关闭其他",
+      onClick: () => closeOtherTabs(tab.path),
+    },
+    {
+      key: "close-all",
+      label: "关闭全部",
+      onClick: closeAllTabs,
+    },
+  ];
 
   const requirePasswordChange = Boolean(session?.requirePasswordChange);
   const effectivePasswordModalOpen = requirePasswordChange || passwordModalOpen;
@@ -142,13 +274,13 @@ export function AdminShell() {
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">管理入口</p>
               <div className="mt-4 rounded-lg border border-white/10 bg-white/8 px-4 py-4">
                 <div className="flex items-center gap-3">
-                  <img src="/brand-logo.png" alt="花语时光" className="h-12 w-12 rounded-xl object-cover shadow-[0_12px_24px_rgba(0,0,0,0.2)]" />
+                  <img src={siteConfig?.brandLogo || "/brand-logo.png"} alt={siteConfig?.brandName || "花语时光"} className="h-12 w-12 rounded-xl object-cover shadow-[0_12px_24px_rgba(0,0,0,0.2)]" />
                   <div>
-                    <h1 className="text-lg font-semibold text-white">花语时光后台</h1>
-                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-white/52">Floral Whisper Time</p>
+                    <h1 className="text-lg font-semibold text-white">{siteConfig?.adminBrandTitle || `${siteConfig?.brandName || "花语时光"}后台`}</h1>
+                    <p className="mt-1 text-xs uppercase tracking-[0.2em] text-white/52">{siteConfig?.adminBrandSubtitle || "Floral Whisper Time"}</p>
                   </div>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-white/70">从作品、站点内容与 AI 能力三个层面维护品牌展示。</p>
+                <p className="mt-2 text-sm leading-6 text-white/70">{siteConfig?.adminBrandDescription || "从作品、站点内容与 AI 能力三个层面维护品牌展示。"}</p>
               </div>
             </div>
             <AdminNav />
@@ -184,6 +316,64 @@ export function AdminShell() {
                   )}
                 </div>
               </div>
+              <div className="admin-shell-section border-t border-black/5 pb-3 sm:px-8">
+                <div className="admin-tabbar">
+                  {openTabs.map((tab) => {
+                    const isActive = tab.path === activeTabPath;
+                    return (
+                      <div
+                        key={tab.path}
+                        className={[
+                          "admin-tab-item",
+                          isActive ? "admin-tab-item-active" : "",
+                        ].join(" ")}
+                      >
+                        <button
+                          type="button"
+                          className="admin-tab-link"
+                          onClick={() => {
+                            setActiveTabPath(tab.path);
+                            window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, tab.path);
+                            if (location.pathname !== tab.path) {
+                              navigate(tab.path);
+                            }
+                          }}
+                        >
+                          <span className="truncate">{tab.label}</span>
+                        </button>
+                        <div className="admin-tab-actions">
+                          {tab.path !== ADMIN_FIXED_TAB_PATH ? (
+                            <button
+                              type="button"
+                              className="admin-tab-icon-button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                closeTab(tab.path);
+                              }}
+                              aria-label={`关闭${tab.label}`}
+                            >
+                              <X size={14} />
+                            </button>
+                          ) : null}
+                          <Dropdown
+                            menu={{ items: tabActionMenuItems(tab) }}
+                            trigger={["click"]}
+                          >
+                            <button
+                              type="button"
+                              className="admin-tab-icon-button"
+                              onClick={(event) => event.stopPropagation()}
+                              aria-label={`${tab.label}更多操作`}
+                            >
+                              <MoreHorizontal size={14} />
+                            </button>
+                          </Dropdown>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </header>
 
             <main className="admin-shell-section py-6 sm:px-8 sm:py-8">
@@ -209,13 +399,13 @@ export function AdminShell() {
           <div className="flex h-full flex-col">
             <div className="admin-subpanel px-4 py-4">
               <div className="flex items-center gap-3">
-                <img src="/brand-logo.png" alt="花语时光" className="h-11 w-11 rounded-xl object-cover shadow-sm" />
+                <img src={siteConfig?.brandLogo || "/brand-logo.png"} alt={siteConfig?.brandName || "花语时光"} className="h-11 w-11 rounded-xl object-cover shadow-sm" />
                 <div>
-                  <p className="text-sm font-semibold text-[#1b281e]">花语时光后台</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#6d7e72]">Floral Whisper Time</p>
+                  <p className="text-sm font-semibold text-[#1b281e]">{siteConfig?.adminBrandTitle || `${siteConfig?.brandName || "花语时光"}后台`}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#6d7e72]">{siteConfig?.adminBrandSubtitle || "Floral Whisper Time"}</p>
                 </div>
               </div>
-              <p className="mt-2 text-sm leading-6 text-muted">移动端以抽屉方式浏览作品、站点、AI 和留言等后台入口。</p>
+              <p className="mt-2 text-sm leading-6 text-muted">{siteConfig?.adminBrandDescription || "移动端以抽屉方式浏览作品、站点、AI 和留言等后台入口。"}</p>
             </div>
 
             <div className="admin-mobile-nav mt-5">
