@@ -9,6 +9,7 @@ ALLOW_DIRTY_GIT=0
 SKIP_BUILD=0
 RELEASE_ID=""
 BUILD_TIMESTAMP="$(date -u +"%Y%m%dT%H%M%SZ")"
+SKIP_PREFLIGHT=0
 
 log() {
   printf '[build-release] %s\n' "$*"
@@ -27,6 +28,7 @@ Options:
   --release-id ID      Explicit release id, default auto-generated
   --output-dir PATH    Output directory for release package, default ./tmp/releases
   --skip-build         Reuse existing local images and artifacts
+  --skip-preflight     Skip release preflight checks
   --allow-dirty-git    Allow building from a dirty git worktree
   -h, --help           Show this help
 EOF
@@ -100,12 +102,14 @@ prepare_release_tree() {
   cp "$REPO_ROOT/.env.production.example" "$RELEASE_STAGING_DIR/"
   cp "$REPO_ROOT/release-package.INSTALL.md" "$RELEASE_STAGING_DIR/INSTALL.md"
   cp \
+    "$REPO_ROOT/release-check.sh" \
     "$REPO_ROOT/release-install.sh" \
     "$REPO_ROOT/release-upgrade.sh" \
     "$REPO_ROOT/release-rollback.sh" \
     "$REPO_ROOT/release-status.sh" \
     "$RELEASE_STAGING_DIR/"
   cp \
+    "$REPO_ROOT/ops/release-check.sh" \
     "$REPO_ROOT/ops/release-common.sh" \
     "$REPO_ROOT/ops/release-install.sh" \
     "$REPO_ROOT/ops/release-upgrade.sh" \
@@ -114,6 +118,21 @@ prepare_release_tree() {
     "$RELEASE_STAGING_DIR/ops/"
   chmod +x "$RELEASE_STAGING_DIR"/release-*.sh
   chmod +x "$RELEASE_STAGING_DIR"/ops/*.sh
+}
+
+run_preflight_check() {
+  if (( SKIP_PREFLIGHT == 1 )); then
+    log "Skipping release preflight checks."
+    return
+  fi
+
+  log "Running release preflight checks..."
+  if (( ALLOW_DIRTY_GIT == 1 )); then
+    "$REPO_ROOT/ops/release-check.sh" --allow-dirty-git
+    return
+  fi
+
+  "$REPO_ROOT/ops/release-check.sh"
 }
 
 write_release_info() {
@@ -165,6 +184,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_BUILD=1
       shift
       ;;
+    --skip-preflight)
+      SKIP_PREFLIGHT=1
+      shift
+      ;;
     --allow-dirty-git)
       ALLOW_DIRTY_GIT=1
       shift
@@ -180,6 +203,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 ensure_prerequisites
+run_preflight_check
 ensure_clean_git_worktree
 resolve_release_id
 

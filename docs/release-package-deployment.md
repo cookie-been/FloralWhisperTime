@@ -22,6 +22,7 @@
 在当前项目根目录执行：
 
 ```bash
+./release-check.sh
 ./ops/build-release.sh
 ```
 
@@ -31,7 +32,14 @@
 ./ops/build-release.sh --release-id prod-20260515
 ./ops/build-release.sh --output-dir /tmp/releases
 ./ops/build-release.sh --skip-build
+./ops/build-release.sh --skip-preflight
 ```
+
+说明：
+
+- `./release-check.sh` 用于在正式打包前自检发布链路依赖、关键文件、脚本语法与 release compose 配置
+- `./ops/build-release.sh` 默认会自动执行一次同样的 preflight 检查
+- 只有在你明确知道当前状态时，才建议使用 `--skip-preflight`
 
 输出目录默认是：
 
@@ -54,6 +62,7 @@ floralwhispertime-release-<release-id>/
   docker-compose.release.yml
   .env.production.example
   RELEASE_INFO
+  release-check.sh
   release-install.sh
   release-upgrade.sh
   release-rollback.sh
@@ -62,6 +71,7 @@ floralwhispertime-release-<release-id>/
     backend-image.tar
     web-image.tar
   ops/
+    release-check.sh
     release-common.sh
     release-install.sh
     release-upgrade.sh

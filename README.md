@@ -74,6 +74,7 @@
 如果目标服务器不方便拉取 Git 仓库，或希望以标准化交付包方式部署，推荐使用离线镜像发布包模式：
 
 ```bash
+./release-check.sh
 ./ops/build-release.sh
 ```
 
@@ -82,6 +83,7 @@
 - 后端镜像 tar
 - Web 镜像 tar
 - 发布版 `docker-compose.release.yml`
+- 发布前自检入口脚本
 - 服务器端安装、升级、回滚、状态脚本
 - `.env.production.example`
 - `RELEASE_INFO`
