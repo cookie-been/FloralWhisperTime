@@ -28,7 +28,6 @@ import com.floralwhisper.entity.FlowerTag;
 import com.floralwhisper.entity.OperationLog;
 import com.floralwhisper.entity.ShopInfo;
 import com.floralwhisper.entity.SiteConfig;
-import com.floralwhisper.entity.SiteConfigStat;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
@@ -282,17 +281,6 @@ public class OperationLogRecoveryService {
       siteConfigMapper.insert(config);
     } else {
       siteConfigMapper.updateById(config);
-    }
-
-    siteConfigStatMapper.delete(null);
-    if (siteConfig.getStats() != null) {
-      for (int i = 0; i < siteConfig.getStats().size(); i++) {
-        SiteConfigStat stat = new SiteConfigStat();
-        stat.setValue(siteConfig.getStats().get(i).getValue());
-        stat.setLabel(siteConfig.getStats().get(i).getLabel());
-        stat.setSort(i);
-        siteConfigStatMapper.insert(stat);
-      }
     }
 
     ShopInfo shop = new ShopInfo();

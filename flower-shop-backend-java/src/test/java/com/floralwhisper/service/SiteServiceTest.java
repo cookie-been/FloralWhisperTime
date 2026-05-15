@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,8 +15,13 @@ import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.dto.SystemStatusResponse;
+import com.floralwhisper.dto.SiteConfigUpdateRequest;
+import com.floralwhisper.entity.BrandStory;
 import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.entity.OperationLog;
+import com.floralwhisper.entity.ShopInfo;
+import com.floralwhisper.entity.SiteConfig;
+import com.floralwhisper.entity.SiteConfigStat;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
@@ -46,6 +53,65 @@ class SiteServiceTest {
 
   @TempDir
   Path tempDir;
+
+  @Test
+  void updateSiteConfigNoLongerWritesLegacyStatsTable() {
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    SiteConfigStatMapper siteConfigStatMapper = mock(SiteConfigStatMapper.class);
+    ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
+    BrandStoryMapper brandStoryMapper = mock(BrandStoryMapper.class);
+    BrandStoryImageMapper brandStoryImageMapper = mock(BrandStoryImageMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+
+    SiteConfig siteConfig = new SiteConfig();
+    siteConfig.setId(1L);
+    siteConfig.setBrandName("花语时光");
+    siteConfig.setHeroTitle("花语时光");
+    when(siteConfigMapper.selectById(1L)).thenReturn(siteConfig);
+
+    ShopInfo shopInfo = new ShopInfo();
+    shopInfo.setId(1L);
+    shopInfo.setName("花语时光");
+    when(shopInfoMapper.selectById(1L)).thenReturn(shopInfo);
+
+    BrandStory story = new BrandStory();
+    story.setId(1L);
+    story.setTitle("品牌故事");
+    when(brandStoryMapper.selectById(1L)).thenReturn(story);
+    when(brandStoryImageMapper.selectList(any())).thenReturn(java.util.List.of());
+
+    SiteService siteService =
+        new SiteService(
+            siteConfigMapper,
+            siteConfigStatMapper,
+            shopInfoMapper,
+            mock(ShopHourMapper.class),
+            mock(AboutPageMapper.class),
+            mock(AboutTimelineEntryMapper.class),
+            mock(AiSettingsMapper.class),
+            brandStoryMapper,
+            brandStoryImageMapper,
+            mock(CategoryMapper.class),
+            mock(OperationLogMapper.class),
+            mock(TeamMemberMapper.class),
+            appProperties(tempDir.resolve("uploads"), tempDir.resolve("backups")),
+            mock(DataSource.class),
+            null,
+            auditLogService,
+            Instant.parse("2026-05-15T00:45:00Z"),
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+
+    SiteConfigUpdateRequest request = new SiteConfigUpdateRequest();
+    request.setBrandName("花语时光 Pro");
+
+    siteService.updateSiteConfig(request);
+
+    verify(siteConfigMapper).updateById(any(SiteConfig.class));
+    verify(siteConfigStatMapper, never()).delete(any());
+    verify(siteConfigStatMapper, never()).insert(any(SiteConfigStat.class));
+    verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
+  }
 
   @Test
   void systemStatusReturnsResolvedRuntimeState() throws Exception {

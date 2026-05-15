@@ -19,7 +19,6 @@ import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
 import com.floralwhisper.dto.SiteConfigUpdateResponse;
-import com.floralwhisper.dto.SiteStatResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.dto.TimeRangeResponse;
@@ -33,7 +32,6 @@ import com.floralwhisper.entity.OperationLog;
 import com.floralwhisper.entity.ShopHour;
 import com.floralwhisper.entity.ShopInfo;
 import com.floralwhisper.entity.SiteConfig;
-import com.floralwhisper.entity.SiteConfigStat;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
@@ -194,8 +192,6 @@ public class SiteService {
     response.setContactIntro(config.getContactIntro());
     response.setBusinessHoursText(config.getBusinessHoursText());
     response.setFooterDescription(config.getFooterDescription());
-    response.setStats(siteConfigStatMapper.selectList(new LambdaQueryWrapper<SiteConfigStat>().orderByAsc(SiteConfigStat::getSort))
-        .stream().map(this::toStatResponse).toList());
     return response;
   }
 
@@ -405,9 +401,6 @@ public class SiteService {
     config.setBusinessHoursText(text(request.getBusinessHoursText(), config.getBusinessHoursText()));
     config.setFooterDescription(text(request.getFooterDescription(), config.getFooterDescription()));
     siteConfigMapper.updateById(config);
-    if (request.getStats() != null) {
-      replaceStats(request.getStats());
-    }
 
     ShopInfo shopInfo = ensureShopInfo();
     shopInfo.setName(config.getBrandName());
@@ -639,20 +632,6 @@ public class SiteService {
     return copy;
   }
 
-  private void replaceStats(List<SiteStatResponse> stats) {
-    if (stats == null) return;
-    siteConfigStatMapper.delete(null);
-    for (int i = 0; i < stats.size(); i++) {
-      SiteStatResponse stat = stats.get(i);
-      if (stat.getValue() == null || stat.getValue().isBlank() || stat.getLabel() == null || stat.getLabel().isBlank()) continue;
-      SiteConfigStat entity = new SiteConfigStat();
-      entity.setValue(stat.getValue().trim());
-      entity.setLabel(stat.getLabel().trim());
-      entity.setSort(i);
-      siteConfigStatMapper.insert(entity);
-    }
-  }
-
   private void replaceStoryImages(List<String> images) {
     if (images == null) return;
     brandStoryImageMapper.delete(null);
@@ -688,13 +667,6 @@ public class SiteService {
       }
     }
     return hours;
-  }
-
-  private SiteStatResponse toStatResponse(SiteConfigStat stat) {
-    SiteStatResponse response = new SiteStatResponse();
-    response.setValue(stat.getValue());
-    response.setLabel(stat.getLabel());
-    return response;
   }
 
   private void updateAiSettings(AiSettingsUpdateRequest request) {
@@ -808,7 +780,6 @@ public class SiteService {
     created.setBusinessHoursText("周一至周五 09:30-21:00，周末 10:00-21:30");
     created.setFooterDescription("纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。");
     siteConfigMapper.insert(created);
-    ensureDefaultStats();
     return created;
   }
 
@@ -931,25 +902,6 @@ public class SiteService {
   private int nextTeamSort() {
     return teamMemberMapper.selectList(new LambdaQueryWrapper<TeamMember>().orderByDesc(TeamMember::getSort))
         .stream().map(TeamMember::getSort).filter(value -> value != null).findFirst().orElse(-1) + 1;
-  }
-
-  private void ensureDefaultStats() {
-    if (!siteConfigStatMapper.selectList(null).isEmpty()) return;
-    insertDefaultStat(0, "860+", "已服务客户");
-    insertDefaultStat(1, "320+", "花艺作品");
-    insertDefaultStat(2, String.valueOf(defaultCategoryCount()), "主题分类");
-  }
-
-  private void insertDefaultStat(int sort, String value, String label) {
-    SiteConfigStat entity = new SiteConfigStat();
-    entity.setSort(sort);
-    entity.setValue(value);
-    entity.setLabel(label);
-    siteConfigStatMapper.insert(entity);
-  }
-
-  private int defaultCategoryCount() {
-    return (int) categoryMapper.selectList(null).stream().map(Category::getId).filter(id -> id != null && !"all".equals(id)).count();
   }
 
   private void ensureDefaultHours() {

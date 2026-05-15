@@ -17,7 +17,6 @@ import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SiteConfigUpdateResponse;
-import com.floralwhisper.dto.SiteStatResponse;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
@@ -103,19 +102,17 @@ class SiteControllerTest {
   private FileStorageService fileStorageService;
 
   @Test
-  void siteConfigReturnsStableStatsArray() throws Exception {
+  void siteConfigDoesNotExposeLegacyStatsField() throws Exception {
     SiteConfigResponse response = new SiteConfigResponse();
     response.setBrandName("花语时光");
     response.setHeroTitle("花语时光");
-    response.setStats(List.of(stat("860+", "已服务客户"), stat("320+", "花艺作品")));
     when(siteService.getSiteConfig()).thenReturn(response);
 
     mockMvc.perform(get("/api/site-config"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.brandName").value("花语时光"))
         .andExpect(jsonPath("$.aiSettings").doesNotExist())
-        .andExpect(jsonPath("$.stats[0].value").value("860+"))
-        .andExpect(jsonPath("$.stats[1].label").value("花艺作品"));
+        .andExpect(jsonPath("$.stats").doesNotExist());
   }
 
   @Test
@@ -134,7 +131,6 @@ class SiteControllerTest {
   void updateSiteConfigReturnsMergedSitePayload() throws Exception {
     SiteConfigResponse siteConfig = new SiteConfigResponse();
     siteConfig.setBrandName("花语时光");
-    siteConfig.setStats(List.of(stat("860+", "已服务客户")));
     ShopInfoResponse shopInfo = new ShopInfoResponse();
     shopInfo.setName("花语时光");
     BrandStoryResponse brandStory = new BrandStoryResponse();
@@ -151,6 +147,7 @@ class SiteControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.siteConfig.brandName").value("花语时光"))
         .andExpect(jsonPath("$.siteConfig.aiSettings").doesNotExist())
+        .andExpect(jsonPath("$.siteConfig.stats").doesNotExist())
         .andExpect(jsonPath("$.brandStory.images[0]").value("/uploads/story-1.jpg"));
   }
 
@@ -175,13 +172,6 @@ class SiteControllerTest {
                 """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("请填写姓名"));
-  }
-
-  private SiteStatResponse stat(String value, String label) {
-    SiteStatResponse response = new SiteStatResponse();
-    response.setValue(value);
-    response.setLabel(label);
-    return response;
   }
 
   @TestConfiguration
