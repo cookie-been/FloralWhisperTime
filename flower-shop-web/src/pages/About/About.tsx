@@ -71,12 +71,12 @@ export function About() {
 
   return (
     <section>
-      <div className="relative min-h-[460px] bg-cover bg-center sm:min-h-[520px]" style={{ backgroundImage: `url(${aboutPage.heroImage})` }}>
+      <div className="relative min-h-[380px] bg-cover bg-center sm:min-h-[520px]" style={{ backgroundImage: `url(${aboutPage.heroImage})` }}>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,26,18,0.72),rgba(15,26,18,0.12))]" />
-        <div className="relative mx-auto flex min-h-[460px] max-w-7xl items-center px-4 sm:min-h-[520px] sm:px-6 lg:px-8">
+        <div className="relative mx-auto flex min-h-[380px] max-w-7xl items-center px-4 sm:min-h-[520px] sm:px-6 lg:px-8">
           <div className="max-w-3xl text-white">
             <p className="section-eyebrow text-white">{aboutPage.heroEyebrow}</p>
-            <h1 className="section-title mt-3 text-3xl text-white sm:text-4xl lg:text-5xl">{aboutPage.heroTitle}</h1>
+            <h1 className="section-title mt-3 text-[2rem] text-white sm:text-4xl lg:text-5xl">{aboutPage.heroTitle}</h1>
             <p className="mt-4 text-base leading-7 text-white/88 sm:mt-5 sm:text-lg sm:leading-8">{aboutPage.heroSubtitle}</p>
           </div>
         </div>
@@ -101,7 +101,7 @@ export function About() {
           <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">发展历程</h2>
           <div className="mt-8">
             {timelineItems.length ? (
-              <Timeline mode="left" items={timelineItems} />
+              <Timeline mode={timelineItems.length > 3 ? "alternate" : "left"} items={timelineItems} />
             ) : (
               <Empty description="时间轴内容正在整理中" />
             )}

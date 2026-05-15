@@ -14,8 +14,8 @@ function PlaceholderCard({ className = "", height = "h-48" }: { className?: stri
 
 export function HomeStatsSection({ stats, loading }: { stats: SiteStat[]; loading: boolean }) {
   return (
-    <section className="relative z-10 -mt-8 mx-auto max-w-7xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
-      <div className="grid gap-4 md:grid-cols-3 lg:gap-6">
+    <section className="relative z-10 -mt-6 mx-auto max-w-7xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-3 lg:gap-6">
         {loading
           ? Array.from({ length: 3 }).map((_, index) => <PlaceholderCard key={index} className="border-none" height="h-36" />)
           : stats.map((stat, index) => {
@@ -25,10 +25,10 @@ export function HomeStatsSection({ stats, loading }: { stats: SiteStat[]; loadin
                   key={`${stat.label}-${index}`}
                   className="surface-card border-none bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(247,243,236,0.96))] p-5 shadow-[0_18px_40px_rgba(29,44,33,0.08)] sm:p-6"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">{stat.label}</p>
-                      <p className="mt-3 text-3xl font-semibold text-forest">{stat.value}</p>
+                      <p className="mt-2 text-[1.75rem] font-semibold text-forest sm:mt-3 sm:text-3xl">{stat.value}</p>
                     </div>
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-mint text-forest">
                       <Icon size={18} />

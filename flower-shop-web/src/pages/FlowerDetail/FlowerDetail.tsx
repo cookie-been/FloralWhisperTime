@@ -61,9 +61,9 @@ export function FlowerDetail() {
   if (!flower) return <div className="mx-auto max-w-7xl px-4 py-20 text-muted">正在加载作品...</div>;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <Breadcrumb
-        className="mb-8"
+        className="mb-6 overflow-hidden"
         items={[
           { title: <Link to="/">首页</Link> },
           { title: <Link to="/gallery">作品画廊</Link> },
@@ -71,14 +71,14 @@ export function FlowerDetail() {
         ]}
       />
 
-      <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr]">
+      <div className="grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:gap-10">
         <ImageGallery images={flower.images} name={flower.name} />
         <div>
           <p className="section-eyebrow">作品详情</p>
           <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl">{flower.name}</h1>
           <p className="mt-4 text-xl font-semibold text-forest sm:text-2xl">参考价 ¥{flower.price}</p>
-          <p className="mt-5 leading-8 text-muted">{flower.description}</p>
-          <p className="mt-4 leading-8 text-muted">{flower.meaning}</p>
+          <p className="mt-4 leading-7 text-muted sm:mt-5 sm:leading-8">{flower.description}</p>
+          <p className="mt-3 leading-7 text-muted sm:mt-4 sm:leading-8">{flower.meaning}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             {flower.tags.map((tag) => (
               <Tag key={tag} color="green" className="m-0">
@@ -86,7 +86,7 @@ export function FlowerDetail() {
               </Tag>
             ))}
           </div>
-          <Descriptions className="mt-8" column={1} bordered size="middle">
+          <Descriptions className="mt-6 sm:mt-8" column={1} bordered size="middle">
             <Descriptions.Item label="主要花材">{flower.materials.join(" / ")}</Descriptions.Item>
             <Descriptions.Item label="适用场景">{flower.tags.join("、")}</Descriptions.Item>
             <Descriptions.Item label="参考说明">作品图片与价格用于沟通参考，实际搭配会随季节花材与制作需求微调。</Descriptions.Item>
@@ -94,7 +94,7 @@ export function FlowerDetail() {
         </div>
       </div>
 
-      <div className="mt-16">
+      <div className="mt-12 sm:mt-16">
         <h2 className="section-title text-2xl">相关推荐</h2>
         {related.length ? (
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

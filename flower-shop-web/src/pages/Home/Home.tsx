@@ -103,7 +103,7 @@ export function Home() {
 
   return (
     <>
-      <section className="relative flex min-h-[calc(100vh-64px)] items-center overflow-hidden bg-[#132018]">
+      <section className="relative flex min-h-[max(560px,calc(100vh-64px))] items-center overflow-hidden bg-[#132018] sm:min-h-[calc(100vh-64px)]">
         <div className="absolute inset-0">
           {heroSlides.map((slide, index) => (
             <div
@@ -120,13 +120,13 @@ export function Home() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,18,12,0.18),rgba(8,18,12,0.52))]" />
         </div>
 
-        <div className="relative mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="max-w-2xl text-white">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/16 px-3 py-2 text-xs backdrop-blur sm:px-4 sm:text-sm">
               <Sparkles size={16} />
               {siteConfig?.heroEyebrow ?? "清新文艺 · 自然温暖"}
             </div>
-            <h1 className="section-title mt-6 text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">{siteConfig?.heroTitle ?? "花语时光"}</h1>
+            <h1 className="section-title mt-5 text-[2rem] font-semibold leading-tight text-white sm:mt-6 sm:text-5xl lg:text-6xl">{siteConfig?.heroTitle ?? "花语时光"}</h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-white/88 sm:mt-5 sm:text-lg sm:leading-8">
               {siteConfig?.heroDescription ?? "用季节花材和克制色彩，制作适合婚礼、日常赠礼与空间陈列的鲜花作品。"}
             </p>
@@ -143,7 +143,7 @@ export function Home() {
               </Link>
             </div>
             {heroSlides.length > 1 ? (
-              <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="mt-8 flex flex-col items-start gap-4 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
