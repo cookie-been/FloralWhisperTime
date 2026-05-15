@@ -95,63 +95,106 @@ public class FlowerService {
   public FlowerResponse create(FlowerRequest request) {
     String id = normalizeText(request.getId());
     if (id == null || id.isBlank()) id = request.getCategoryId() + "_" + System.currentTimeMillis();
-    if (flowerMapper.selectById(id) != null) {
-      throw new ApiException(HttpStatus.CONFLICT, "作品 ID 已存在");
+    try {
+      if (flowerMapper.selectById(id) != null) {
+        throw new ApiException(HttpStatus.CONFLICT, "作品 ID 已存在");
+      }
+      Flower flower = toEntity(request, id);
+      flowerMapper.insert(flower);
+      replaceChildren(id, request);
+      FlowerResponse created = getById(id);
+      auditLogService.record(AuditLogCommand.builder()
+          .module("FLOWER")
+          .action("CREATE")
+          .targetType("FLOWER")
+          .targetId(id)
+          .requestSummary(request)
+          .beforeSnapshot(null)
+          .afterSnapshot(created)
+          .success(true)
+          .build());
+      return created;
+    } catch (RuntimeException error) {
+      auditLogService.record(AuditLogCommand.builder()
+          .module("FLOWER")
+          .action("CREATE")
+          .targetType("FLOWER")
+          .targetId(id)
+          .requestSummary(request)
+          .success(false)
+          .errorMessage(error.getMessage())
+          .build());
+      throw error;
     }
-    Flower flower = toEntity(request, id);
-    flowerMapper.insert(flower);
-    replaceChildren(id, request);
-    FlowerResponse created = getById(id);
-    auditLogService.record(AuditLogCommand.builder()
-        .module("FLOWER")
-        .action("CREATE")
-        .targetType("FLOWER")
-        .targetId(id)
-        .requestSummary(request)
-        .beforeSnapshot(null)
-        .afterSnapshot(created)
-        .success(true)
-        .build());
-    return created;
   }
 
   @Transactional
   public FlowerResponse update(String id, FlowerRequest request) {
-    if (flowerMapper.selectById(id) == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
-    FlowerResponse before = getById(id);
-    Flower flower = toEntity(request, id);
-    flowerMapper.updateById(flower);
-    replaceChildren(id, request);
-    FlowerResponse updated = getById(id);
-    auditLogService.record(AuditLogCommand.builder()
-        .module("FLOWER")
-        .action("UPDATE")
-        .targetType("FLOWER")
-        .targetId(id)
-        .requestSummary(request)
-        .beforeSnapshot(before)
-        .afterSnapshot(updated)
-        .success(true)
-        .build());
-    return updated;
+    FlowerResponse before = null;
+    try {
+      if (flowerMapper.selectById(id) == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
+      before = getById(id);
+      Flower flower = toEntity(request, id);
+      flowerMapper.updateById(flower);
+      replaceChildren(id, request);
+      FlowerResponse updated = getById(id);
+      auditLogService.record(AuditLogCommand.builder()
+          .module("FLOWER")
+          .action("UPDATE")
+          .targetType("FLOWER")
+          .targetId(id)
+          .requestSummary(request)
+          .beforeSnapshot(before)
+          .afterSnapshot(updated)
+          .success(true)
+          .build());
+      return updated;
+    } catch (RuntimeException error) {
+      auditLogService.record(AuditLogCommand.builder()
+          .module("FLOWER")
+          .action("UPDATE")
+          .targetType("FLOWER")
+          .targetId(id)
+          .requestSummary(request)
+          .beforeSnapshot(before)
+          .success(false)
+          .errorMessage(error.getMessage())
+          .build());
+      throw error;
+    }
   }
 
   @Transactional
   public void delete(String id) {
-    if (flowerMapper.selectById(id) == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
-    FlowerResponse before = getById(id);
-    deleteChildren(id);
-    flowerMapper.deleteById(id);
-    auditLogService.record(AuditLogCommand.builder()
-        .module("FLOWER")
-        .action("DELETE")
-        .targetType("FLOWER")
-        .targetId(id)
-        .requestSummary(java.util.Map.of("id", id))
-        .beforeSnapshot(before)
-        .afterSnapshot(null)
-        .success(true)
-        .build());
+    FlowerResponse before = null;
+    try {
+      if (flowerMapper.selectById(id) == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
+      before = getById(id);
+      deleteChildren(id);
+      flowerMapper.deleteById(id);
+      auditLogService.record(AuditLogCommand.builder()
+          .module("FLOWER")
+          .action("DELETE")
+          .targetType("FLOWER")
+          .targetId(id)
+          .requestSummary(java.util.Map.of("id", id))
+          .beforeSnapshot(before)
+          .afterSnapshot(null)
+          .success(true)
+          .build());
+    } catch (RuntimeException error) {
+      auditLogService.record(AuditLogCommand.builder()
+          .module("FLOWER")
+          .action("DELETE")
+          .targetType("FLOWER")
+          .targetId(id)
+          .requestSummary(java.util.Map.of("id", id))
+          .beforeSnapshot(before)
+          .success(false)
+          .errorMessage(error.getMessage())
+          .build());
+      throw error;
+    }
   }
 
   private Flower toEntity(FlowerRequest request, String id) {

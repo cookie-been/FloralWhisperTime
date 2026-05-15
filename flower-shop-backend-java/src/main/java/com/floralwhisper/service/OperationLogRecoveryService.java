@@ -127,34 +127,59 @@ public class OperationLogRecoveryService {
   public OperationLogDetailResponse restore(Long logId, String reason) {
     OperationLog log = operationLogMapper.selectById(logId);
     if (log == null) {
+      auditLogService.record(AuditLogCommand.builder()
+          .module("AUDIT")
+          .action("RESTORE")
+          .targetType("OPERATION_LOG")
+          .targetId(String.valueOf(logId))
+          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", reason == null ? "" : reason.trim()))
+          .success(false)
+          .errorMessage("操作日志不存在")
+          .build());
       throw new ApiException(HttpStatus.NOT_FOUND, "操作日志不存在");
     }
-    if (!operationLogQueryService.isRestorable(log)) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "该日志不支持恢复");
+    Object beforeRestore = null;
+    try {
+      if (!operationLogQueryService.isRestorable(log)) {
+        throw new ApiException(HttpStatus.BAD_REQUEST, "该日志不支持恢复");
+      }
+
+      beforeRestore = captureCurrentState(log);
+      applyBeforeSnapshot(log);
+      Object afterRestore = captureCurrentState(log);
+
+      auditLogService.record(AuditLogCommand.builder()
+          .module(log.getModule())
+          .action("RESTORE")
+          .targetType(log.getTargetType())
+          .targetId(log.getTargetId())
+          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", reason == null ? "" : reason.trim()))
+          .beforeSnapshot(beforeRestore)
+          .afterSnapshot(afterRestore)
+          .success(true)
+          .restoredFromLogId(logId)
+          .build());
+
+      OperationLog latest = operationLogMapper.selectOne(new LambdaQueryWrapper<OperationLog>()
+          .eq(OperationLog::getRestoredFromLogId, logId)
+          .eq(OperationLog::getAction, "RESTORE")
+          .orderByDesc(OperationLog::getId)
+          .last("LIMIT 1"));
+      return operationLogQueryService.getDetail(latest == null ? logId : latest.getId());
+    } catch (RuntimeException error) {
+      auditLogService.record(AuditLogCommand.builder()
+          .module(log.getModule() == null || log.getModule().isBlank() ? "AUDIT" : log.getModule())
+          .action("RESTORE")
+          .targetType(log.getTargetType() == null || log.getTargetType().isBlank() ? "OPERATION_LOG" : log.getTargetType())
+          .targetId(log.getTargetId() == null || log.getTargetId().isBlank() ? String.valueOf(logId) : log.getTargetId())
+          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", reason == null ? "" : reason.trim()))
+          .beforeSnapshot(beforeRestore)
+          .success(false)
+          .errorMessage(error.getMessage())
+          .restoredFromLogId(logId)
+          .build());
+      throw error;
     }
-
-    Object beforeRestore = captureCurrentState(log);
-    applyBeforeSnapshot(log);
-    Object afterRestore = captureCurrentState(log);
-
-    auditLogService.record(AuditLogCommand.builder()
-        .module(log.getModule())
-        .action("RESTORE")
-        .targetType(log.getTargetType())
-        .targetId(log.getTargetId())
-        .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", reason == null ? "" : reason.trim()))
-        .beforeSnapshot(beforeRestore)
-        .afterSnapshot(afterRestore)
-        .success(true)
-        .restoredFromLogId(logId)
-        .build());
-
-    OperationLog latest = operationLogMapper.selectOne(new LambdaQueryWrapper<OperationLog>()
-        .eq(OperationLog::getRestoredFromLogId, logId)
-        .eq(OperationLog::getAction, "RESTORE")
-        .orderByDesc(OperationLog::getId)
-        .last("LIMIT 1"));
-    return operationLogQueryService.getDetail(latest == null ? logId : latest.getId());
   }
 
   private Object captureCurrentState(OperationLog log) {

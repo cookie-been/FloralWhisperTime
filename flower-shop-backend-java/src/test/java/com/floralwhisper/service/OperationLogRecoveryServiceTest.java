@@ -43,12 +43,14 @@ class OperationLogRecoveryServiceTest {
   @Test
   void restoreRejectsMissingLog() {
     OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
     when(operationLogMapper.selectById(99L)).thenReturn(null);
 
-    OperationLogRecoveryService service = createService(operationLogMapper, mock(OperationLogQueryService.class), mock(AuditLogService.class));
+    OperationLogRecoveryService service = createService(operationLogMapper, mock(OperationLogQueryService.class), auditLogService);
 
     ApiException error = assertThrows(ApiException.class, () -> service.restore(99L, "恢复"));
     assertEquals("操作日志不存在", error.getMessage());
+    verify(auditLogService).record(any(AuditLogCommand.class));
   }
 
   @Test
@@ -59,13 +61,15 @@ class OperationLogRecoveryServiceTest {
 
     OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
     OperationLogQueryService queryService = mock(OperationLogQueryService.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
     when(operationLogMapper.selectById(2L)).thenReturn(log);
     when(queryService.isRestorable(log)).thenReturn(false);
 
-    OperationLogRecoveryService service = createService(operationLogMapper, queryService, mock(AuditLogService.class));
+    OperationLogRecoveryService service = createService(operationLogMapper, queryService, auditLogService);
 
     ApiException error = assertThrows(ApiException.class, () -> service.restore(2L, "恢复"));
     assertEquals("该日志不支持恢复", error.getMessage());
+    verify(auditLogService).record(any(AuditLogCommand.class));
   }
 
   @Test
@@ -136,7 +140,7 @@ class OperationLogRecoveryServiceTest {
   }
 
   @Test
-  void restoreInvalidSnapshotThrowsAndDoesNotWriteAuditLog() {
+  void restoreInvalidSnapshotThrowsAndWritesFailureAuditLog() {
     OperationLog log = new OperationLog();
     log.setId(4L);
     log.setModule("FLOWER");
@@ -156,7 +160,7 @@ class OperationLogRecoveryServiceTest {
 
     ApiException error = assertThrows(ApiException.class, () -> service.restore(4L, "人工恢复"));
     assertEquals("日志快照格式无效，无法恢复", error.getMessage());
-    verify(auditLogService, never()).record(any(AuditLogCommand.class));
+    verify(auditLogService).record(any(AuditLogCommand.class));
   }
 
   private OperationLogRecoveryService createService(

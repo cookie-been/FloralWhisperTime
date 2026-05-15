@@ -61,24 +61,39 @@ public class ContactService {
 
   @Transactional
   public Contact markAsRead(String id) {
-    Contact contact = contactMapper.selectById(id);
-    if (contact == null) throw new ApiException(HttpStatus.NOT_FOUND, "留言不存在");
-    Contact before = copyContact(contact);
-    if (contact.getReadAt() == null) {
-      contact.setReadAt(LocalDateTime.now());
-      contactMapper.updateById(contact);
+    Contact before = null;
+    try {
+      Contact contact = contactMapper.selectById(id);
+      if (contact == null) throw new ApiException(HttpStatus.NOT_FOUND, "留言不存在");
+      before = copyContact(contact);
+      if (contact.getReadAt() == null) {
+        contact.setReadAt(LocalDateTime.now());
+        contactMapper.updateById(contact);
+      }
+      auditLogService.record(AuditLogCommand.builder()
+          .module("CONTACT")
+          .action("MARK_READ")
+          .targetType("CONTACT")
+          .targetId(id)
+          .beforeSnapshot(before)
+          .afterSnapshot(contact)
+          .requestSummary(Map.of("contactId", id))
+          .success(true)
+          .build());
+      return contact;
+    } catch (RuntimeException error) {
+      auditLogService.record(AuditLogCommand.builder()
+          .module("CONTACT")
+          .action("MARK_READ")
+          .targetType("CONTACT")
+          .targetId(id)
+          .beforeSnapshot(before)
+          .requestSummary(Map.of("contactId", id))
+          .success(false)
+          .errorMessage(error.getMessage())
+          .build());
+      throw error;
     }
-    auditLogService.record(AuditLogCommand.builder()
-        .module("CONTACT")
-        .action("MARK_READ")
-        .targetType("CONTACT")
-        .targetId(id)
-        .beforeSnapshot(before)
-        .afterSnapshot(contact)
-        .requestSummary(Map.of("contactId", id))
-        .success(true)
-        .build());
-    return contact;
   }
 
   private Contact copyContact(Contact source) {
