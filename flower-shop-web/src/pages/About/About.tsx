@@ -4,6 +4,7 @@ import { getAboutPage, getAboutTimeline, getShopInfo, getTeamMembers } from "@/s
 import type { AboutPageContent, AboutTimelineEntry, ShopInfo, TeamMember } from "@/types";
 
 export function About() {
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth < 768 : false));
   const [aboutPage, setAboutPage] = useState<AboutPageContent | null>(null);
   const [timeline, setTimeline] = useState<AboutTimelineEntry[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -38,6 +39,14 @@ export function About() {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const update = () => setIsMobile(window.innerWidth < 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   const timelineItems = useMemo(
@@ -101,7 +110,7 @@ export function About() {
           <h2 className="section-title section-title-accent mt-2 text-2xl sm:text-3xl">发展历程</h2>
           <div className="mt-8">
             {timelineItems.length ? (
-              <Timeline mode={timelineItems.length > 3 ? "alternate" : "left"} items={timelineItems} />
+              <Timeline mode={isMobile ? "left" : timelineItems.length > 3 ? "alternate" : "left"} items={timelineItems} />
             ) : (
               <Empty description="时间轴内容正在整理中" />
             )}

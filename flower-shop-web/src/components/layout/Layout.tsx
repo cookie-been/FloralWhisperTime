@@ -100,9 +100,15 @@ export function Layout() {
         onClose={() => setMobileNavOpen(false)}
         width="100%"
         title={siteConfig?.brandName ?? "花语时光"}
-        className="md:!hidden"
+        className="site-mobile-drawer md:!hidden"
       >
         <div className="flex h-full flex-col">
+          <div className="mb-5 rounded-lg border border-black/6 bg-[#f8fbf7] px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#58725f]">品牌导航</p>
+            <p className="mt-2 text-sm leading-7 text-muted">
+              {siteConfig?.footerDescription ?? "查看作品、了解品牌、联系门店与提交咨询。"}
+            </p>
+          </div>
           <nav className="space-y-2">
             {navItems.map((item) => (
               <NavLink
@@ -123,7 +129,12 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
-          <div className="mt-auto pt-6">
+          <div className="mt-auto space-y-4 pt-6">
+            <div className="rounded-lg border border-black/6 bg-[#f8fbf7] px-4 py-4 text-sm text-muted">
+              <p className="font-semibold text-ink">门店信息</p>
+              <p className="mt-2 leading-7">{shop?.address ?? "上海市徐汇区衡山路 88 号 1 层"}</p>
+              <p className="mt-1 leading-7">{siteConfig?.businessHoursText ?? "周一至周五 09:30-21:00，周末 10:00-21:30"}</p>
+            </div>
             <NavLink to="/contact" onClick={() => setMobileNavOpen(false)}>
               <Button type="primary" size="large" block icon={<Phone size={16} />}>
                 咨询花艺

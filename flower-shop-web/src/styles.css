@@ -709,6 +709,17 @@ a {
   box-shadow: none;
 }
 
+.site-mobile-drawer .ant-drawer-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(41, 57, 46, 0.08);
+  background: linear-gradient(180deg, rgba(251, 248, 242, 0.96), rgba(247, 242, 233, 0.92));
+}
+
+.site-mobile-drawer .ant-drawer-body {
+  padding: 20px;
+  background: #f6f3ee;
+}
+
 @media (max-width: 767px) {
   .ant-segmented {
     width: 100%;
