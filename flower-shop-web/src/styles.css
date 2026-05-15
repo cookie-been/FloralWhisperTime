@@ -362,6 +362,39 @@ a {
   line-height: 1.7;
 }
 
+.admin-restore-risk-panel {
+  border: 1px solid rgba(193, 142, 88, 0.22);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 249, 242, 0.96), rgba(252, 245, 236, 0.92));
+  padding: 14px;
+}
+
+.admin-restore-risk-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-restore-risk-grid p,
+.admin-restore-risk-grid strong {
+  margin: 0;
+}
+
+.admin-restore-risk-grid p {
+  color: #8a6a4b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.admin-restore-risk-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: #3f2a18;
+  font-size: 13px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
 .admin-subpanel {
   border: 1px solid rgba(41, 57, 46, 0.08);
   border-radius: 8px;

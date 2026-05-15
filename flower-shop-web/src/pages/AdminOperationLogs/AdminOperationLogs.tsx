@@ -192,7 +192,9 @@ export function AdminOperationLogs() {
   const [restoringId, setRestoringId] = useState<number | null>(null);
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
   const [restoreReason, setRestoreReason] = useState("");
+  const [restoreConfirmText, setRestoreConfirmText] = useState("");
   const [pendingRestoreId, setPendingRestoreId] = useState<number | null>(null);
+  const [pendingRestoreContext, setPendingRestoreContext] = useState<OperationLogItem | OperationLogDetail | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeDetail, setActiveDetail] = useState<OperationLogDetail | null>(null);
   const [page, setPage] = useState(1);
@@ -438,8 +440,19 @@ export function AdminOperationLogs() {
   const openRestoreModal = (id: number) => {
     setPendingRestoreId(id);
     setRestoreReason("");
+    setRestoreConfirmText("");
     setRestoreModalOpen(true);
   };
+
+  const openRestoreModalWithContext = (item: OperationLogItem | OperationLogDetail) => {
+    setPendingRestoreId(item.id);
+    setPendingRestoreContext(item);
+    setRestoreReason("");
+    setRestoreConfirmText("");
+    setRestoreModalOpen(true);
+  };
+
+  const restoreConfirmPhrase = pendingRestoreId ? `恢复${pendingRestoreId}` : "";
 
   const applyQuickView = (view: QuickView) => {
     if (view === "all") {
@@ -629,7 +642,7 @@ export function AdminOperationLogs() {
             <Popconfirm
               title="确认按该日志快照恢复数据？"
               description="下一步需要填写恢复原因，并会新增一条恢复日志。"
-              onConfirm={() => openRestoreModal(record.id)}
+              onConfirm={() => openRestoreModalWithContext(record)}
             >
               <Button
                 size="small"
@@ -887,7 +900,7 @@ export function AdminOperationLogs() {
             <Popconfirm
               title="确认按该日志快照恢复数据？"
               description="下一步需要填写恢复原因，并会新增一条恢复日志。"
-              onConfirm={() => openRestoreModal(activeDetail.id)}
+              onConfirm={() => openRestoreModalWithContext(activeDetail)}
             >
               <Button
                 type="primary"
@@ -1096,7 +1109,9 @@ export function AdminOperationLogs() {
           if (restoringId) return;
           setRestoreModalOpen(false);
           setRestoreReason("");
+          setRestoreConfirmText("");
           setPendingRestoreId(null);
+          setPendingRestoreContext(null);
         }}
         onOk={() => {
           if (!pendingRestoreId) return;
@@ -1104,13 +1119,61 @@ export function AdminOperationLogs() {
             message.warning("请填写恢复原因");
             return;
           }
+          if (!restoreConfirmPhrase || restoreConfirmText.trim() !== restoreConfirmPhrase) {
+            message.warning("请输入正确的确认短语后再执行恢复");
+            return;
+          }
           void handleRestore(pendingRestoreId);
         }}
         okText="确认恢复"
         cancelText="取消"
         confirmLoading={pendingRestoreId !== null && restoringId === pendingRestoreId}
+        okButtonProps={{
+          danger: true,
+          disabled: !restoreReason.trim() || !restoreConfirmPhrase || restoreConfirmText.trim() !== restoreConfirmPhrase,
+        }}
       >
         <div className="space-y-3">
+          <Alert
+            showIcon
+            type="warning"
+            message="该操作会按历史快照回写数据"
+            description="恢复会立即覆盖当前结构化数据状态，并新增一条恢复日志。建议先确认影响对象、时间点和恢复原因。"
+          />
+          {pendingRestoreContext ? (
+            <div className="admin-restore-risk-panel">
+              <div className="admin-restore-risk-grid">
+                <div>
+                  <p>模块</p>
+                  <strong>{formatModule(pendingRestoreContext.module)}</strong>
+                </div>
+                <div>
+                  <p>动作</p>
+                  <strong>{formatAction(pendingRestoreContext.action)}</strong>
+                </div>
+                <div>
+                  <p>目标</p>
+                  <strong>{formatTargetType(pendingRestoreContext.targetType)}</strong>
+                </div>
+                <div>
+                  <p>目标标识</p>
+                  <strong>{pendingRestoreContext.targetId || "暂无"}</strong>
+                </div>
+                <div>
+                  <p>原日志时间</p>
+                  <strong>{formatDateTime(pendingRestoreContext.createdAt)}</strong>
+                </div>
+                <div>
+                  <p>原日志结果</p>
+                  <strong>{pendingRestoreContext.success ? "成功" : "失败"}</strong>
+                </div>
+              </div>
+              <p className="admin-cell-note mt-3">
+                恢复来源日志 ID：#{pendingRestoreContext.id}
+                {pendingRestoreContext.restoredFromLogId ? ` · 上级恢复来源 #${pendingRestoreContext.restoredFromLogId}` : ""}
+              </p>
+            </div>
+          ) : null}
           <p className="text-sm leading-6 text-muted">恢复原因会写入新的恢复日志，便于后续排查、追责和恢复链路回放。</p>
           <Input.TextArea
             value={restoreReason}
@@ -1120,6 +1183,20 @@ export function AdminOperationLogs() {
             maxLength={200}
             showCount
           />
+          <div className="space-y-2">
+            <p className="text-sm leading-6 text-muted">
+              请输入确认短语后才能恢复：
+              <span className="ml-2 inline-flex rounded-md bg-[#f4ece3] px-2 py-1 font-semibold text-[#7a4d28]">
+                {restoreConfirmPhrase || "恢复"}
+              </span>
+            </p>
+            <Input
+              value={restoreConfirmText}
+              onChange={(event) => setRestoreConfirmText(event.target.value)}
+              placeholder={restoreConfirmPhrase ? `请输入 ${restoreConfirmPhrase}` : "请输入确认短语"}
+              maxLength={32}
+            />
+          </div>
         </div>
       </Modal>
     </div>
