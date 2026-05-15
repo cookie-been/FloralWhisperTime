@@ -367,6 +367,68 @@ a {
   gap: 12px;
 }
 
+.admin-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-timeline::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: rgba(87, 114, 95, 0.18);
+}
+
+.admin-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-timeline-dot {
+  position: relative;
+  z-index: 1;
+  margin-top: 6px;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 4px solid #edf4eb;
+  background: #2e7d32;
+  box-shadow: 0 0 0 1px rgba(46, 125, 50, 0.08);
+}
+
+.admin-timeline-card {
+  border: 1px solid rgba(41, 57, 46, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  padding: 14px;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-timeline-item:hover .admin-timeline-card {
+  border-color: rgba(46, 125, 50, 0.22);
+  background: #fffdf9;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(88, 69, 48, 0.08);
+}
+
 .admin-diff-item {
   border: 1px solid rgba(41, 57, 46, 0.08);
   border-radius: 8px;

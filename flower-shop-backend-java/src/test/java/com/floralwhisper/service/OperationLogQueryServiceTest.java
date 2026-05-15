@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.floralwhisper.audit.AuditPayloadSanitizer;
+import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.entity.OperationLog;
@@ -84,6 +85,30 @@ class OperationLogQueryServiceTest {
 
     assertEquals(1, result.getTotal());
     assertEquals(List.of(2L), result.getList().stream().map(OperationLogResponse::getId).toList());
+  }
+
+  @Test
+  void detailIncludesRestoreChainLogs() {
+    OperationLogMapper mapper = mock(OperationLogMapper.class);
+    AuditPayloadSanitizer sanitizer = mock(AuditPayloadSanitizer.class);
+    when(sanitizer.sanitizeForDisplay(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    OperationLog source = createLogAt(12L, "FLOWER", "UPDATE", "FLOWER", true, LocalDateTime.of(2026, 5, 15, 10, 0));
+    source.setTargetId("flower_001");
+    OperationLog restore = createLogAt(18L, "FLOWER", "RESTORE", "FLOWER", true, LocalDateTime.of(2026, 5, 15, 11, 0));
+    restore.setTargetId("flower_001");
+    restore.setRestoredFromLogId(12L);
+
+    when(mapper.selectById(18L)).thenReturn(restore);
+    when(mapper.selectList(any()))
+        .thenReturn(List.of(source));
+
+    OperationLogQueryService service = new OperationLogQueryService(mapper, sanitizer);
+
+    OperationLogDetailResponse detail = service.getDetail(18L);
+
+    assertEquals(1, detail.getRelatedLogs().size());
+    assertEquals(12L, detail.getRelatedLogs().get(0).getId());
   }
 
   private OperationLog createLog(Long id, String module, String action, String targetType, boolean success) {

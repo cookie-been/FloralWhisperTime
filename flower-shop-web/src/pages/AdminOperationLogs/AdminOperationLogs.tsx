@@ -769,6 +769,49 @@ export function AdminOperationLogs() {
               </div>
             </div>
 
+            {activeDetail.relatedLogs?.length ? (
+              <div className="admin-subpanel px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">恢复链路</p>
+                    <p className="admin-cell-note mt-2">按时间顺序展示当前日志关联的来源记录和恢复记录，可点击继续查看详情。</p>
+                  </div>
+                  <Tag color="green">{activeDetail.relatedLogs.length} 条关联日志</Tag>
+                </div>
+                <div className="admin-timeline mt-4">
+                  {activeDetail.relatedLogs.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="admin-timeline-item"
+                      onClick={() => void openDetail(item.id)}
+                    >
+                      <span className="admin-timeline-dot" />
+                      <div className="admin-timeline-card">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[#1b281e]">
+                              #{item.id} · {formatAction(item.action)}
+                            </p>
+                            <p className="mt-1 text-xs text-muted">
+                              {formatModule(item.module)} / {formatTargetType(item.targetType)} / {formatDateTime(item.createdAt)}
+                            </p>
+                          </div>
+                          <Space size={[8, 8]} wrap>
+                            {item.restoredFromLogId ? <Tag color="gold">恢复记录</Tag> : null}
+                            {item.success ? <Tag color="success">成功</Tag> : <Tag color="error">失败</Tag>}
+                          </Space>
+                        </div>
+                        <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted">
+                          {item.errorMessage || item.requestSummary || item.targetId || "关联日志"}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {!activeDetail.success && activeDetail.errorMessage ? (
               <div className="admin-subpanel px-4 py-4">
                 <div className="flex items-start justify-between gap-3">

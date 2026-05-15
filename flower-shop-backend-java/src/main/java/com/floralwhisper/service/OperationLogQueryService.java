@@ -94,6 +94,7 @@ public class OperationLogQueryService {
     response.setUserAgent(entity.getUserAgent());
     response.setRestoredFromLogId(entity.getRestoredFromLogId());
     response.setRestorable(isRestorable(entity));
+    response.setRelatedLogs(findRelatedLogs(entity));
     response.setCreatedAt(entity.getCreatedAt());
     return response;
   }
@@ -156,5 +157,28 @@ public class OperationLogQueryService {
     response.setRestorable(isRestorable(entity));
     response.setCreatedAt(entity.getCreatedAt());
     return response;
+  }
+
+  private List<OperationLogResponse> findRelatedLogs(OperationLog entity) {
+    if (entity == null) {
+      return List.of();
+    }
+
+    Long sourceId = "RESTORE".equalsIgnoreCase(entity.getAction()) ? entity.getRestoredFromLogId() : entity.getId();
+    if (sourceId == null) {
+      return List.of();
+    }
+
+    return operationLogMapper.selectList(new LambdaQueryWrapper<OperationLog>()
+            .ne(OperationLog::getId, entity.getId())
+            .and(wrapper -> wrapper
+                .eq(OperationLog::getId, sourceId)
+                .or()
+                .eq(OperationLog::getRestoredFromLogId, sourceId))
+            .orderByAsc(OperationLog::getCreatedAt)
+            .orderByAsc(OperationLog::getId))
+        .stream()
+        .map(this::toResponse)
+        .toList();
   }
 }

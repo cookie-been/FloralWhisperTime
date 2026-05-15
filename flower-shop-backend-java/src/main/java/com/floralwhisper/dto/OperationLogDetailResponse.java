@@ -1,6 +1,7 @@
 package com.floralwhisper.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -20,5 +21,6 @@ public class OperationLogDetailResponse {
   private String userAgent;
   private Long restoredFromLogId;
   private Boolean restorable;
+  private List<OperationLogResponse> relatedLogs;
   private LocalDateTime createdAt;
 }

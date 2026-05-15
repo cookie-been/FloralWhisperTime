@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.floralwhisper.dto.PaginatedResult;
+import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.service.OperationLogQueryService;
 import com.floralwhisper.security.JwtService;
@@ -125,5 +126,27 @@ class AdminControllerOperationLogFilterTest {
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "text/csv;charset=UTF-8"))
         .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("operation-logs")));
+  }
+
+  @Test
+  void operationLogDetailIncludesRestoreChainLogs() throws Exception {
+    OperationLogResponse source = new OperationLogResponse();
+    source.setId(12L);
+    source.setAction("UPDATE");
+    source.setTargetId("flower_001");
+    source.setCreatedAt(LocalDateTime.of(2026, 5, 15, 10, 0));
+
+    OperationLogDetailResponse detail = new OperationLogDetailResponse();
+    detail.setId(18L);
+    detail.setAction("RESTORE");
+    detail.setTargetId("flower_001");
+    detail.setRestoredFromLogId(12L);
+    detail.setRelatedLogs(java.util.List.of(source));
+    when(operationLogQueryService.getDetail(18L)).thenReturn(detail);
+
+    mockMvc.perform(get("/api/admin/operation-logs/18")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.relatedLogs[0].id").value(12));
   }
 }

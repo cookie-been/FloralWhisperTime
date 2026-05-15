@@ -191,6 +191,7 @@ export interface OperationLogDetail extends OperationLogItem {
   beforeSnapshot: string;
   afterSnapshot: string;
   userAgent?: string;
+  relatedLogs?: OperationLogItem[];
 }
 
 export interface OperationLogQuery {
