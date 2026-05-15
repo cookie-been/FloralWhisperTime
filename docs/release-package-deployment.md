@@ -51,6 +51,7 @@
 
 ```text
 floralwhispertime-release-20260515T120000Z-abc1234.tar.gz
+floralwhispertime-release-20260515T120000Z-abc1234.tar.gz.sha256
 ```
 
 ## 3. 发布包内容
@@ -62,9 +63,11 @@ floralwhispertime-release-<release-id>/
   docker-compose.release.yml
   .env.production.example
   RELEASE_INFO
+  CHECKSUMS.sha256
   release-check.sh
   release-inspect.sh
   release-install.sh
+  release-verify.sh
   release-upgrade.sh
   release-rollback.sh
   release-status.sh
@@ -76,6 +79,7 @@ floralwhispertime-release-<release-id>/
     release-common.sh
     release-inspect.sh
     release-install.sh
+    release-verify.sh
     release-upgrade.sh
     release-rollback.sh
     release-status.sh
@@ -89,6 +93,19 @@ floralwhispertime-release-<release-id>/
 scp floralwhispertime-release-<release-id>.tar.gz user@server:/tmp/
 ```
 
+建议同时上传对应校验文件：
+
+```bash
+scp floralwhispertime-release-<release-id>.tar.gz.sha256 user@server:/tmp/
+```
+
+在服务器解压前先校验下载包：
+
+```bash
+cd /tmp
+sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
+```
+
 ## 5. 服务器首次安装
 
 ### 5.1 解压
@@ -97,6 +114,12 @@ scp floralwhispertime-release-<release-id>.tar.gz user@server:/tmp/
 cd /tmp
 tar -xzf floralwhispertime-release-<release-id>.tar.gz
 cd floralwhispertime-release-<release-id>
+```
+
+解压后建议先校验包内文件：
+
+```bash
+./release-verify.sh
 ```
 
 ### 5.2 安装

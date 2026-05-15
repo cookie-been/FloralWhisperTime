@@ -43,6 +43,7 @@ ensure_prerequisites() {
   require_cmd mvn
   require_cmd npm
   require_cmd tar
+  require_cmd sha256sum
   require_cmd sed
   require_cmd grep
   docker compose version >/dev/null 2>&1 || fail "docker compose is not available"
@@ -105,6 +106,7 @@ prepare_release_tree() {
     "$REPO_ROOT/release-check.sh" \
     "$REPO_ROOT/release-inspect.sh" \
     "$REPO_ROOT/release-install.sh" \
+    "$REPO_ROOT/release-verify.sh" \
     "$REPO_ROOT/release-upgrade.sh" \
     "$REPO_ROOT/release-rollback.sh" \
     "$REPO_ROOT/release-status.sh" \
@@ -114,6 +116,7 @@ prepare_release_tree() {
     "$REPO_ROOT/ops/release-common.sh" \
     "$REPO_ROOT/ops/release-inspect.sh" \
     "$REPO_ROOT/ops/release-install.sh" \
+    "$REPO_ROOT/ops/release-verify.sh" \
     "$REPO_ROOT/ops/release-upgrade.sh" \
     "$REPO_ROOT/ops/release-rollback.sh" \
     "$REPO_ROOT/ops/release-status.sh" \
@@ -159,9 +162,24 @@ export_release_images() {
   docker save -o "$RELEASE_STAGING_DIR/images/web-image.tar" "floralwhispertime/web:${RELEASE_ID}"
 }
 
+write_release_checksums() {
+  log "Writing release file checksums..."
+  (
+    cd "$RELEASE_STAGING_DIR"
+    find . -type f ! -name 'CHECKSUMS.sha256' -printf '%P\n' | sort | while read -r file; do
+      sha256sum "$file"
+    done > CHECKSUMS.sha256
+  )
+}
+
 package_release_archive() {
   log "Packaging release archive..."
   tar -C "$OUTPUT_DIR" -czf "$RELEASE_PACKAGE" "$(basename "$RELEASE_STAGING_DIR")"
+  log "Writing archive checksum..."
+  (
+    cd "$OUTPUT_DIR"
+    sha256sum "$(basename "$RELEASE_PACKAGE")" > "$(basename "$RELEASE_PACKAGE").sha256"
+  )
 }
 
 print_summary() {
@@ -217,5 +235,6 @@ fi
 prepare_release_tree
 write_release_info
 export_release_images
+write_release_checksums
 package_release_archive
 print_summary

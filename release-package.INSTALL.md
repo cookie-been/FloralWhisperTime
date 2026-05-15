@@ -11,9 +11,16 @@
 
 ## 2. 首次安装
 
+建议先校验发布包：
+
+```bash
+sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
+```
+
 解压发布包后进入根目录，直接执行：
 
 ```bash
+./release-verify.sh
 ./release-install.sh
 ```
 
@@ -82,6 +89,8 @@
 ## 5. 说明
 
 - 默认保留最近 `5` 个 release
+- 发布包解压前可校验外层 `.tar.gz.sha256`
+- 解压后可用 `./release-verify.sh` 校验包内文件
 - 上传文件目录：`/opt/floralwhispertime/shared/uploads`
 - 环境文件：`/opt/floralwhispertime/shared/.env`
 
