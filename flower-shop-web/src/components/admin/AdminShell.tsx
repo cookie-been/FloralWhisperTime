@@ -77,7 +77,13 @@ export function AdminShell() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/65">管理入口</p>
             <div className="mt-4 rounded-lg border border-white/10 bg-white/8 px-4 py-4">
-              <h1 className="text-lg font-semibold text-white">花语时光后台</h1>
+              <div className="flex items-center gap-3">
+                <img src="/brand-logo.png" alt="花语时光" className="h-12 w-12 rounded-xl object-cover shadow-[0_12px_24px_rgba(0,0,0,0.2)]" />
+                <div>
+                  <h1 className="text-lg font-semibold text-white">花语时光后台</h1>
+                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-white/52">Floral Whisper Time</p>
+                </div>
+              </div>
               <p className="mt-2 text-sm leading-6 text-white/70">从作品、首页与门店内容三个层面维护品牌展示。</p>
             </div>
           </div>
@@ -135,7 +141,13 @@ export function AdminShell() {
       >
         <div className="flex h-full flex-col">
           <div className="admin-subpanel px-4 py-4">
-            <p className="text-sm font-semibold text-[#1b281e]">花语时光后台</p>
+            <div className="flex items-center gap-3">
+              <img src="/brand-logo.png" alt="花语时光" className="h-11 w-11 rounded-xl object-cover shadow-sm" />
+              <div>
+                <p className="text-sm font-semibold text-[#1b281e]">花语时光后台</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#6d7e72]">Floral Whisper Time</p>
+              </div>
+            </div>
             <p className="mt-2 text-sm leading-6 text-muted">移动端以抽屉方式浏览后台导航与操作入口。</p>
           </div>
 

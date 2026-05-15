@@ -1,6 +1,6 @@
 import { Button, Drawer } from "antd";
 import { Outlet, NavLink } from "react-router-dom";
-import { Flower2, MapPin, Menu, Phone } from "lucide-react";
+import { MapPin, Menu, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getShopInfo, getSiteConfig } from "@/services/api";
 import type { ShopInfo, SiteConfig } from "@/types";
@@ -29,9 +29,7 @@ export function Layout() {
       <header className="sticky top-0 z-50 border-b border-black/5 bg-white/92 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <NavLink to="/" className="flex items-center gap-2 font-semibold text-forest">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-mint">
-              <Flower2 size={20} />
-            </span>
+            <img src="/brand-logo.png" alt="花语时光" className="h-10 w-10 rounded-xl object-cover shadow-sm" />
             <span className="max-w-[11rem] truncate text-base sm:max-w-none sm:text-lg">{siteConfig?.brandName ?? "花语时光"}</span>
           </NavLink>
           <nav className="hidden items-center gap-8 md:flex">
@@ -75,7 +73,7 @@ export function Layout() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.2fr_1fr_1fr] lg:px-8">
           <div>
             <div className="flex items-center gap-2 font-semibold text-forest">
-              <Flower2 size={20} />
+              <img src="/brand-logo.png" alt="花语时光" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
               {siteConfig?.brandName ?? "花语时光"}
             </div>
             <p className="mt-3 max-w-md text-sm leading-7 text-muted">
