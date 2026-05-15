@@ -429,6 +429,18 @@ a {
   box-shadow: 0 14px 28px rgba(88, 69, 48, 0.08);
 }
 
+.admin-timeline-item.is-active .admin-timeline-dot {
+  border-color: #dcebd7;
+  background: #1f6a35;
+  box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.12);
+}
+
+.admin-timeline-item.is-active .admin-timeline-card {
+  border-color: rgba(46, 125, 50, 0.3);
+  background: linear-gradient(180deg, rgba(247, 252, 245, 0.96), rgba(255, 255, 255, 0.96));
+  box-shadow: 0 16px 32px rgba(46, 125, 50, 0.12);
+}
+
 .admin-diff-item {
   border: 1px solid rgba(41, 57, 46, 0.08);
   border-radius: 8px;

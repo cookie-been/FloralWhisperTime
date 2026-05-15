@@ -280,6 +280,18 @@ export function AdminOperationLogs() {
     ];
   }, [data]);
 
+  const timelineLogs = useMemo(() => {
+    if (!activeDetail) return [];
+    const merged = [activeDetail, ...(activeDetail.relatedLogs ?? [])];
+    const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
+    return unique.sort((left, right) => {
+      const leftTime = new Date(left.createdAt).getTime();
+      const rightTime = new Date(right.createdAt).getTime();
+      if (leftTime !== rightTime) return leftTime - rightTime;
+      return left.id - right.id;
+    });
+  }, [activeDetail]);
+
   const moduleStats = useMemo(() => {
     const counts = new Map<string, number>();
     (data?.list ?? []).forEach((item) => {
@@ -769,21 +781,23 @@ export function AdminOperationLogs() {
               </div>
             </div>
 
-            {activeDetail.relatedLogs?.length ? (
+            {timelineLogs.length ? (
               <div className="admin-subpanel px-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">恢复链路</p>
-                    <p className="admin-cell-note mt-2">按时间顺序展示当前日志关联的来源记录和恢复记录，可点击继续查看详情。</p>
+                    <p className="admin-cell-note mt-2">按时间顺序展示来源记录、当前节点和恢复记录，便于定位本次查看日志在整条链路中的位置。</p>
                   </div>
-                  <Tag color="green">{activeDetail.relatedLogs.length} 条关联日志</Tag>
+                  <Tag color="green">{timelineLogs.length} 个链路节点</Tag>
                 </div>
                 <div className="admin-timeline mt-4">
-                  {activeDetail.relatedLogs.map((item) => (
+                  {timelineLogs.map((item) => {
+                    const isCurrent = item.id === activeDetail.id;
+                    return (
                     <button
                       key={item.id}
                       type="button"
-                      className="admin-timeline-item"
+                      className={`admin-timeline-item${isCurrent ? " is-active" : ""}`}
                       onClick={() => void openDetail(item.id)}
                     >
                       <span className="admin-timeline-dot" />
@@ -798,6 +812,7 @@ export function AdminOperationLogs() {
                             </p>
                           </div>
                           <Space size={[8, 8]} wrap>
+                            {isCurrent ? <Tag color="processing">当前查看</Tag> : null}
                             {item.restoredFromLogId ? <Tag color="gold">恢复记录</Tag> : null}
                             {item.success ? <Tag color="success">成功</Tag> : <Tag color="error">失败</Tag>}
                           </Space>
@@ -807,7 +822,8 @@ export function AdminOperationLogs() {
                         </p>
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
