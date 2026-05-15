@@ -97,3 +97,4 @@ sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 更完整说明见仓库文档：
 
 - `docs/release-package-deployment.md`
+- `RELEASE_NOTES.md`

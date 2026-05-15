@@ -86,6 +86,7 @@
 - 发布前自检入口脚本
 - 发布包与包内文件校验脚本
 - 服务器端安装、升级、回滚、状态脚本
+- `RELEASE_NOTES.md` 版本说明
 - `.env.production.example`
 - `RELEASE_INFO`
 

@@ -10,6 +10,7 @@ SKIP_BUILD=0
 RELEASE_ID=""
 BUILD_TIMESTAMP="$(date -u +"%Y%m%dT%H%M%SZ")"
 SKIP_PREFLIGHT=0
+RELEASE_NOTES_COMMITS=10
 
 log() {
   printf '[build-release] %s\n' "$*"
@@ -29,6 +30,7 @@ Options:
   --output-dir PATH    Output directory for release package, default ./tmp/releases
   --skip-build         Reuse existing local images and artifacts
   --skip-preflight     Skip release preflight checks
+  --notes-commits N    Number of recent commits in release notes, default 10
   --allow-dirty-git    Allow building from a dirty git worktree
   -h, --help           Show this help
 EOF
@@ -154,6 +156,34 @@ web_image=floralwhispertime/web:$RELEASE_ID
 EOF
 }
 
+write_release_notes() {
+  local git_revision git_branch
+
+  git_revision="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || printf 'dev')"
+  git_branch="$(git -C "$REPO_ROOT" branch --show-current 2>/dev/null || printf 'unknown')"
+
+  cat >"$RELEASE_STAGING_DIR/RELEASE_NOTES.md" <<EOF
+# Release Notes
+
+- Release ID: \`$RELEASE_ID\`
+- Build Timestamp (UTC): \`$BUILD_TIMESTAMP\`
+- Git Branch: \`$git_branch\`
+- Git Revision: \`$git_revision\`
+- Backend Image: \`floralwhispertime/backend:$RELEASE_ID\`
+- Web Image: \`floralwhispertime/web:$RELEASE_ID\`
+
+## Recent Commits
+
+EOF
+
+  if git -C "$REPO_ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
+    git -C "$REPO_ROOT" log -n "$RELEASE_NOTES_COMMITS" --pretty=format:'- `%h` %s' >>"$RELEASE_STAGING_DIR/RELEASE_NOTES.md"
+    printf '\n' >>"$RELEASE_STAGING_DIR/RELEASE_NOTES.md"
+  else
+    printf -- '- No git history available.\n' >>"$RELEASE_STAGING_DIR/RELEASE_NOTES.md"
+  fi
+}
+
 export_release_images() {
   log "Saving backend image archive..."
   docker save -o "$RELEASE_STAGING_DIR/images/backend-image.tar" "floralwhispertime/backend:${RELEASE_ID}"
@@ -208,6 +238,11 @@ while [[ $# -gt 0 ]]; do
       SKIP_PREFLIGHT=1
       shift
       ;;
+    --notes-commits)
+      [[ $# -ge 2 ]] || fail "--notes-commits requires a value"
+      RELEASE_NOTES_COMMITS="$2"
+      shift 2
+      ;;
     --allow-dirty-git)
       ALLOW_DIRTY_GIT=1
       shift
@@ -222,6 +257,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+[[ "$RELEASE_NOTES_COMMITS" =~ ^[0-9]+$ ]] || fail "--notes-commits must be a non-negative integer"
+(( RELEASE_NOTES_COMMITS >= 1 )) || fail "--notes-commits must be at least 1"
+
 ensure_prerequisites
 run_preflight_check
 ensure_clean_git_worktree
@@ -234,6 +272,7 @@ fi
 
 prepare_release_tree
 write_release_info
+write_release_notes
 export_release_images
 write_release_checksums
 package_release_archive

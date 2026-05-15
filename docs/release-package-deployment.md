@@ -33,12 +33,14 @@
 ./ops/build-release.sh --output-dir /tmp/releases
 ./ops/build-release.sh --skip-build
 ./ops/build-release.sh --skip-preflight
+./ops/build-release.sh --notes-commits 15
 ```
 
 说明：
 
 - `./release-check.sh` 用于在正式打包前自检发布链路依赖、关键文件、脚本语法与 release compose 配置
 - `./ops/build-release.sh` 默认会自动执行一次同样的 preflight 检查
+- `RELEASE_NOTES.md` 会自动写入当前 release 元信息和最近若干条 git 提交摘要
 - 只有在你明确知道当前状态时，才建议使用 `--skip-preflight`
 
 输出目录默认是：
@@ -63,6 +65,7 @@ floralwhispertime-release-<release-id>/
   docker-compose.release.yml
   .env.production.example
   RELEASE_INFO
+  RELEASE_NOTES.md
   CHECKSUMS.sha256
   release-check.sh
   release-inspect.sh
