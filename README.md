@@ -21,6 +21,7 @@
 - `shared/`：Web 共享类型与数据结构
 - `scripts/catalog/`：作品批量生成与导入脚本
 - `logo/`：品牌 Logo 原始文件
+- `docs/`：正式产品、架构、接口与运维文档
 
 ## 一键部署
 
@@ -61,6 +62,7 @@
 - 生产环境建议基于 `.env.production.example` 生成正式 `.env`
 - 部署前后可按 [docs/deployment-checklist.md](/workspace/FloralWhisperTime/docs/deployment-checklist.md) 执行人工巡检
 - 如需接入企业域名与 HTTPS 入口，可参考 [docs/nginx-https-example.md](/workspace/FloralWhisperTime/docs/nginx-https-example.md)
+- 正式文档索引见 [docs/README.md](/workspace/FloralWhisperTime/docs/README.md)
 
 ## 备份
 

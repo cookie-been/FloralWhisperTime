@@ -19,6 +19,7 @@ backups/
 logs/
 tmp/
 docs/superpowers/
+*.zip
 
 *.zip
 *:Zone.Identifier
