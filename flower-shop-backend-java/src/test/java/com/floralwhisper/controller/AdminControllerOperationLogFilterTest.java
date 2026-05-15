@@ -64,7 +64,6 @@ class AdminControllerOperationLogFilterTest {
   @MockBean private com.floralwhisper.mapper.ShopHourMapper shopHourMapper;
   @MockBean private com.floralwhisper.mapper.ShopInfoMapper shopInfoMapper;
   @MockBean private com.floralwhisper.mapper.SiteConfigMapper siteConfigMapper;
-  @MockBean private com.floralwhisper.mapper.SiteConfigStatMapper siteConfigStatMapper;
   @MockBean private com.floralwhisper.mapper.TeamMemberMapper teamMemberMapper;
 
   @Test

@@ -29,7 +29,6 @@ import com.floralwhisper.mapper.FlowerTagMapper;
 import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
-import com.floralwhisper.mapper.SiteConfigStatMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import com.floralwhisper.security.JwtAuthenticationFilter;
 import com.floralwhisper.security.JwtService;
@@ -119,7 +118,6 @@ class AdminAiControllerTest {
   @MockBean private ShopHourMapper shopHourMapper;
   @MockBean private ShopInfoMapper shopInfoMapper;
   @MockBean private SiteConfigMapper siteConfigMapper;
-  @MockBean private SiteConfigStatMapper siteConfigStatMapper;
   @MockBean private TeamMemberMapper teamMemberMapper;
 
   @SuppressWarnings("unused")
