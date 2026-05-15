@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Drawer, Empty, Input, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
+import { Alert, Button, Drawer, Empty, Grid, Input, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { ClipboardList, History, RefreshCw, RotateCcw, Search, ShieldAlert } from "lucide-react";
+import { CheckCircle2, ClipboardList, Copy, RefreshCw, RotateCcw, Search, ShieldAlert } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { getAdminOperationLogDetail, getAdminOperationLogs, restoreAdminOperationLog } from "@/services/api";
 import type { OperationLogDetail, OperationLogItem, PaginatedResult } from "@/types";
 
@@ -44,7 +45,57 @@ function formatAction(value: string) {
   return mapping[value] ?? value;
 }
 
+function formatTargetType(value: string) {
+  const mapping: Record<string, string> = {
+    FLOWER: "作品",
+    CONTACT: "留言",
+    SITE_CONFIG: "站点配置",
+    ABOUT_PAGE: "关于页",
+    ABOUT_TIMELINE: "时间轴",
+    TEAM_MEMBER: "团队成员",
+    AI_SETTINGS: "AI 配置",
+    AUTH: "鉴权",
+  };
+  return mapping[value] ?? value;
+}
+
+function shouldIgnoreRowClick(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("button, .ant-btn, .ant-popover, .ant-popconfirm"));
+}
+
+async function copyText(value: string, successText: string) {
+  if (!value.trim()) {
+    message.warning("当前没有可复制的内容");
+    return;
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+    message.success(successText);
+  } catch {
+    message.error("复制失败，请稍后重试");
+  }
+}
+
+type ResultFilter = "all" | "true" | "false";
+type QuickView = "all" | "failed" | "restorable" | "restore";
+
 export function AdminOperationLogs() {
+  const screens = Grid.useBreakpoint();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState<PaginatedResult<OperationLogItem> | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -53,9 +104,18 @@ export function AdminOperationLogs() {
   const [activeDetail, setActiveDetail] = useState<OperationLogDetail | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [keyword, setKeyword] = useState("");
-  const [module, setModule] = useState<string>();
-  const [success, setSuccess] = useState<"all" | "true" | "false">("all");
+  const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
+  const [module, setModule] = useState<string | undefined>(searchParams.get("module") ?? undefined);
+  const initialSuccess = searchParams.get("success");
+  const initialAction = searchParams.get("action");
+  const initialRestorable = searchParams.get("restorable");
+  const [success, setSuccess] = useState<ResultFilter>(
+    initialSuccess === "true" || initialSuccess === "false" ? initialSuccess : "all",
+  );
+  const [action, setAction] = useState<string | undefined>(initialAction ?? undefined);
+  const [restorable, setRestorable] = useState<boolean | undefined>(
+    initialRestorable === "true" ? true : initialRestorable === "false" ? false : undefined,
+  );
 
   const load = async (
     nextPage = page,
@@ -63,6 +123,8 @@ export function AdminOperationLogs() {
     nextKeyword = keyword,
     nextModule = module,
     nextSuccess = success,
+    nextAction = action,
+    nextRestorable = restorable,
   ) => {
     setLoading(true);
     try {
@@ -71,7 +133,9 @@ export function AdminOperationLogs() {
         limit: nextPageSize,
         keyword: nextKeyword.trim() || undefined,
         module: nextModule || undefined,
+        action: nextAction || undefined,
         success: nextSuccess === "all" ? undefined : nextSuccess === "true",
+        restorable: nextRestorable,
       });
       setData(result);
       setPage(result.page);
@@ -84,8 +148,25 @@ export function AdminOperationLogs() {
   };
 
   useEffect(() => {
-    void load(1, 10);
+    void load(1, 10, keyword, module, success, action, restorable);
   }, []);
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (keyword.trim()) next.set("keyword", keyword.trim());
+    if (module) next.set("module", module);
+    if (success !== "all") next.set("success", success);
+    if (action) next.set("action", action);
+    if (restorable !== undefined) next.set("restorable", String(restorable));
+    setSearchParams(next, { replace: true });
+  }, [action, keyword, module, restorable, setSearchParams, success]);
+
+  const currentQuickView = useMemo<QuickView>(() => {
+    if (action === "RESTORE") return "restore";
+    if (restorable === true) return "restorable";
+    if (success === "false") return "failed";
+    return "all";
+  }, [action, restorable, success]);
 
   const metrics = useMemo(() => {
     const list = data?.list ?? [];
@@ -94,11 +175,35 @@ export function AdminOperationLogs() {
     const restorableCount = list.filter((item) => item.restorable).length;
     return [
       { label: "当前页日志", value: list.length, note: "展示当前筛选条件下的日志数量", icon: ClipboardList },
-      { label: "成功操作", value: successCount, note: "已成功落库的后台写操作与登录行为", icon: History },
-      { label: "失败操作", value: failedCount, note: "可用于排查失败请求与误操作链路", icon: ShieldAlert },
-      { label: "可恢复记录", value: restorableCount, note: "具备变更前快照，可执行单条恢复", icon: RotateCcw },
+      { label: "成功操作", value: successCount, note: "已成功写入的后台操作与登录行为", icon: CheckCircle2 },
+      { label: "失败操作", value: failedCount, note: "优先排查失败请求与异常链路", icon: ShieldAlert },
+      { label: "可恢复记录", value: restorableCount, note: "具备变更前快照，可单条恢复", icon: RotateCcw },
     ];
   }, [data]);
+
+  const moduleStats = useMemo(() => {
+    const counts = new Map<string, number>();
+    (data?.list ?? []).forEach((item) => {
+      counts.set(item.module, (counts.get(item.module) ?? 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([key, count]) => ({ key, label: formatModule(key), count }))
+      .sort((left, right) => right.count - left.count);
+  }, [data]);
+
+  const filterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (keyword.trim()) parts.push(`关键词“${keyword.trim()}”`);
+    if (module) parts.push(formatModule(module));
+    if (action) parts.push(`动作 ${formatAction(action)}`);
+    if (success === "true") parts.push("仅成功");
+    if (success === "false") parts.push("仅失败");
+    if (restorable === true) parts.push("仅可恢复");
+    if (restorable === false) parts.push("仅不可恢复");
+    return parts;
+  }, [action, keyword, module, restorable, success]);
+
+  const hasActiveFilters = Boolean(keyword.trim()) || Boolean(module) || Boolean(action) || success !== "all" || restorable !== undefined;
 
   const openDetail = async (id: number) => {
     setDrawerOpen(true);
@@ -119,12 +224,49 @@ export function AdminOperationLogs() {
       const detail = await restoreAdminOperationLog(id, "后台人工确认恢复");
       message.success("已按日志快照恢复数据");
       setActiveDetail(detail);
-      await load(page, pageSize, keyword, module, success);
+      await load(page, pageSize, keyword, module, success, action, restorable);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "恢复失败");
     } finally {
       setRestoringId(null);
     }
+  };
+
+  const applyQuickView = (view: QuickView) => {
+    if (view === "all") {
+      setSuccess("all");
+      setAction(undefined);
+      setRestorable(undefined);
+      void load(1, pageSize, keyword, module, "all", undefined, undefined);
+      return;
+    }
+    if (view === "failed") {
+      setSuccess("false");
+      setAction(undefined);
+      setRestorable(undefined);
+      void load(1, pageSize, keyword, module, "false", undefined, undefined);
+      return;
+    }
+    if (view === "restorable") {
+      setSuccess("all");
+      setAction(undefined);
+      setRestorable(true);
+      void load(1, pageSize, keyword, module, "all", undefined, true);
+      return;
+    }
+    setSuccess("all");
+    setAction("RESTORE");
+    setRestorable(undefined);
+    void load(1, pageSize, keyword, module, "all", "RESTORE", undefined);
+  };
+
+  const resetFilters = () => {
+    setKeyword("");
+    setModule(undefined);
+    setSuccess("all");
+    setAction(undefined);
+    setRestorable(undefined);
+    void load(1, pageSize, "", undefined, "all", undefined, undefined);
   };
 
   const columns: ColumnsType<OperationLogItem> = [
@@ -144,15 +286,16 @@ export function AdminOperationLogs() {
       title: "动作",
       dataIndex: "action",
       width: 120,
-      render: (value: string) => <Tag color="default">{formatAction(value)}</Tag>,
+      render: (value: string) => <Tag color={value === "RESTORE" ? "gold" : "default"}>{formatAction(value)}</Tag>,
     },
     {
       title: "目标",
       key: "target",
+      width: 220,
       render: (_: unknown, record) => (
         <div>
-          <p className="font-semibold text-[#1b281e]">{record.targetType}</p>
-          <p className="mt-1 text-xs text-muted">{record.targetId}</p>
+          <p className="font-semibold text-[#1b281e]">{formatTargetType(record.targetType)}</p>
+          <p className="mt-1 break-all text-xs text-muted">{record.targetId || "暂无"}</p>
         </div>
       ),
     },
@@ -160,6 +303,7 @@ export function AdminOperationLogs() {
       title: "操作人",
       dataIndex: "operatorName",
       width: 140,
+      render: (value: string) => value || "系统",
     },
     {
       title: "结果",
@@ -170,7 +314,14 @@ export function AdminOperationLogs() {
     {
       title: "摘要",
       dataIndex: "requestSummary",
-      render: (value: string) => <p className="line-clamp-2 text-sm leading-6 text-muted">{value || "暂无"}</p>,
+      render: (value: string, record) => (
+        <div>
+          <p className="line-clamp-2 text-sm leading-6 text-muted">{value || "暂无"}</p>
+          {!record.success && record.errorMessage ? (
+            <p className="admin-cell-note break-all text-[#9f4b45]">失败原因：{record.errorMessage}</p>
+          ) : null}
+        </div>
+      ),
     },
     {
       title: "操作",
@@ -183,8 +334,8 @@ export function AdminOperationLogs() {
           </Button>
           {record.restorable ? (
             <Popconfirm
-              title="确认按该日志的变更前快照恢复数据？"
-              description="恢复后会再生成一条新的恢复日志。"
+              title="确认按该日志快照恢复数据？"
+              description="恢复后会新增一条恢复日志，请确认当前变更需要回退。"
               onConfirm={() => void handleRestore(record.id)}
             >
               <Button
@@ -232,55 +383,120 @@ export function AdminOperationLogs() {
         })}
       </section>
 
-      <section className="admin-panel p-5">
-        <div className="flex flex-col gap-4">
-          <Alert
-            showIcon
-            type="warning"
-            message="恢复仅针对结构化数据快照"
-            description="作品、配置、关于页、团队、时间轴、留言已读和 AI 配置支持单条恢复。上传图片文件仍建议通过备份目录兜底。"
-          />
-          <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_0.7fr_auto]">
-            <Input
-              allowClear
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="按目标 ID、错误信息或请求摘要搜索"
-              prefix={<Search size={16} className="text-muted" />}
-            />
-            <Select
-              allowClear
-              value={module}
-              onChange={(value) => setModule(value)}
-              placeholder="筛选模块"
-              options={[
-                { label: "登录鉴权", value: "AUTH" },
-                { label: "作品管理", value: "FLOWER" },
-                { label: "用户留言", value: "CONTACT" },
-                { label: "站点配置", value: "SITE" },
-                { label: "关于我们", value: "ABOUT" },
-                { label: "团队成员", value: "TEAM" },
-                { label: "AI 配置", value: "AI" },
-              ]}
-            />
-            <Select
-              value={success}
-              onChange={setSuccess}
-              options={[
-                { label: "全部结果", value: "all" },
-                { label: "仅成功", value: "true" },
-                { label: "仅失败", value: "false" },
-              ]}
-            />
-            <Button
-              type="primary"
-              icon={<RefreshCw size={16} />}
-              onClick={() => void load(1, pageSize, keyword, module, success)}
-            >
-              刷新日志
-            </Button>
-          </div>
+      <section className="admin-toolbar admin-sticky-toolbar p-5">
+        <div>
+          <p className="section-eyebrow">日志筛选</p>
+          <h3 className="admin-section-title mt-2 text-xl">操作日志工作台</h3>
+          <p className="mt-2 text-sm leading-6 text-muted">集中排查后台写操作、登录异常与可恢复数据变更，适合定位误操作与恢复依据。</p>
         </div>
+        <div className="mt-5">
+          <p className="admin-filter-caption">快捷视图</p>
+        </div>
+        <div className="admin-quick-filters">
+          <Button type={currentQuickView === "all" ? "primary" : "default"} onClick={() => applyQuickView("all")}>
+            全部日志
+          </Button>
+          <Button type={currentQuickView === "failed" ? "primary" : "default"} onClick={() => applyQuickView("failed")}>
+            仅失败
+          </Button>
+          <Button type={currentQuickView === "restorable" ? "primary" : "default"} onClick={() => applyQuickView("restorable")}>
+            仅可恢复
+          </Button>
+          <Button type={currentQuickView === "restore" ? "primary" : "default"} onClick={() => applyQuickView("restore")}>
+            恢复记录
+          </Button>
+        </div>
+        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1.25fr)_180px_180px_180px_auto]">
+          <Input
+            allowClear
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+            onPressEnter={() => void load(1, pageSize, keyword, module, success, action, restorable)}
+            placeholder="按目标 ID、错误信息或请求摘要搜索"
+            prefix={<Search size={16} className="text-muted" />}
+          />
+          <Select
+            allowClear
+            value={module}
+            onChange={(value) => setModule(value)}
+            placeholder="筛选模块"
+            options={[
+              { label: "登录鉴权", value: "AUTH" },
+              { label: "作品管理", value: "FLOWER" },
+              { label: "用户留言", value: "CONTACT" },
+              { label: "站点配置", value: "SITE" },
+              { label: "关于我们", value: "ABOUT" },
+              { label: "团队成员", value: "TEAM" },
+              { label: "AI 配置", value: "AI" },
+            ]}
+          />
+          <Select
+            allowClear
+            value={action}
+            onChange={(value) => setAction(value)}
+            placeholder="筛选动作"
+            options={[
+              { label: "登录", value: "LOGIN" },
+              { label: "新增", value: "CREATE" },
+              { label: "修改", value: "UPDATE" },
+              { label: "删除", value: "DELETE" },
+              { label: "标记已读", value: "MARK_READ" },
+              { label: "恢复", value: "RESTORE" },
+            ]}
+          />
+          <Select
+            value={success}
+            onChange={setSuccess}
+            options={[
+              { label: "全部结果", value: "all" },
+              { label: "仅成功", value: "true" },
+              { label: "仅失败", value: "false" },
+            ]}
+          />
+          <Button
+            type="primary"
+            icon={<RefreshCw size={16} />}
+            onClick={() => void load(1, pageSize, keyword, module, success, action, restorable)}
+          >
+            刷新日志
+          </Button>
+        </div>
+        <div className="admin-filter-summary">
+          <div className="admin-filter-summary-copy">
+            <p>当前结果 {data?.list.length ?? 0} 条</p>
+            <span>
+              {hasActiveFilters
+                ? `已应用 ${filterSummary.join(" · ")}`
+                : "已展示最近的后台写操作、登录行为与恢复记录。"}
+            </span>
+          </div>
+          {hasActiveFilters ? <Button onClick={resetFilters}>清空筛选</Button> : null}
+        </div>
+      </section>
+
+      <section className="admin-panel p-5">
+        <Alert
+          showIcon
+          type="warning"
+          message="恢复仅针对结构化数据快照"
+          description="作品、站点配置、关于页、时间轴、团队、留言已读状态和 AI 配置支持按单条日志恢复。上传图片文件仍建议通过备份目录兜底。"
+        />
+        {moduleStats.length ? (
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {moduleStats.map((item) => (
+              <div key={item.key} className="admin-subpanel px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">模块分布</p>
+                <div className="mt-3 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-base font-semibold text-[#1b281e]">{item.label}</p>
+                    <p className="mt-1 text-sm text-muted">当前页相关日志 {item.count} 条</p>
+                  </div>
+                  <Tag color="green">{item.count}</Tag>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="admin-panel overflow-hidden p-0">
@@ -294,7 +510,7 @@ export function AdminOperationLogs() {
               <div className="admin-empty-state min-h-[220px]">
                 <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />
                 <h4>当前还没有符合条件的操作日志</h4>
-                <p>后台写操作和登录行为会在这里持续沉淀，便于排查与恢复。</p>
+                <p>后台写操作和登录行为会在这里持续沉淀，便于排查问题和恢复数据。</p>
               </div>
             ),
           }}
@@ -303,19 +519,53 @@ export function AdminOperationLogs() {
             pageSize,
             total: data?.total ?? 0,
             showSizeChanger: true,
-            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, success),
+            size: screens.sm ? undefined : "small",
+            pageSizeOptions: ["10", "20", "50"],
+            showTotal: (total) => `共 ${total} 条日志`,
+            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, success, action, restorable),
           }}
+          onRow={(record) => ({
+            onClick: (event) => {
+              if (shouldIgnoreRowClick(event.target)) return;
+              void openDetail(record.id);
+            },
+          })}
+          scroll={{ x: 1240 }}
         />
       </section>
 
       <Drawer
-        width={720}
+        title={
+          <div className="admin-drawer-title">
+            <p>日志详情</p>
+            <h3>{activeDetail ? `${formatModule(activeDetail.module)} / ${formatAction(activeDetail.action)}` : "日志详情"}</h3>
+            <span>查看完整请求、前后快照、异常信息与恢复入口。</span>
+          </div>
+        }
+        width={screens.lg ? 720 : "100%"}
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
           setActiveDetail(null);
         }}
-        title="日志详情"
+        extra={
+          activeDetail?.restorable ? (
+            <Popconfirm
+              title="确认按该日志快照恢复数据？"
+              description="恢复后会新增一条恢复日志，请确认当前变更需要回退。"
+              onConfirm={() => void handleRestore(activeDetail.id)}
+            >
+              <Button
+                type="primary"
+                icon={<RotateCcw size={14} />}
+                loading={restoringId === activeDetail.id}
+                block={!screens.sm}
+              >
+                按快照恢复
+              </Button>
+            </Popconfirm>
+          ) : null
+        }
       >
         {detailLoading ? (
           <div className="flex min-h-[240px] items-center justify-center">
@@ -329,30 +579,78 @@ export function AdminOperationLogs() {
         ) : (
           <div className="space-y-5 text-sm">
             <div className="admin-subpanel px-4 py-4">
-              <p className="font-semibold text-[#1b281e]">基础信息</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">基础信息</p>
               <div className="mt-3 space-y-2 text-muted">
                 <p>模块：{formatModule(activeDetail.module)}</p>
                 <p>动作：{formatAction(activeDetail.action)}</p>
-                <p>目标：{activeDetail.targetType} / {activeDetail.targetId}</p>
-                <p>操作人：{activeDetail.operatorName}</p>
+                <p>目标：{formatTargetType(activeDetail.targetType)} / {activeDetail.targetId || "暂无"}</p>
+                <p>操作人：{activeDetail.operatorName || "系统"}</p>
+                <p>结果：{activeDetail.success ? "成功" : "失败"}</p>
                 <p>时间：{formatDateTime(activeDetail.createdAt)}</p>
                 <p>来源 IP：{activeDetail.ipAddress || "暂无"}</p>
                 <p>UA：{activeDetail.userAgent || "暂无"}</p>
+                {activeDetail.restoredFromLogId ? <p>恢复来源日志：#{activeDetail.restoredFromLogId}</p> : null}
               </div>
             </div>
 
+            {!activeDetail.success && activeDetail.errorMessage ? (
+              <div className="admin-subpanel px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4b45]">失败原因</p>
+                    <p className="mt-3 whitespace-pre-wrap break-all text-sm leading-7 text-[#7d3d37]">{activeDetail.errorMessage}</p>
+                  </div>
+                  <Button
+                    type="text"
+                    icon={<Copy size={16} />}
+                    onClick={() => void copyText(activeDetail.errorMessage ?? "", "失败原因已复制")}
+                  />
+                </div>
+              </div>
+            ) : null}
+
             <div className="admin-subpanel px-4 py-4">
-              <p className="font-semibold text-[#1b281e]">请求摘要</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">请求摘要</p>
+                  <p className="admin-cell-note mt-2">用于回放请求意图，敏感字段已自动脱敏。</p>
+                </div>
+                <Button
+                  type="text"
+                  icon={<Copy size={16} />}
+                  onClick={() => void copyText(activeDetail.requestSummary || "", "请求摘要已复制")}
+                />
+              </div>
               <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-lg bg-white px-4 py-4 text-xs leading-6 text-[#33463a]">{activeDetail.requestSummary || "暂无"}</pre>
             </div>
 
             <div className="admin-subpanel px-4 py-4">
-              <p className="font-semibold text-[#1b281e]">变更前快照</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">变更前快照</p>
+                  <p className="admin-cell-note mt-2">可作为恢复依据，适用于结构化数据字段。</p>
+                </div>
+                <Button
+                  type="text"
+                  icon={<Copy size={16} />}
+                  onClick={() => void copyText(activeDetail.beforeSnapshot || "", "变更前快照已复制")}
+                />
+              </div>
               <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-lg bg-white px-4 py-4 text-xs leading-6 text-[#33463a]">{activeDetail.beforeSnapshot || "暂无"}</pre>
             </div>
 
             <div className="admin-subpanel px-4 py-4">
-              <p className="font-semibold text-[#1b281e]">变更后快照</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">变更后快照</p>
+                  <p className="admin-cell-note mt-2">便于核对本次提交最终落库的结构化数据。</p>
+                </div>
+                <Button
+                  type="text"
+                  icon={<Copy size={16} />}
+                  onClick={() => void copyText(activeDetail.afterSnapshot || "", "变更后快照已复制")}
+                />
+              </div>
               <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-lg bg-white px-4 py-4 text-xs leading-6 text-[#33463a]">{activeDetail.afterSnapshot || "暂无"}</pre>
             </div>
           </div>

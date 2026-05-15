@@ -117,8 +117,9 @@ public class AdminController {
       @RequestParam(required = false) String action,
       @RequestParam(required = false) String operatorName,
       @RequestParam(required = false) Boolean success,
-      @RequestParam(required = false) String keyword) {
-    return operationLogQueryService.list(page, limit, module, action, operatorName, success, keyword);
+      @RequestParam(required = false) String keyword,
+      @RequestParam(required = false) Boolean restorable) {
+    return operationLogQueryService.list(page, limit, module, action, operatorName, success, keyword, restorable);
   }
 
   @GetMapping("/operation-logs/{id}")

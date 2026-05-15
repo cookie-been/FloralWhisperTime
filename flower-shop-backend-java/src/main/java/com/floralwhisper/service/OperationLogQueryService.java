@@ -39,7 +39,8 @@ public class OperationLogQueryService {
       String action,
       String operatorName,
       Boolean success,
-      String keyword) {
+      String keyword,
+      Boolean restorable) {
     int currentPage = page == null || page < 1 ? 1 : page;
     int pageSize = limit == null || limit < 1 ? 20 : limit;
     String normalizedKeyword = keyword == null ? "" : keyword.trim();
@@ -58,11 +59,14 @@ public class OperationLogQueryService {
         .orderByDesc(OperationLog::getCreatedAt)
         .orderByDesc(OperationLog::getId);
 
-    List<OperationLog> all = operationLogMapper.selectList(query);
-    int from = Math.min((currentPage - 1) * pageSize, all.size());
-    int to = Math.min(from + pageSize, all.size());
-    List<OperationLogResponse> items = all.subList(from, to).stream().map(this::toResponse).toList();
-    return new PaginatedResult<>(items, all.size(), currentPage, pageSize);
+    List<OperationLogResponse> filtered = operationLogMapper.selectList(query).stream()
+        .map(this::toResponse)
+        .filter(item -> restorable == null || item.getRestorable().equals(restorable))
+        .toList();
+    int from = Math.min((currentPage - 1) * pageSize, filtered.size());
+    int to = Math.min(from + pageSize, filtered.size());
+    List<OperationLogResponse> items = filtered.subList(from, to);
+    return new PaginatedResult<>(items, filtered.size(), currentPage, pageSize);
   }
 
   public OperationLogDetailResponse getDetail(Long id) {

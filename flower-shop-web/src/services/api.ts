@@ -8,6 +8,7 @@ import type {
   ContactMessage,
   OperationLogDetail,
   OperationLogItem,
+  OperationLogQuery,
   Flower,
   FlowerQuery,
   PaginatedResult,
@@ -149,15 +150,7 @@ export function markAdminContactRead(id: string) {
   );
 }
 
-export function getAdminOperationLogs(query: {
-  page?: number;
-  limit?: number;
-  module?: string;
-  action?: string;
-  operatorName?: string;
-  success?: boolean;
-  keyword?: string;
-} = {}) {
+export function getAdminOperationLogs(query: OperationLogQuery = {}) {
   return request<PaginatedResult<OperationLogItem>>(withQuery("/api/admin/operation-logs", query));
 }
 

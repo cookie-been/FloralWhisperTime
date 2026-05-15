@@ -192,3 +192,14 @@ export interface OperationLogDetail extends OperationLogItem {
   afterSnapshot: string;
   userAgent?: string;
 }
+
+export interface OperationLogQuery {
+  page?: number;
+  limit?: number;
+  module?: string;
+  action?: string;
+  operatorName?: string;
+  success?: boolean;
+  keyword?: string;
+  restorable?: boolean;
+}

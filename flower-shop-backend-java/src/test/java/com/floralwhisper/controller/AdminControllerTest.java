@@ -515,7 +515,7 @@ class AdminControllerTest {
     item.setSuccess(true);
     item.setRestorable(true);
     item.setCreatedAt(LocalDateTime.of(2026, 5, 15, 9, 30));
-    when(operationLogQueryService.list(1, 10, "FLOWER", null, null, true, "wedding"))
+    when(operationLogQueryService.list(1, 10, "FLOWER", null, null, true, "wedding", null))
         .thenReturn(new PaginatedResult<>(List.of(item), 1, 1, 10));
 
     mockMvc.perform(get("/api/admin/operation-logs")

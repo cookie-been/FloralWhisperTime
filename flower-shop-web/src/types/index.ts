@@ -9,6 +9,7 @@ export type {
   ContactMessage,
   OperationLogDetail,
   OperationLogItem,
+  OperationLogQuery,
   Flower,
   FlowerQuery,
   PaginatedResult,
