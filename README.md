@@ -69,6 +69,32 @@
 - 如需接入企业域名与 HTTPS 入口，可参考 [docs/nginx-https-example.md](/workspace/FloralWhisperTime/docs/nginx-https-example.md)
 - 正式文档索引见 [docs/README.md](/workspace/FloralWhisperTime/docs/README.md)
 
+## 离线镜像发布部署
+
+如果目标服务器不方便拉取 Git 仓库，或希望以标准化交付包方式部署，推荐使用离线镜像发布包模式：
+
+```bash
+./ops/build-release.sh
+```
+
+脚本会在 `./tmp/releases/` 生成一个发布包，内部包含：
+
+- 后端镜像 tar
+- Web 镜像 tar
+- 发布版 `docker-compose.release.yml`
+- 服务器端安装、升级、回滚、状态脚本
+- `.env.production.example`
+- `RELEASE_INFO`
+
+将发布包上传到目标服务器后，按文档执行：
+
+- 首次安装：`./ops/release-install.sh`
+- 后续升级：`./ops/release-upgrade.sh`
+- 回滚：`./ops/release-rollback.sh`
+- 状态查看：`./ops/release-status.sh`
+
+完整说明见 [docs/release-package-deployment.md](/workspace/FloralWhisperTime/docs/release-package-deployment.md)。
+
 ## 备份
 
 推荐使用根目录脚本：

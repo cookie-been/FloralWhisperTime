@@ -17,12 +17,30 @@
 
 ## 2. 获取项目
 
+当前支持两种部署路径：
+
+- 路径 A：源码仓库部署
+- 路径 B：离线镜像发布包部署
+
+如果部署人员具备 Git 访问能力，推荐继续使用源码仓库部署；如果交付给外部客户或目标服务器不便拉 Git，推荐使用离线镜像发布包部署。
+
+### 路径 A：源码仓库部署
+
 ```bash
 git clone <your-repository-url>
 cd FloralWhisperTime
 ```
 
 如果交付的是压缩包，直接解压后进入项目根目录即可。
+
+### 路径 B：离线镜像发布包部署
+
+如果交付的是离线发布包：
+
+1. 将 `floralwhispertime-release-<release-id>.tar.gz` 上传到服务器
+2. 解压到任意临时目录
+3. 进入解压后的 release 根目录
+4. 按 [release-package-deployment.md](./release-package-deployment.md) 执行首次安装
 
 ## 3. 初始化环境文件
 
@@ -51,6 +69,8 @@ cp .env.production.example .env
 详细说明见 [env-reference.md](./env-reference.md)。
 
 ## 4. 首次部署
+
+### 4.1 源码仓库部署
 
 执行：
 
@@ -85,6 +105,42 @@ cp .env.production.example .env
 - AI / 上传 / 配置导入并发隔离
 - 公开只读接口本地缓存
 
+### 4.2 离线镜像发布包部署
+
+在 release 解压目录执行：
+
+```bash
+./ops/release-install.sh
+```
+
+脚本会自动：
+
+- 将当前 release 注册到 `/opt/floralwhispertime/releases/<release-id>`
+- 初始化共享目录 `/opt/floralwhispertime/shared`
+- 首次创建 `/opt/floralwhispertime/shared/.env`
+- 导入后端与 Web 业务镜像
+- 启动 `mysql + backend + web`
+- 执行健康检查、后台登录检查和系统状态检查
+- 成功后切换 `/opt/floralwhispertime/current`
+
+后续升级执行：
+
+```bash
+./ops/release-upgrade.sh
+```
+
+回滚执行：
+
+```bash
+./ops/release-rollback.sh --latest-previous
+```
+
+状态查看：
+
+```bash
+./ops/release-status.sh
+```
+
 ## 5. 安装后确认
 
 至少确认：
@@ -107,6 +163,16 @@ cp .env.production.example .env
 ```
 
 实际脚本主目录为 `ops/`，根目录命令为兼容入口。
+
+离线发布包模式额外运维命令：
+
+```bash
+./ops/build-release.sh
+./ops/release-install.sh
+./ops/release-upgrade.sh
+./ops/release-rollback.sh --latest-previous
+./ops/release-status.sh
+```
 
 ## 7. 升级建议
 
