@@ -251,6 +251,50 @@ class SiteServiceTest {
     verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
   }
 
+  @Test
+  void listOperationLogArchiveFilesReturnsSortedFiles() throws Exception {
+    Path uploadsDir = Files.createDirectories(tempDir.resolve("uploads"));
+    Path backupsDir = Files.createDirectories(tempDir.resolve("backups"));
+    Path archiveDir = Files.createDirectories(backupsDir.resolve("operation-logs"));
+    Path older = archiveDir.resolve("operation-logs-archive-20260514-090000.csv");
+    Path latest = archiveDir.resolve("operation-logs-archive-20260515-090000.csv");
+    Files.writeString(older, "older");
+    Files.writeString(latest, "latest");
+    Files.setLastModifiedTime(older, java.nio.file.attribute.FileTime.from(Instant.parse("2026-05-14T01:00:00Z")));
+    Files.setLastModifiedTime(latest, java.nio.file.attribute.FileTime.from(Instant.parse("2026-05-15T01:00:00Z")));
+
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(false, "volcengine", "", "doubao-image", "doubao-text"));
+
+    SiteService siteService =
+        new SiteService(
+            mock(SiteConfigMapper.class),
+            mock(SiteConfigStatMapper.class),
+            mock(ShopInfoMapper.class),
+            mock(ShopHourMapper.class),
+            mock(AboutPageMapper.class),
+            mock(AboutTimelineEntryMapper.class),
+            aiSettingsMapper,
+            mock(BrandStoryMapper.class),
+            mock(BrandStoryImageMapper.class),
+            mock(CategoryMapper.class),
+            mock(OperationLogMapper.class),
+            mock(TeamMemberMapper.class),
+            appProperties(uploadsDir, backupsDir),
+            mock(DataSource.class),
+            null,
+            mock(AuditLogService.class),
+            Instant.parse("2026-05-15T00:45:00Z"),
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+
+    var files = siteService.listOperationLogArchiveFiles();
+
+    assertEquals(2, files.size());
+    assertEquals("operation-logs-archive-20260515-090000.csv", files.get(0).getFilename());
+    assertTrue(files.get(0).getDownloadUrl().contains("/api/admin/system/operation-logs/archive-files/operation-logs-archive-20260515-090000.csv/download"));
+  }
+
   private AppProperties appProperties(Path uploadsDir, Path backupsDir) {
     AppProperties properties = new AppProperties();
     AppProperties.Upload upload = new AppProperties.Upload();

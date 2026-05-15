@@ -181,6 +181,14 @@ export interface OperationLogArchiveResult {
   archiveBefore: string;
 }
 
+export interface OperationLogArchiveFile {
+  filename: string;
+  path: string;
+  modifiedAt: string;
+  size: string;
+  downloadUrl: string;
+}
+
 export interface OperationLogItem {
   id: number;
   module: string;

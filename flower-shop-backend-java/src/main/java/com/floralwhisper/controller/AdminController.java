@@ -9,6 +9,7 @@ import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.LoginRequest;
 import com.floralwhisper.dto.LoginResponse;
+import com.floralwhisper.dto.OperationLogArchiveFileResponse;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
@@ -92,6 +93,18 @@ public class AdminController {
   public OperationLogArchiveResponse archiveOperationLogs(
       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime before) {
     return siteService.archiveOperationLogs(before);
+  }
+
+  @GetMapping("/system/operation-logs/archive-files")
+  public List<OperationLogArchiveFileResponse> operationLogArchiveFiles() {
+    return siteService.listOperationLogArchiveFiles();
+  }
+
+  @GetMapping(value = "/system/operation-logs/archive-files/{filename}/download", produces = "text/csv;charset=UTF-8")
+  public void downloadOperationLogArchiveFile(@PathVariable String filename, HttpServletResponse response) throws java.io.IOException {
+    response.setContentType("text/csv;charset=UTF-8");
+    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+    siteService.writeOperationLogArchiveFile(filename, response.getOutputStream());
   }
 
   @GetMapping("/system/ai-settings")

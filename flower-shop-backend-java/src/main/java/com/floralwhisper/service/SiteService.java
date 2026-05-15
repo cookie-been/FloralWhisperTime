@@ -14,6 +14,7 @@ import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.BusinessHoursResponse;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
+import com.floralwhisper.dto.OperationLogArchiveFileResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
@@ -61,6 +62,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Comparator;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -291,6 +293,41 @@ public class SiteService {
         .success(true)
         .build());
     return response;
+  }
+
+  public List<OperationLogArchiveFileResponse> listOperationLogArchiveFiles() {
+    File archiveDir = resolveOperationLogArchiveDirectory();
+    if (!archiveDir.exists() || !archiveDir.isDirectory()) {
+      return List.of();
+    }
+
+    File[] files = archiveDir.listFiles(file -> file.isFile() && file.getName().endsWith(".csv"));
+    if (files == null || files.length == 0) {
+      return List.of();
+    }
+
+    return java.util.Arrays.stream(files)
+        .sorted(
+            Comparator.comparingLong(File::lastModified)
+                .reversed()
+                .thenComparing(File::getName, Comparator.reverseOrder()))
+        .map(this::toOperationLogArchiveFileResponse)
+        .toList();
+  }
+
+  public String writeOperationLogArchiveFile(String filename, OutputStream outputStream) throws IOException {
+    File archiveDir = resolveOperationLogArchiveDirectory();
+    File target = new File(archiveDir, filename == null ? "" : filename);
+    if (!target.exists() || !target.isFile()) {
+      throw new ApiException(HttpStatus.NOT_FOUND, "操作日志归档文件不存在");
+    }
+    if (!target.getCanonicalPath().startsWith(archiveDir.getCanonicalPath())) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "非法的归档文件路径");
+    }
+    try (BufferedInputStream inputStream = new BufferedInputStream(java.nio.file.Files.newInputStream(target.toPath()))) {
+      inputStream.transferTo(outputStream);
+    }
+    return target.getName();
   }
 
   public String writeLatestBackupArchive(OutputStream outputStream) throws IOException {
@@ -1074,6 +1111,13 @@ public class SiteService {
         Instant.ofEpochMilli(backupDirectory.lastModified()).atZone(zoneId == null ? ZoneId.systemDefault() : zoneId));
   }
 
+  private File resolveOperationLogArchiveDirectory() {
+    File backupDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
+    return resolveDirectory(
+        backupDir.toPath().resolve(appProperties.getOperationLog().getArchiveDir()).toString(),
+        backupDir.toPath().resolve("operation-logs").toString());
+  }
+
   private long resolveOperationLogCount() {
     return operationLogMapper.selectCount(new LambdaQueryWrapper<>());
   }
@@ -1114,6 +1158,16 @@ public class SiteService {
           .append('\n');
     }
     return builder.toString();
+  }
+
+  private OperationLogArchiveFileResponse toOperationLogArchiveFileResponse(File file) {
+    OperationLogArchiveFileResponse response = new OperationLogArchiveFileResponse();
+    response.setFilename(file.getName());
+    response.setPath(file.getAbsolutePath());
+    response.setModifiedAt(formatBackupModifiedAt(file));
+    response.setSize(formatBytes(file.length()));
+    response.setDownloadUrl("/api/admin/system/operation-logs/archive-files/" + file.getName() + "/download");
+    return response;
   }
 
   private String csv(Object value) {

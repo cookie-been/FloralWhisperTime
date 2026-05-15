@@ -22,6 +22,7 @@ import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
+import com.floralwhisper.dto.OperationLogArchiveFileResponse;
 import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.PaginatedResult;
@@ -276,6 +277,39 @@ class AdminControllerTest {
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "application/gzip"))
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"latest-backup.tar.gz\""))
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes("archive-demo".getBytes(StandardCharsets.UTF_8)));
+  }
+
+  @Test
+  void operationLogArchiveFilesReturnsListWhenTokenIsValid() throws Exception {
+    OperationLogArchiveFileResponse item = new OperationLogArchiveFileResponse();
+    item.setFilename("operation-logs-archive-20260515-090000.csv");
+    item.setPath("/app/backups/operation-logs/operation-logs-archive-20260515-090000.csv");
+    item.setModifiedAt("2026-05-15 09:00:00");
+    item.setSize("8.00 KB");
+    item.setDownloadUrl("/api/admin/system/operation-logs/archive-files/operation-logs-archive-20260515-090000.csv/download");
+
+    when(siteService.listOperationLogArchiveFiles()).thenReturn(List.of(item));
+
+    mockMvc.perform(get("/api/admin/system/operation-logs/archive-files")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].filename").value("operation-logs-archive-20260515-090000.csv"))
+        .andExpect(jsonPath("$[0].downloadUrl").value("/api/admin/system/operation-logs/archive-files/operation-logs-archive-20260515-090000.csv/download"));
+  }
+
+  @Test
+  void operationLogArchiveFileDownloadStreamsFileWhenTokenIsValid() throws Exception {
+    doAnswer(invocation -> {
+      OutputStream outputStream = invocation.getArgument(1);
+      outputStream.write("csv-demo".getBytes(StandardCharsets.UTF_8));
+      return "operation-logs-archive-20260515-090000.csv";
+    }).when(siteService).writeOperationLogArchiveFile(eq("operation-logs-archive-20260515-090000.csv"), any(OutputStream.class));
+
+    mockMvc.perform(get("/api/admin/system/operation-logs/archive-files/operation-logs-archive-20260515-090000.csv/download")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"operation-logs-archive-20260515-090000.csv\""))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes("csv-demo".getBytes(StandardCharsets.UTF_8)));
   }
 
   @Test

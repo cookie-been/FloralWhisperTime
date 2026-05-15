@@ -1,8 +1,8 @@
 import { Alert, Button, Empty, Input, Modal, Spin, Switch, Tag, message } from "antd";
 import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { archiveAdminOperationLogs, downloadLatestAdminBackup, getAdminSystemStatus } from "@/services/api";
-import type { OperationLogArchiveResult, SystemStatus } from "@/types";
+import { archiveAdminOperationLogs, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminSystemStatus } from "@/services/api";
+import type { OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
 
 const AUTO_REFRESH_INTERVAL_MS = 60000;
 const AUTO_REFRESH_ERROR_THRESHOLD = 3;
@@ -20,6 +20,7 @@ export function AdminSystemStatus() {
   const [archiveBefore, setArchiveBefore] = useState("");
   const [archiving, setArchiving] = useState(false);
   const [latestArchiveResult, setLatestArchiveResult] = useState<OperationLogArchiveResult | null>(null);
+  const [archiveFiles, setArchiveFiles] = useState<OperationLogArchiveFile[]>([]);
 
   const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
     if (mode === "refresh") {
@@ -28,7 +29,9 @@ export function AdminSystemStatus() {
       setLoading(true);
     }
     try {
-      setStatus(await getAdminSystemStatus());
+      const [nextStatus, nextArchiveFiles] = await Promise.all([getAdminSystemStatus(), getAdminOperationLogArchiveFiles()]);
+      setStatus(nextStatus);
+      setArchiveFiles(nextArchiveFiles);
       setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
       setRefreshErrorCount(0);
       setLastRefreshError("");
@@ -366,6 +369,44 @@ export function AdminSystemStatus() {
                   description={`归档文件 ${latestArchiveResult.archiveFilename}，归档截止 ${latestArchiveResult.archiveBefore}`}
                 />
               ) : null}
+              <div className="admin-subpanel px-4 py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-[#1b281e]">归档文件</p>
+                    <p className="mt-1 text-sm text-muted">展示最近生成的日志归档文件，可直接下载留存。</p>
+                  </div>
+                  <Tag color={archiveFiles.length ? "green" : "default"}>{archiveFiles.length} 份</Tag>
+                </div>
+                {archiveFiles.length ? (
+                  <div className="mt-4 space-y-3">
+                    {archiveFiles.slice(0, 5).map((item) => (
+                      <div key={item.filename} className="rounded-lg border border-[rgba(41,57,46,0.08)] bg-white px-4 py-3">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-[#1b281e]">{item.filename}</p>
+                            <p className="mt-1 text-xs text-muted">{item.modifiedAt || "暂无时间"} · {item.size || "未知大小"}</p>
+                            <p className="mt-1 truncate text-xs text-muted">{item.path}</p>
+                          </div>
+                          <Button
+                            icon={<Download size={14} />}
+                            onClick={() => {
+                              downloadAdminFile(item.downloadUrl, item.filename)
+                                .then(() => message.success(`已开始下载 ${item.filename}`))
+                                .catch((error) => message.error(error instanceof Error ? error.message : "归档文件下载失败"));
+                            }}
+                          >
+                            下载
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="admin-empty-inline mt-4">
+                    <p>当前还没有操作日志归档文件。</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
