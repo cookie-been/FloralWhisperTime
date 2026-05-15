@@ -1,6 +1,8 @@
 package com.floralwhisper.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.floralwhisper.audit.AuditLogCommand;
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.dto.ContactRequest;
 import com.floralwhisper.dto.PaginatedResult;
@@ -15,9 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ContactService {
   private final ContactMapper contactMapper;
+  private final AuditLogService auditLogService;
 
-  public ContactService(ContactMapper contactMapper) {
+  public ContactService(ContactMapper contactMapper, AuditLogService auditLogService) {
     this.contactMapper = contactMapper;
+    this.auditLogService = auditLogService;
   }
 
   public Map<String, Boolean> create(ContactRequest request) {
@@ -59,10 +63,32 @@ public class ContactService {
   public Contact markAsRead(String id) {
     Contact contact = contactMapper.selectById(id);
     if (contact == null) throw new ApiException(HttpStatus.NOT_FOUND, "留言不存在");
+    Contact before = copyContact(contact);
     if (contact.getReadAt() == null) {
       contact.setReadAt(LocalDateTime.now());
       contactMapper.updateById(contact);
     }
+    auditLogService.record(AuditLogCommand.builder()
+        .module("CONTACT")
+        .action("MARK_READ")
+        .targetType("CONTACT")
+        .targetId(id)
+        .beforeSnapshot(before)
+        .afterSnapshot(contact)
+        .requestSummary(Map.of("contactId", id))
+        .success(true)
+        .build());
     return contact;
+  }
+
+  private Contact copyContact(Contact source) {
+    Contact copy = new Contact();
+    copy.setId(source.getId());
+    copy.setName(source.getName());
+    copy.setPhone(source.getPhone());
+    copy.setMessage(source.getMessage());
+    copy.setCreatedAt(source.getCreatedAt());
+    copy.setReadAt(source.getReadAt());
+    return copy;
   }
 }

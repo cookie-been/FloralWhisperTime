@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
@@ -73,6 +74,10 @@ class SiteControllerTest {
 
   @MockBean
   private TeamMemberMapper teamMemberMapper;
+  @MockBean
+  private AuditLogService auditLogService;
+  @MockBean
+  private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private AiSettingsMapper aiSettingsMapper;

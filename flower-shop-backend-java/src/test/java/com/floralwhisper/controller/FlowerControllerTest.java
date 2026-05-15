@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
@@ -65,6 +66,10 @@ class FlowerControllerTest {
 
   @MockBean
   private FlowerService flowerService;
+  @MockBean
+  private AuditLogService auditLogService;
+  @MockBean
+  private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private AiSettingsMapper aiSettingsMapper;

@@ -1,6 +1,8 @@
 package com.floralwhisper.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.floralwhisper.audit.AuditLogCommand;
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.dto.FlowerRequest;
 import com.floralwhisper.dto.FlowerResponse;
@@ -37,16 +39,19 @@ public class FlowerService {
   private final FlowerImageMapper flowerImageMapper;
   private final FlowerMaterialMapper flowerMaterialMapper;
   private final FlowerTagMapper flowerTagMapper;
+  private final AuditLogService auditLogService;
 
   public FlowerService(
       FlowerMapper flowerMapper,
       FlowerImageMapper flowerImageMapper,
       FlowerMaterialMapper flowerMaterialMapper,
-      FlowerTagMapper flowerTagMapper) {
+      FlowerTagMapper flowerTagMapper,
+      AuditLogService auditLogService) {
     this.flowerMapper = flowerMapper;
     this.flowerImageMapper = flowerImageMapper;
     this.flowerMaterialMapper = flowerMaterialMapper;
     this.flowerTagMapper = flowerTagMapper;
+    this.auditLogService = auditLogService;
   }
 
   public PaginatedResult<FlowerResponse> list(String categoryId, String tag, String keyword, String sortBy, Integer page, Integer limit) {
@@ -96,23 +101,57 @@ public class FlowerService {
     Flower flower = toEntity(request, id);
     flowerMapper.insert(flower);
     replaceChildren(id, request);
-    return getById(id);
+    FlowerResponse created = getById(id);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("FLOWER")
+        .action("CREATE")
+        .targetType("FLOWER")
+        .targetId(id)
+        .requestSummary(request)
+        .beforeSnapshot(null)
+        .afterSnapshot(created)
+        .success(true)
+        .build());
+    return created;
   }
 
   @Transactional
   public FlowerResponse update(String id, FlowerRequest request) {
     if (flowerMapper.selectById(id) == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
+    FlowerResponse before = getById(id);
     Flower flower = toEntity(request, id);
     flowerMapper.updateById(flower);
     replaceChildren(id, request);
-    return getById(id);
+    FlowerResponse updated = getById(id);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("FLOWER")
+        .action("UPDATE")
+        .targetType("FLOWER")
+        .targetId(id)
+        .requestSummary(request)
+        .beforeSnapshot(before)
+        .afterSnapshot(updated)
+        .success(true)
+        .build());
+    return updated;
   }
 
   @Transactional
   public void delete(String id) {
     if (flowerMapper.selectById(id) == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
+    FlowerResponse before = getById(id);
     deleteChildren(id);
     flowerMapper.deleteById(id);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("FLOWER")
+        .action("DELETE")
+        .targetType("FLOWER")
+        .targetId(id)
+        .requestSummary(java.util.Map.of("id", id))
+        .beforeSnapshot(before)
+        .afterSnapshot(null)
+        .success(true)
+        .build());
   }
 
   private Flower toEntity(FlowerRequest request, String id) {

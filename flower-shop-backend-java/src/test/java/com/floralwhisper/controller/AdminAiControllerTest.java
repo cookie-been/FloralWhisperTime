@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AiImageProperties;
 import com.floralwhisper.config.AppProperties;
@@ -99,6 +100,10 @@ class AdminAiControllerTest {
 
   @MockBean
   private AiSettingsResolver aiSettingsResolver;
+  @MockBean
+  private AuditLogService auditLogService;
+  @MockBean
+  private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
 
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;

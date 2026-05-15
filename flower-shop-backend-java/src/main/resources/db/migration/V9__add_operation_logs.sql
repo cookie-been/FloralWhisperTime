@@ -1,0 +1,23 @@
+CREATE TABLE operation_logs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    module VARCHAR(64) NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    target_type VARCHAR(64) NOT NULL,
+    target_id VARCHAR(128) NOT NULL,
+    operator_name VARCHAR(128) NOT NULL,
+    request_summary LONGTEXT NULL,
+    before_snapshot LONGTEXT NULL,
+    after_snapshot LONGTEXT NULL,
+    success TINYINT(1) NOT NULL DEFAULT 1,
+    error_message VARCHAR(500) NULL,
+    ip_address VARCHAR(128) NULL,
+    user_agent VARCHAR(500) NULL,
+    restored_from_log_id BIGINT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_operation_logs_created_at (created_at DESC),
+    INDEX idx_operation_logs_module (module),
+    INDEX idx_operation_logs_target (target_type, target_id),
+    INDEX idx_operation_logs_operator (operator_name),
+    INDEX idx_operation_logs_success (success),
+    INDEX idx_operation_logs_restored_from (restored_from_log_id)
+);

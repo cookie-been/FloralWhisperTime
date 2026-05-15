@@ -7,6 +7,8 @@ export type {
   Category,
   ContactForm,
   ContactMessage,
+  OperationLogDetail,
+  OperationLogItem,
   Flower,
   FlowerQuery,
   PaginatedResult,

@@ -6,6 +6,8 @@ import type {
   Category,
   ContactForm,
   ContactMessage,
+  OperationLogDetail,
+  OperationLogItem,
   Flower,
   FlowerQuery,
   PaginatedResult,
@@ -143,6 +145,31 @@ export function markAdminContactRead(id: string) {
   return withMutationGuard(`admin:contact:read:${id}`, () =>
     request<ContactMessage>(`/api/admin/contacts/${id}/read`, {
       method: "PATCH",
+    }),
+  );
+}
+
+export function getAdminOperationLogs(query: {
+  page?: number;
+  limit?: number;
+  module?: string;
+  action?: string;
+  operatorName?: string;
+  success?: boolean;
+  keyword?: string;
+} = {}) {
+  return request<PaginatedResult<OperationLogItem>>(withQuery("/api/admin/operation-logs", query));
+}
+
+export function getAdminOperationLogDetail(id: number) {
+  return request<OperationLogDetail>(`/api/admin/operation-logs/${id}`);
+}
+
+export function restoreAdminOperationLog(id: number, reason?: string) {
+  return withMutationGuard(`admin:operation-log:restore:${id}`, () =>
+    request<OperationLogDetail>(`/api/admin/operation-logs/${id}/restore`, {
+      method: "POST",
+      body: JSON.stringify({ reason: reason ?? "" }),
     }),
   );
 }

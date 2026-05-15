@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
@@ -20,6 +21,8 @@ import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.LoginResponse;
+import com.floralwhisper.dto.OperationLogDetailResponse;
+import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.entity.TeamMember;
@@ -44,6 +47,8 @@ import com.floralwhisper.security.JwtAuthenticationFilter;
 import com.floralwhisper.security.JwtService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
+import com.floralwhisper.service.OperationLogQueryService;
+import com.floralwhisper.service.OperationLogRecoveryService;
 import com.floralwhisper.service.SiteService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -94,6 +99,14 @@ class AdminControllerTest {
   private ContactService contactService;
   @MockBean
   private SiteService siteService;
+  @MockBean
+  private OperationLogQueryService operationLogQueryService;
+  @MockBean
+  private OperationLogRecoveryService operationLogRecoveryService;
+  @MockBean
+  private AuditLogService auditLogService;
+  @MockBean
+  private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private AiSettingsMapper aiSettingsMapper;
@@ -480,6 +493,93 @@ class AdminControllerTest {
     mockMvc.perform(delete("/api/admin/team/team_001")
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void operationLogsRequireAdminToken() throws Exception {
+    mockMvc.perform(get("/api/admin/operation-logs"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录管理后台"));
+  }
+
+  @Test
+  void operationLogsReturnPaginatedPayloadWhenTokenIsValid() throws Exception {
+    OperationLogResponse item = new OperationLogResponse();
+    item.setId(1L);
+    item.setModule("FLOWER");
+    item.setAction("UPDATE");
+    item.setTargetType("FLOWER");
+    item.setTargetId("wedding_001");
+    item.setOperatorName("admin");
+    item.setRequestSummary("{\"name\":\"晨雾誓约\"}");
+    item.setSuccess(true);
+    item.setRestorable(true);
+    item.setCreatedAt(LocalDateTime.of(2026, 5, 15, 9, 30));
+    when(operationLogQueryService.list(1, 10, "FLOWER", null, null, true, "wedding"))
+        .thenReturn(new PaginatedResult<>(List.of(item), 1, 1, 10));
+
+    mockMvc.perform(get("/api/admin/operation-logs")
+            .param("page", "1")
+            .param("limit", "10")
+            .param("module", "FLOWER")
+            .param("success", "true")
+            .param("keyword", "wedding")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.list[0].module").value("FLOWER"))
+        .andExpect(jsonPath("$.list[0].targetId").value("wedding_001"))
+        .andExpect(jsonPath("$.list[0].restorable").value(true))
+        .andExpect(jsonPath("$.total").value(1));
+  }
+
+  @Test
+  void operationLogDetailReturnsPayloadWhenTokenIsValid() throws Exception {
+    OperationLogDetailResponse detail = new OperationLogDetailResponse();
+    detail.setId(12L);
+    detail.setModule("SITE");
+    detail.setAction("UPDATE");
+    detail.setTargetType("SITE_CONFIG");
+    detail.setTargetId("1");
+    detail.setOperatorName("admin");
+    detail.setRequestSummary("{\"brandName\":\"花语时光\"}");
+    detail.setBeforeSnapshot("{\"brandName\":\"旧名称\"}");
+    detail.setAfterSnapshot("{\"brandName\":\"花语时光\"}");
+    detail.setSuccess(true);
+    detail.setRestorable(true);
+    detail.setCreatedAt(LocalDateTime.of(2026, 5, 15, 9, 40));
+    when(operationLogQueryService.getDetail(12L)).thenReturn(detail);
+
+    mockMvc.perform(get("/api/admin/operation-logs/12")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(12))
+        .andExpect(jsonPath("$.beforeSnapshot").value("{\"brandName\":\"旧名称\"}"))
+        .andExpect(jsonPath("$.restorable").value(true));
+  }
+
+  @Test
+  void restoreOperationLogReturnsRecoveryPayloadWhenTokenIsValid() throws Exception {
+    OperationLogDetailResponse detail = new OperationLogDetailResponse();
+    detail.setId(18L);
+    detail.setModule("FLOWER");
+    detail.setAction("RESTORE");
+    detail.setTargetType("FLOWER");
+    detail.setTargetId("wedding_001");
+    detail.setOperatorName("admin");
+    detail.setSuccess(true);
+    detail.setRestorable(false);
+    detail.setRestoredFromLogId(12L);
+    when(operationLogRecoveryService.restore(eq(12L), eq("后台人工确认恢复"))).thenReturn(detail);
+
+    mockMvc.perform(post("/api/admin/operation-logs/12/restore")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"reason":"后台人工确认恢复"}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.action").value("RESTORE"))
+        .andExpect(jsonPath("$.restoredFromLogId").value(12));
   }
 
   private String expiredToken() {

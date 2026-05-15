@@ -6,6 +6,7 @@ import { AdminDashboard } from "@/pages/AdminDashboard/AdminDashboard";
 import { AdminContacts } from "@/pages/AdminContacts/AdminContacts";
 import { AdminFlowers } from "@/pages/AdminFlowers/AdminFlowers";
 import { AdminLogin } from "@/pages/AdminLogin/AdminLogin";
+import { AdminOperationLogs } from "@/pages/AdminOperationLogs/AdminOperationLogs";
 import { AdminSettings } from "@/pages/AdminSettings/AdminSettings";
 import { AdminSystemStatus } from "@/pages/AdminSystemStatus/AdminSystemStatus";
 import { About } from "@/pages/About/About";
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
           { path: "flowers", element: <AdminFlowers /> },
           { path: "settings", element: <AdminSettings /> },
           { path: "system", element: <AdminSystemStatus /> },
+          { path: "operation-logs", element: <AdminOperationLogs /> },
           { path: "about", element: <Navigate to="/admin/settings?tab=about" replace /> },
           { path: "contacts", element: <AdminContacts /> },
         ],

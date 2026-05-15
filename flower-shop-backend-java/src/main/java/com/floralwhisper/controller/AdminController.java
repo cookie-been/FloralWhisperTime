@@ -9,10 +9,15 @@ import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.LoginRequest;
 import com.floralwhisper.dto.LoginResponse;
+import com.floralwhisper.dto.OperationLogDetailResponse;
+import com.floralwhisper.dto.OperationLogResponse;
+import com.floralwhisper.dto.OperationLogRestoreRequest;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.entity.Contact;
 import com.floralwhisper.entity.TeamMember;
+import com.floralwhisper.service.OperationLogQueryService;
+import com.floralwhisper.service.OperationLogRecoveryService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
 import com.floralwhisper.service.SiteService;
@@ -41,11 +46,20 @@ public class AdminController {
   private final AuthService authService;
   private final ContactService contactService;
   private final SiteService siteService;
+  private final OperationLogQueryService operationLogQueryService;
+  private final OperationLogRecoveryService operationLogRecoveryService;
 
-  public AdminController(AuthService authService, ContactService contactService, SiteService siteService) {
+  public AdminController(
+      AuthService authService,
+      ContactService contactService,
+      SiteService siteService,
+      OperationLogQueryService operationLogQueryService,
+      OperationLogRecoveryService operationLogRecoveryService) {
     this.authService = authService;
     this.contactService = contactService;
     this.siteService = siteService;
+    this.operationLogQueryService = operationLogQueryService;
+    this.operationLogRecoveryService = operationLogRecoveryService;
   }
 
   @PostMapping("/login")
@@ -93,6 +107,28 @@ public class AdminController {
   @PatchMapping("/contacts/{id}/read")
   public Contact markContactRead(@PathVariable String id) {
     return contactService.markAsRead(id);
+  }
+
+  @GetMapping("/operation-logs")
+  public PaginatedResult<OperationLogResponse> operationLogs(
+      @RequestParam(required = false) Integer page,
+      @RequestParam(required = false) Integer limit,
+      @RequestParam(required = false) String module,
+      @RequestParam(required = false) String action,
+      @RequestParam(required = false) String operatorName,
+      @RequestParam(required = false) Boolean success,
+      @RequestParam(required = false) String keyword) {
+    return operationLogQueryService.list(page, limit, module, action, operatorName, success, keyword);
+  }
+
+  @GetMapping("/operation-logs/{id}")
+  public OperationLogDetailResponse operationLogDetail(@PathVariable Long id) {
+    return operationLogQueryService.getDetail(id);
+  }
+
+  @PostMapping("/operation-logs/{id}/restore")
+  public OperationLogDetailResponse restoreOperationLog(@PathVariable Long id, @RequestBody(required = false) OperationLogRestoreRequest request) {
+    return operationLogRecoveryService.restore(id, request == null ? "" : request.getReason());
   }
 
   @GetMapping("/about-page")

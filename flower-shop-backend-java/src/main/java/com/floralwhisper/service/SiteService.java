@@ -1,6 +1,8 @@
 package com.floralwhisper.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.floralwhisper.audit.AuditLogCommand;
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.dto.AboutPageResponse;
@@ -89,6 +91,7 @@ public class SiteService {
   private final Instant startedAt;
   private final ZoneId zoneId;
   private final Clock clock;
+  private final AuditLogService auditLogService;
 
   @Autowired
   public SiteService(
@@ -105,7 +108,8 @@ public class SiteService {
       TeamMemberMapper teamMemberMapper,
       AppProperties appProperties,
       DataSource dataSource,
-      @Nullable BuildProperties buildProperties) {
+      @Nullable BuildProperties buildProperties,
+      AuditLogService auditLogService) {
     this(
         siteConfigMapper,
         siteConfigStatMapper,
@@ -121,6 +125,7 @@ public class SiteService {
         appProperties,
         dataSource,
         buildProperties,
+        auditLogService,
         Instant.now(),
         ZoneId.systemDefault(),
         Clock.systemDefaultZone());
@@ -141,6 +146,7 @@ public class SiteService {
       AppProperties appProperties,
       DataSource dataSource,
       @Nullable BuildProperties buildProperties,
+      AuditLogService auditLogService,
       @Nullable Instant startedAt,
       ZoneId zoneId,
       Clock clock) {
@@ -158,6 +164,7 @@ public class SiteService {
     this.appProperties = appProperties;
     this.dataSource = dataSource;
     this.buildProperties = buildProperties;
+    this.auditLogService = auditLogService;
     this.startedAt = startedAt;
     this.zoneId = zoneId;
     this.clock = clock;
@@ -281,6 +288,7 @@ public class SiteService {
 
   @Transactional
   public SiteConfigUpdateResponse updateSiteConfig(SiteConfigUpdateRequest request) {
+    SiteConfigUpdateResponse before = new SiteConfigUpdateResponse(getSiteConfig(), getShopInfo(), getBrandStory());
     SiteConfig config = ensureSiteConfig();
     config.setBrandName(text(request.getBrandName(), config.getBrandName()));
     config.setHeroEyebrow(text(request.getHeroEyebrow(), config.getHeroEyebrow()));
@@ -315,18 +323,43 @@ public class SiteService {
       replaceStoryImages(request.getStoryImages());
     }
 
-    return new SiteConfigUpdateResponse(getSiteConfig(), getShopInfo(), getBrandStory());
+    SiteConfigUpdateResponse after = new SiteConfigUpdateResponse(getSiteConfig(), getShopInfo(), getBrandStory());
+    auditLogService.record(AuditLogCommand.builder()
+        .module("SITE")
+        .action("UPDATE")
+        .targetType("SITE_CONFIG")
+        .targetId(String.valueOf(SINGLETON_ID))
+        .requestSummary(request)
+        .beforeSnapshot(before)
+        .afterSnapshot(after)
+        .success(true)
+        .build());
+    return after;
   }
 
   @Transactional
   public AiSettingsResponse updateAdminAiSettings(AiSettingsUpdateRequest request) {
+    AiSettings before = ensureAiSettings();
+    AiSettings beforeCopy = cloneAiSettings(before);
     updateAiSettings(request);
-    return getAdminAiSettings();
+    AiSettingsResponse after = getAdminAiSettings();
+    auditLogService.record(AuditLogCommand.builder()
+        .module("AI")
+        .action("UPDATE")
+        .targetType("AI_SETTINGS")
+        .targetId(String.valueOf(SINGLETON_ID))
+        .requestSummary(request)
+        .beforeSnapshot(beforeCopy)
+        .afterSnapshot(ensureAiSettings())
+        .success(true)
+        .build());
+    return after;
   }
 
   @Transactional
   public AboutPageResponse updateAboutPage(AboutPageUpdateRequest request) {
     AboutPage current = ensureAboutPage();
+    AboutPageResponse before = toAboutPageResponse(current);
     current.setHeroImage(text(request.getHeroImage(), current.getHeroImage()));
     current.setHeroEyebrow(text(request.getHeroEyebrow(), current.getHeroEyebrow()));
     current.setHeroTitle(text(request.getHeroTitle(), current.getHeroTitle()));
@@ -334,7 +367,18 @@ public class SiteService {
     current.setStoryTitle(text(request.getStoryTitle(), current.getStoryTitle()));
     current.setStoryContent(text(request.getStoryContent(), current.getStoryContent()));
     aboutPageMapper.updateById(current);
-    return toAboutPageResponse(current);
+    AboutPageResponse after = toAboutPageResponse(current);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("ABOUT")
+        .action("UPDATE")
+        .targetType("ABOUT_PAGE")
+        .targetId(String.valueOf(SINGLETON_ID))
+        .requestSummary(request)
+        .beforeSnapshot(before)
+        .afterSnapshot(after)
+        .success(true)
+        .build());
+    return after;
   }
 
   @Transactional
@@ -345,24 +389,58 @@ public class SiteService {
     entity.setContent(requiredText(request.getContent(), "请输入时间轴内容"));
     entity.setSort(request.getSort() == null ? nextTimelineSort() : request.getSort());
     aboutTimelineEntryMapper.insert(entity);
-    return toAboutTimelineEntryResponse(entity);
+    AboutTimelineEntryResponse created = toAboutTimelineEntryResponse(entity);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("ABOUT")
+        .action("CREATE")
+        .targetType("ABOUT_TIMELINE")
+        .targetId(entity.getId())
+        .requestSummary(request)
+        .afterSnapshot(created)
+        .success(true)
+        .build());
+    return created;
   }
 
   @Transactional
   public AboutTimelineEntryResponse updateAboutTimelineEntry(String id, AboutTimelineEntryRequest request) {
     AboutTimelineEntry current = requireTimelineEntry(id);
+    AboutTimelineEntryResponse before = toAboutTimelineEntryResponse(current);
     current.setYearLabel(requiredText(request.getYearLabel(), "请输入时间轴年份"));
     current.setContent(requiredText(request.getContent(), "请输入时间轴内容"));
     current.setSort(request.getSort() == null ? current.getSort() : request.getSort());
     aboutTimelineEntryMapper.updateById(current);
-    return toAboutTimelineEntryResponse(current);
+    AboutTimelineEntryResponse after = toAboutTimelineEntryResponse(current);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("ABOUT")
+        .action("UPDATE")
+        .targetType("ABOUT_TIMELINE")
+        .targetId(id)
+        .requestSummary(request)
+        .beforeSnapshot(before)
+        .afterSnapshot(after)
+        .success(true)
+        .build());
+    return after;
   }
 
   @Transactional
   public void deleteAboutTimelineEntry(String id) {
+    AboutTimelineEntry current = requireTimelineEntry(id);
+    AboutTimelineEntryResponse before = toAboutTimelineEntryResponse(current);
     if (aboutTimelineEntryMapper.deleteById(id) == 0) {
       throw new ApiException(HttpStatus.NOT_FOUND, "时间轴条目不存在");
     }
+    auditLogService.record(AuditLogCommand.builder()
+        .module("ABOUT")
+        .action("DELETE")
+        .targetType("ABOUT_TIMELINE")
+        .targetId(id)
+        .requestSummary(java.util.Map.of("id", id))
+        .beforeSnapshot(before)
+        .afterSnapshot(null)
+        .success(true)
+        .build());
   }
 
   @Transactional
@@ -375,26 +453,86 @@ public class SiteService {
     entity.setBio(optionalText(request.getBio()));
     entity.setSort(request.getSort() == null ? nextTeamSort() : request.getSort());
     teamMemberMapper.insert(entity);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("TEAM")
+        .action("CREATE")
+        .targetType("TEAM_MEMBER")
+        .targetId(entity.getId())
+        .requestSummary(request)
+        .afterSnapshot(entity)
+        .success(true)
+        .build());
     return entity;
   }
 
   @Transactional
   public TeamMember updateTeamMember(String id, TeamMemberRequest request) {
     TeamMember current = requireTeamMember(id);
+    TeamMember before = cloneTeamMember(current);
     current.setName(requiredText(request.getName(), "请输入团队成员姓名"));
     current.setTitle(requiredText(request.getTitle(), "请输入团队成员职务"));
     current.setAvatar(requiredText(request.getAvatar(), "请上传团队成员头像"));
     current.setBio(optionalText(request.getBio()));
     current.setSort(request.getSort() == null ? current.getSort() : request.getSort());
     teamMemberMapper.updateById(current);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("TEAM")
+        .action("UPDATE")
+        .targetType("TEAM_MEMBER")
+        .targetId(id)
+        .requestSummary(request)
+        .beforeSnapshot(before)
+        .afterSnapshot(current)
+        .success(true)
+        .build());
     return current;
   }
 
   @Transactional
   public void deleteTeamMember(String id) {
+    TeamMember current = requireTeamMember(id);
+    TeamMember before = cloneTeamMember(current);
     if (teamMemberMapper.deleteById(id) == 0) {
       throw new ApiException(HttpStatus.NOT_FOUND, "团队成员不存在");
     }
+    auditLogService.record(AuditLogCommand.builder()
+        .module("TEAM")
+        .action("DELETE")
+        .targetType("TEAM_MEMBER")
+        .targetId(id)
+        .requestSummary(java.util.Map.of("id", id))
+        .beforeSnapshot(before)
+        .afterSnapshot(null)
+        .success(true)
+        .build());
+  }
+
+  private TeamMember cloneTeamMember(TeamMember source) {
+    TeamMember copy = new TeamMember();
+    copy.setId(source.getId());
+    copy.setName(source.getName());
+    copy.setTitle(source.getTitle());
+    copy.setAvatar(source.getAvatar());
+    copy.setBio(source.getBio());
+    copy.setSort(source.getSort());
+    return copy;
+  }
+
+  private AiSettings cloneAiSettings(AiSettings source) {
+    AiSettings copy = new AiSettings();
+    copy.setId(source.getId());
+    copy.setEnabled(source.getEnabled());
+    copy.setProvider(source.getProvider());
+    copy.setApiKey(source.getApiKey());
+    copy.setModel(source.getModel());
+    copy.setBaseUrl(source.getBaseUrl());
+    copy.setGeneratePath(source.getGeneratePath());
+    copy.setSize(source.getSize());
+    copy.setTextModel(source.getTextModel());
+    copy.setTextGeneratePath(source.getTextGeneratePath());
+    copy.setTextTemperature(source.getTextTemperature());
+    copy.setTextMaxTokens(source.getTextMaxTokens());
+    return copy;
   }
 
   private void replaceStats(List<SiteStatResponse> stats) {

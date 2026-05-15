@@ -1,4 +1,4 @@
-import { BarChart3, Flower2, Globe, HardDriveDownload, MessageSquareMore, Settings } from "lucide-react";
+import { BarChart3, ClipboardList, Flower2, Globe, HardDriveDownload, MessageSquareMore, Settings } from "lucide-react";
 
 export const adminNavItems = [
   {
@@ -36,6 +36,13 @@ export const adminNavItems = [
     description: "查看版本、备份与 AI 配置状态",
     icon: HardDriveDownload,
   },
+  {
+    key: "operation-logs",
+    path: "/admin/operation-logs",
+    label: "操作日志",
+    description: "查看后台写操作记录并按快照恢复",
+    icon: ClipboardList,
+  },
 ] as const;
 
 export const adminPublicLink = {
@@ -69,5 +76,10 @@ export const adminPageMeta = {
     eyebrow: "运维状态",
     title: "系统状态",
     description: "快速确认版本、备份、AI 配置和上传目录是否正常。",
+  },
+  "/admin/operation-logs": {
+    eyebrow: "审计恢复",
+    title: "操作日志",
+    description: "记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。",
   },
 } as const;

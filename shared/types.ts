@@ -170,3 +170,25 @@ export interface SystemStatus {
   latestBackupDownloadUrl: string;
   latestBackupPresent: boolean;
 }
+
+export interface OperationLogItem {
+  id: number;
+  module: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  operatorName: string;
+  requestSummary: string;
+  success: boolean;
+  errorMessage?: string;
+  ipAddress?: string;
+  restoredFromLogId?: number | null;
+  restorable: boolean;
+  createdAt: string;
+}
+
+export interface OperationLogDetail extends OperationLogItem {
+  beforeSnapshot: string;
+  afterSnapshot: string;
+  userAgent?: string;
+}

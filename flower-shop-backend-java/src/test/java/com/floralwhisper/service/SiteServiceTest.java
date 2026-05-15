@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.entity.AiSettings;
@@ -91,6 +92,7 @@ class SiteServiceTest {
             appProperties(uploadsDir, backupsDir),
             dataSource,
             buildProperties,
+            mock(AuditLogService.class),
             Instant.parse("2026-05-15T00:45:00Z"),
             ZoneId.of("Asia/Shanghai"),
             Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
@@ -149,6 +151,7 @@ class SiteServiceTest {
             appProperties(uploadsDir, backupsDir),
             dataSource,
             null,
+            mock(AuditLogService.class),
             null,
             ZoneId.of("Asia/Shanghai"),
             Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
