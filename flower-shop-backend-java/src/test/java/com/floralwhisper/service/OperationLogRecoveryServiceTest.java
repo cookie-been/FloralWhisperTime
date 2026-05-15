@@ -163,6 +163,19 @@ class OperationLogRecoveryServiceTest {
     verify(auditLogService).record(any(AuditLogCommand.class));
   }
 
+  @Test
+  void restoreRejectsBlankReason() {
+    OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+
+    OperationLogRecoveryService service = createService(operationLogMapper, mock(OperationLogQueryService.class), auditLogService);
+
+    ApiException error = assertThrows(ApiException.class, () -> service.restore(5L, "   "));
+    assertEquals("请填写恢复原因", error.getMessage());
+    verify(operationLogMapper, never()).selectById(any());
+    verify(auditLogService, never()).record(any(AuditLogCommand.class));
+  }
+
   private OperationLogRecoveryService createService(
       OperationLogMapper operationLogMapper,
       OperationLogQueryService queryService,

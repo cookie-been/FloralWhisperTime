@@ -125,6 +125,11 @@ public class OperationLogRecoveryService {
 
   @Transactional
   public OperationLogDetailResponse restore(Long logId, String reason) {
+    String normalizedReason = reason == null ? "" : reason.trim();
+    if (normalizedReason.isBlank()) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "请填写恢复原因");
+    }
+
     OperationLog log = operationLogMapper.selectById(logId);
     if (log == null) {
       auditLogService.record(AuditLogCommand.builder()
@@ -132,7 +137,7 @@ public class OperationLogRecoveryService {
           .action("RESTORE")
           .targetType("OPERATION_LOG")
           .targetId(String.valueOf(logId))
-          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", reason == null ? "" : reason.trim()))
+          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", normalizedReason))
           .success(false)
           .errorMessage("操作日志不存在")
           .build());
@@ -153,7 +158,7 @@ public class OperationLogRecoveryService {
           .action("RESTORE")
           .targetType(log.getTargetType())
           .targetId(log.getTargetId())
-          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", reason == null ? "" : reason.trim()))
+          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", normalizedReason))
           .beforeSnapshot(beforeRestore)
           .afterSnapshot(afterRestore)
           .success(true)
@@ -172,7 +177,7 @@ public class OperationLogRecoveryService {
           .action("RESTORE")
           .targetType(log.getTargetType() == null || log.getTargetType().isBlank() ? "OPERATION_LOG" : log.getTargetType())
           .targetId(log.getTargetId() == null || log.getTargetId().isBlank() ? String.valueOf(logId) : log.getTargetId())
-          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", reason == null ? "" : reason.trim()))
+          .requestSummary(java.util.Map.of("sourceLogId", logId, "reason", normalizedReason))
           .beforeSnapshot(beforeRestore)
           .success(false)
           .errorMessage(error.getMessage())

@@ -150,7 +150,7 @@ public class AdminController {
   }
 
   @PostMapping("/operation-logs/{id}/restore")
-  public OperationLogDetailResponse restoreOperationLog(@PathVariable Long id, @RequestBody(required = false) OperationLogRestoreRequest request) {
+  public OperationLogDetailResponse restoreOperationLog(@PathVariable Long id, @Valid @RequestBody OperationLogRestoreRequest request) {
     return operationLogRecoveryService.restore(id, request == null ? "" : request.getReason());
   }
 

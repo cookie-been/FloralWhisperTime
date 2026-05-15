@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Drawer, Empty, Grid, Input, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
+import { Alert, Button, Drawer, Empty, Grid, Input, Modal, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { CheckCircle2, ClipboardList, Copy, Download, RefreshCw, RotateCcw, Search, ShieldAlert } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -181,6 +181,9 @@ export function AdminOperationLogs() {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<number | null>(null);
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+  const [restoreReason, setRestoreReason] = useState("");
+  const [pendingRestoreId, setPendingRestoreId] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeDetail, setActiveDetail] = useState<OperationLogDetail | null>(null);
   const [page, setPage] = useState(1);
@@ -332,15 +335,24 @@ export function AdminOperationLogs() {
   const handleRestore = async (id: number) => {
     setRestoringId(id);
     try {
-      const detail = await restoreAdminOperationLog(id, "后台人工确认恢复");
+      const detail = await restoreAdminOperationLog(id, restoreReason.trim());
       message.success("已按日志快照恢复数据");
       setActiveDetail(detail);
+      setRestoreModalOpen(false);
+      setRestoreReason("");
+      setPendingRestoreId(null);
       await load(page, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "恢复失败");
     } finally {
       setRestoringId(null);
     }
+  };
+
+  const openRestoreModal = (id: number) => {
+    setPendingRestoreId(id);
+    setRestoreReason("");
+    setRestoreModalOpen(true);
   };
 
   const applyQuickView = (view: QuickView) => {
@@ -467,8 +479,8 @@ export function AdminOperationLogs() {
           {record.restorable ? (
             <Popconfirm
               title="确认按该日志快照恢复数据？"
-              description="恢复后会新增一条恢复日志，请确认当前变更需要回退。"
-              onConfirm={() => void handleRestore(record.id)}
+              description="下一步需要填写恢复原因，并会新增一条恢复日志。"
+              onConfirm={() => openRestoreModal(record.id)}
             >
               <Button
                 size="small"
@@ -705,8 +717,8 @@ export function AdminOperationLogs() {
           activeDetail?.restorable ? (
             <Popconfirm
               title="确认按该日志快照恢复数据？"
-              description="恢复后会新增一条恢复日志，请确认当前变更需要回退。"
-              onConfirm={() => void handleRestore(activeDetail.id)}
+              description="下一步需要填写恢复原因，并会新增一条恢复日志。"
+              onConfirm={() => openRestoreModal(activeDetail.id)}
             >
               <Button
                 type="primary"
@@ -742,7 +754,18 @@ export function AdminOperationLogs() {
                 <p>时间：{formatDateTime(activeDetail.createdAt)}</p>
                 <p>来源 IP：{activeDetail.ipAddress || "暂无"}</p>
                 <p>UA：{activeDetail.userAgent || "暂无"}</p>
-                {activeDetail.restoredFromLogId ? <p>恢复来源日志：#{activeDetail.restoredFromLogId}</p> : null}
+                {activeDetail.restoredFromLogId ? (
+                  <p>
+                    恢复来源日志：
+                    <button
+                      type="button"
+                      className="ml-2 text-sm font-semibold text-forest underline-offset-4 transition hover:underline"
+                      onClick={() => void openDetail(activeDetail.restoredFromLogId ?? 0)}
+                    >
+                      #{activeDetail.restoredFromLogId}
+                    </button>
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -849,6 +872,40 @@ export function AdminOperationLogs() {
           </div>
         )}
       </Drawer>
+
+      <Modal
+        title="填写恢复原因"
+        open={restoreModalOpen}
+        onCancel={() => {
+          if (restoringId) return;
+          setRestoreModalOpen(false);
+          setRestoreReason("");
+          setPendingRestoreId(null);
+        }}
+        onOk={() => {
+          if (!pendingRestoreId) return;
+          if (!restoreReason.trim()) {
+            message.warning("请填写恢复原因");
+            return;
+          }
+          void handleRestore(pendingRestoreId);
+        }}
+        okText="确认恢复"
+        cancelText="取消"
+        confirmLoading={pendingRestoreId !== null && restoringId === pendingRestoreId}
+      >
+        <div className="space-y-3">
+          <p className="text-sm leading-6 text-muted">恢复原因会写入新的恢复日志，便于后续排查、追责和恢复链路回放。</p>
+          <Input.TextArea
+            value={restoreReason}
+            onChange={(event) => setRestoreReason(event.target.value)}
+            placeholder="请填写本次恢复的原因、影响范围或处理背景"
+            rows={4}
+            maxLength={200}
+            showCount
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

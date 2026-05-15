@@ -582,6 +582,18 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.restoredFromLogId").value(12));
   }
 
+  @Test
+  void restoreOperationLogRejectsBlankReason() throws Exception {
+    mockMvc.perform(post("/api/admin/operation-logs/12/restore")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"reason":"   "}
+                """)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("请填写恢复原因"));
+  }
+
   private String expiredToken() {
     return Jwts.builder()
         .issuer(properties.getJwt().getIssuer())
