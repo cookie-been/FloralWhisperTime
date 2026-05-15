@@ -12,6 +12,9 @@
 
 ## 部署与运维
 
+- [本地开发环境说明](./local-development-guide.md)
+- [本地开发 `.env` 示例](./local-dev-env-example.md)
+- [切换正式部署前检查清单](./pre-production-cutover-checklist.md)
 - [安装手册](./installation-guide.md)
 - [新服务器首次上线操作手册](./first-server-go-live.md)
 - [商业交付说明](./commercial-delivery.md)
@@ -34,7 +37,9 @@
 4. `docs/api.md`
 5. `docs/env-reference.md`
 6. `docs/deployment-checklist.md`
-7. `docs/first-server-go-live.md`
-8. `docs/installation-guide.md`
+7. `docs/local-development-guide.md`
+8. `docs/pre-production-cutover-checklist.md`
+9. `docs/first-server-go-live.md`
+10. `docs/installation-guide.md`
 
 上线或运维时，再按需查阅备份、升级、回滚和 HTTPS 相关文档。
