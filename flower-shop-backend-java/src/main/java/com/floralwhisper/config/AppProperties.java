@@ -1,11 +1,14 @@
 package com.floralwhisper.config;
 
+import jakarta.validation.Valid;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.stereotype.Component;
 
 @Data
 @Component
+@Validated
 @ConfigurationProperties(prefix = "app")
 public class AppProperties {
   private Admin admin = new Admin();
@@ -16,6 +19,7 @@ public class AppProperties {
   private Cors cors = new Cors();
   private Import importer = new Import();
   private Runtime runtime = new Runtime();
+  @Valid
   private ConcurrencyProtectionProperties protection = new ConcurrencyProtectionProperties();
 
   @Data

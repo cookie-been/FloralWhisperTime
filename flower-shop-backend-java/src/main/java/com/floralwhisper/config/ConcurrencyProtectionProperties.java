@@ -1,25 +1,68 @@
 package com.floralwhisper.config;
 
-import lombok.AllArgsConstructor;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 public class ConcurrencyProtectionProperties {
-  private RouteLimit publicRead = new RouteLimit(60, 10, 0, 0, true);
-  private RouteLimit publicWrite = new RouteLimit(12, 60, 0, 0, true);
-  private RouteLimit admin = new RouteLimit(30, 60, 0, 0, true);
-  private RouteLimit heavy = new RouteLimit(6, 60, 2, 4, true);
-  private Integer configImportConcurrent = 1;
+  @Valid
+  private RateLimit publicRead = new RateLimit(60, 10, true);
+  @Valid
+  private RateLimit publicWrite = new RateLimit(12, 60, true);
+  @Valid
+  private RateLimit admin = new RateLimit(30, 60, true);
+  @Valid
+  private RateLimit heavy = new RateLimit(6, 60, true);
+  @Valid
+  private Concurrency concurrency = new Concurrency();
 
   @Data
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static class RouteLimit {
+  public static class RateLimit {
+    @NotNull
+    @Min(1)
     private Integer capacity;
+    @NotNull
+    @Min(1)
     private Integer refillSeconds;
-    private Integer aiConcurrent;
-    private Integer uploadConcurrent;
+    @NotNull
     private Boolean enabled;
+
+    public RateLimit() {
+    }
+
+    public RateLimit(Integer capacity, Integer refillSeconds, Boolean enabled) {
+      this.capacity = capacity;
+      this.refillSeconds = refillSeconds;
+      this.enabled = enabled;
+    }
+  }
+
+  @Data
+  public static class Concurrency {
+    @Valid
+    private ConcurrencyLimit ai = new ConcurrencyLimit(2, true);
+    @Valid
+    private ConcurrencyLimit upload = new ConcurrencyLimit(4, true);
+    @Valid
+    private ConcurrencyLimit configImport = new ConcurrencyLimit(1, true);
+  }
+
+  @Data
+  public static class ConcurrencyLimit {
+    @NotNull
+    @Min(1)
+    private Integer maxConcurrent;
+    @NotNull
+    private Boolean enabled;
+
+    public ConcurrencyLimit() {
+    }
+
+    public ConcurrencyLimit(Integer maxConcurrent, Boolean enabled) {
+      this.maxConcurrent = maxConcurrent;
+      this.enabled = enabled;
+    }
   }
 }

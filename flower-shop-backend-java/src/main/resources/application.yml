@@ -101,6 +101,13 @@ app:
       enabled: ${PROTECTION_HEAVY_ENABLED:true}
       capacity: ${PROTECTION_HEAVY_CAPACITY:6}
       refill-seconds: ${PROTECTION_HEAVY_REFILL_SECONDS:60}
-      ai-concurrent: ${PROTECTION_HEAVY_AI_CONCURRENT:2}
-      upload-concurrent: ${PROTECTION_HEAVY_UPLOAD_CONCURRENT:4}
-    config-import-concurrent: ${PROTECTION_CONFIG_IMPORT_CONCURRENT:1}
+    concurrency:
+      ai:
+        enabled: ${PROTECTION_CONCURRENCY_AI_ENABLED:true}
+        max-concurrent: ${PROTECTION_CONCURRENCY_AI_MAX_CONCURRENT:2}
+      upload:
+        enabled: ${PROTECTION_CONCURRENCY_UPLOAD_ENABLED:true}
+        max-concurrent: ${PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT:4}
+      config-import:
+        enabled: ${PROTECTION_CONCURRENCY_CONFIG_IMPORT_ENABLED:true}
+        max-concurrent: ${PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT:1}

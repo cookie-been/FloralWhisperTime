@@ -56,6 +56,8 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.mock.web.MockMultipartFile;
 
 class SiteServiceTest {
@@ -68,7 +70,19 @@ class SiteServiceTest {
     AppProperties properties = new AppProperties();
 
     assertEquals(60, properties.getProtection().getPublicRead().getCapacity());
-    assertEquals(2, properties.getProtection().getHeavy().getAiConcurrent());
+    assertEquals(2, properties.getProtection().getConcurrency().getAi().getMaxConcurrent());
+  }
+
+  @Test
+  void protectionBindingMapsKebabCaseKeysToConcurrencySettings() {
+    Binder binder = new Binder(new MapConfigurationPropertySource(Map.of(
+        "app.protection.heavy.capacity", "9",
+        "app.protection.concurrency.config-import.max-concurrent", "3")));
+
+    AppProperties properties = binder.bind("app", AppProperties.class).orElseThrow(IllegalStateException::new);
+
+    assertEquals(9, properties.getProtection().getHeavy().getCapacity());
+    assertEquals(3, properties.getProtection().getConcurrency().getConfigImport().getMaxConcurrent());
   }
 
   @Test
