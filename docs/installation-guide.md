@@ -110,7 +110,7 @@ cp .env.production.example .env
 在 release 解压目录执行：
 
 ```bash
-./ops/release-install.sh
+./release-install.sh
 ```
 
 脚本会自动：
@@ -126,25 +126,25 @@ cp .env.production.example .env
 后续升级执行：
 
 ```bash
-./ops/release-upgrade.sh
+./release-upgrade.sh
 ```
 
 默认会保留最近 `5` 个 release，可用 `--retain` 调整：
 
 ```bash
-./ops/release-upgrade.sh --retain 5
+./release-upgrade.sh --retain 5
 ```
 
 回滚执行：
 
 ```bash
-./ops/release-rollback.sh --latest-previous
+./release-rollback.sh --latest-previous
 ```
 
 状态查看：
 
 ```bash
-./ops/release-status.sh
+./release-status.sh
 ```
 
 ## 5. 安装后确认
@@ -174,10 +174,10 @@ cp .env.production.example .env
 
 ```bash
 ./ops/build-release.sh
-./ops/release-install.sh
-./ops/release-upgrade.sh
-./ops/release-rollback.sh --latest-previous
-./ops/release-status.sh
+./release-install.sh
+./release-upgrade.sh
+./release-rollback.sh --latest-previous
+./release-status.sh
 ```
 
 ## 7. 升级建议

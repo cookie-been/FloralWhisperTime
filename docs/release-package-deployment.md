@@ -54,6 +54,10 @@ floralwhispertime-release-<release-id>/
   docker-compose.release.yml
   .env.production.example
   RELEASE_INFO
+  release-install.sh
+  release-upgrade.sh
+  release-rollback.sh
+  release-status.sh
   images/
     backend-image.tar
     web-image.tar
@@ -86,13 +90,13 @@ cd floralwhispertime-release-<release-id>
 ### 5.2 安装
 
 ```bash
-./ops/release-install.sh
+./release-install.sh
 ```
 
 也可以显式指定保留版本数：
 
 ```bash
-./ops/release-install.sh --retain 5
+./release-install.sh --retain 5
 ```
 
 脚本默认会使用以下目录：
@@ -135,13 +139,13 @@ cd floralwhispertime-release-<release-id>
 如果首次安装时仍保留默认占位值，建议修改后再执行一次：
 
 ```bash
-./ops/release-upgrade.sh
+./release-upgrade.sh
 ```
 
 也可以在升级时指定保留最近几个 release：
 
 ```bash
-./ops/release-upgrade.sh --retain 5
+./release-upgrade.sh --retain 5
 ```
 
 ## 6. 后续升级
@@ -149,7 +153,7 @@ cd floralwhispertime-release-<release-id>
 将新的 release 包上传并解压后，在新 release 目录执行：
 
 ```bash
-./ops/release-upgrade.sh
+./release-upgrade.sh
 ```
 
 升级流程：
@@ -165,13 +169,13 @@ cd floralwhispertime-release-<release-id>
 回滚到上一个 release：
 
 ```bash
-./ops/release-rollback.sh --latest-previous
+./release-rollback.sh --latest-previous
 ```
 
 回滚到指定 release：
 
 ```bash
-./ops/release-rollback.sh --release-id <release-id>
+./release-rollback.sh --release-id <release-id>
 ```
 
 回滚不会删除：
@@ -190,7 +194,7 @@ cd floralwhispertime-release-<release-id>
 ## 8. 查看状态
 
 ```bash
-./ops/release-status.sh
+./release-status.sh
 ```
 
 会输出：

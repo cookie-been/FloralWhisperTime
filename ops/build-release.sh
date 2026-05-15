@@ -99,12 +99,19 @@ prepare_release_tree() {
   cp "$REPO_ROOT/docker-compose.release.yml" "$RELEASE_STAGING_DIR/"
   cp "$REPO_ROOT/.env.production.example" "$RELEASE_STAGING_DIR/"
   cp \
+    "$REPO_ROOT/release-install.sh" \
+    "$REPO_ROOT/release-upgrade.sh" \
+    "$REPO_ROOT/release-rollback.sh" \
+    "$REPO_ROOT/release-status.sh" \
+    "$RELEASE_STAGING_DIR/"
+  cp \
     "$REPO_ROOT/ops/release-common.sh" \
     "$REPO_ROOT/ops/release-install.sh" \
     "$REPO_ROOT/ops/release-upgrade.sh" \
     "$REPO_ROOT/ops/release-rollback.sh" \
     "$REPO_ROOT/ops/release-status.sh" \
     "$RELEASE_STAGING_DIR/ops/"
+  chmod +x "$RELEASE_STAGING_DIR"/release-*.sh
   chmod +x "$RELEASE_STAGING_DIR"/ops/*.sh
 }
 

@@ -88,10 +88,10 @@
 
 将发布包上传到目标服务器后，按文档执行：
 
-- 首次安装：`./ops/release-install.sh`
-- 后续升级：`./ops/release-upgrade.sh`
-- 回滚：`./ops/release-rollback.sh`
-- 状态查看：`./ops/release-status.sh`
+- 首次安装：`./release-install.sh`
+- 后续升级：`./release-upgrade.sh`
+- 回滚：`./release-rollback.sh`
+- 状态查看：`./release-status.sh`
 
 release 脚本默认会保留最近 `5` 个版本目录，超出的旧 release 会在安装或升级成功后自动清理。
 
