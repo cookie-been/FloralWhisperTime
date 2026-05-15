@@ -203,33 +203,14 @@ npm run dev
 - 生成图下载到本地 `uploads/ai/`
 - 人工审核后再进入新增作品流程
 
-## 关键环境变量
+## 环境变量
 
-- `WEB_PORT`
-- `MYSQL_DATABASE`
-- `MYSQL_USER`
-- `MYSQL_PASSWORD`
-- `MYSQL_ROOT_PASSWORD`
-- `ADMIN_USERNAME`
-- `ADMIN_PASSWORD`
-- `ADMIN_AUTH_SECRET`
-- `JWT_ISSUER`
-- `CORS_ALLOWED_ORIGIN_PATTERNS`
-- `BACKUP_DIR`
-- `AI_IMAGE_ENABLED`
-- `VOLCENGINE_API_KEY`
-- `VOLCENGINE_IMAGE_MODEL`
-- `VOLCENGINE_BASE_URL`
-- `VOLCENGINE_IMAGE_GENERATE_PATH`
-- `AI_IMAGE_MAX_REFERENCE_FILES`
-- `AI_IMAGE_MAX_REFERENCE_FILE_SIZE_BYTES`
-- `AI_IMAGE_DOWNLOAD_SUBDIR`
-- `AI_IMAGE_REQUEST_TIMEOUT_SECONDS`
-- `AI_IMAGE_SIZE`
-- `AI_IMAGE_RESPONSE_FORMAT`
-- `AI_IMAGE_WATERMARK`
+环境变量请统一以以下文档为准：
 
-生产环境必须替换默认密码和签名密钥。
+- [生产环境变量说明](/workspace/FloralWhisperTime/docs/env-reference.md)
+- [安装手册](/workspace/FloralWhisperTime/docs/installation-guide.md)
+
+生产环境必须至少替换默认密码、签名密钥，并按当前访问规模复核并发保护阈值。
 
 ## 功能范围
 
