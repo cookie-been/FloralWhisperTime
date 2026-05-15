@@ -401,6 +401,7 @@ export function AdminContacts() {
       </section>
 
       <Drawer
+        className="admin-mobile-drawer"
         title={
           <div className="admin-drawer-title">
             <p>留言详情</p>

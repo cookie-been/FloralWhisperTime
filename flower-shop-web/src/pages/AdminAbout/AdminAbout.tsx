@@ -553,13 +553,14 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
       </section>
 
       <Drawer
+        className="admin-mobile-drawer"
         title={editingTimeline ? "编辑时间轴节点" : "新增时间轴节点"}
         width={screens.md ? 520 : "100%"}
         open={timelineDrawerOpen}
         onClose={closeTimelineDrawer}
         destroyOnClose
         extra={
-          <Space>
+          <Space wrap className="w-full sm:w-auto">
             <Button onClick={closeTimelineDrawer}>取消</Button>
             <Button type="primary" loading={savingTimeline} onClick={() => void saveTimeline()}>
               保存
@@ -584,13 +585,14 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
       </Drawer>
 
       <Drawer
+        className="admin-mobile-drawer"
         title={editingMember ? "编辑团队成员" : "新增团队成员"}
         width={screens.md ? 560 : "100%"}
         open={memberDrawerOpen}
         onClose={closeMemberDrawer}
         destroyOnClose
         extra={
-          <Space>
+          <Space wrap className="w-full sm:w-auto">
             <Button onClick={closeMemberDrawer}>取消</Button>
             <Button type="primary" loading={savingMember} onClick={() => void saveMember()}>
               保存

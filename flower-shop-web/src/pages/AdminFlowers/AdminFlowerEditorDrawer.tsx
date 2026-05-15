@@ -35,6 +35,7 @@ export function AdminFlowerEditorDrawer({
 
   return (
     <Drawer
+      className="admin-mobile-drawer"
       title={
         <div className="admin-drawer-title">
           <p>{editing ? "编辑作品" : "新增作品"}</p>
@@ -47,7 +48,7 @@ export function AdminFlowerEditorDrawer({
       width={screensLg ? 720 : "100%"}
       destroyOnHidden
       extra={
-        <Space wrap>
+        <Space wrap className="w-full sm:w-auto">
           <Button onClick={onClose}>取消</Button>
           <Button type="primary" loading={saving} onClick={onSave}>
             保存

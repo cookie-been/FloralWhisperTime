@@ -762,7 +762,33 @@ a {
   }
 
   .ant-table-wrapper .ant-table-pagination.ant-pagination {
+    row-gap: 12px;
     padding: 14px 16px 16px;
+  }
+
+  .ant-table-wrapper .ant-table-pagination.ant-pagination .ant-pagination-total-text {
+    width: 100%;
+    margin-inline-end: 0;
+  }
+
+  .admin-mobile-drawer .ant-drawer-extra {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+
+  .admin-mobile-drawer .ant-drawer-extra .ant-space {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .admin-mobile-drawer .ant-drawer-extra .ant-space .ant-space-item {
+    flex: 1 1 100%;
+  }
+
+  .admin-mobile-drawer .ant-drawer-extra .ant-btn,
+  .admin-mobile-drawer .ant-drawer-extra .ant-popconfirm-open .ant-btn {
+    width: 100%;
   }
 
   .ant-tabs-top > .ant-tabs-nav {

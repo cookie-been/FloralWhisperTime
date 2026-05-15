@@ -661,7 +661,7 @@ export function AdminOperationLogs() {
       key: "actions",
       width: 220,
       render: (_: unknown, record) => (
-        <Space>
+        <Space wrap>
           <Button className="admin-action-button" size="small" onClick={() => void openDetail(record.id)}>
             查看详情
           </Button>
@@ -911,6 +911,7 @@ export function AdminOperationLogs() {
       </section>
 
       <Drawer
+        className="admin-mobile-drawer"
         title={
           <div className="admin-drawer-title">
             <p>日志详情</p>
