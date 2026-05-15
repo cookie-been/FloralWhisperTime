@@ -14,7 +14,7 @@ export function FlowerCard({ flower, compact = false }: FlowerCardProps) {
         <img
           src={flower.images[0]}
           alt={flower.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
           loading="lazy"
         />
       </div>

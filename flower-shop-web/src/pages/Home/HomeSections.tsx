@@ -4,12 +4,6 @@ import { FlowerCard } from "@/components/common/FlowerCard";
 import type { BrandStory, Category, Flower, ShopInfo, SiteStat } from "@/types";
 
 const statIcons = [Sparkles, Flower2, Store, MapPin];
-const defaultStats: SiteStat[] = [
-  { value: "860+", label: "已服务客户" },
-  { value: "320+", label: "花艺作品" },
-  { value: "6", label: "主题分类" },
-];
-
 function PlaceholderCard({ className = "", height = "h-48" }: { className?: string; height?: string }) {
   return (
     <div className={`surface-card overflow-hidden p-5 sm:p-6 ${className}`}>
@@ -19,14 +13,12 @@ function PlaceholderCard({ className = "", height = "h-48" }: { className?: stri
 }
 
 export function HomeStatsSection({ stats, loading }: { stats: SiteStat[]; loading: boolean }) {
-  const visibleStats = stats.length ? stats : defaultStats;
-
   return (
     <section className="relative z-10 -mt-8 mx-auto max-w-7xl px-4 sm:-mt-10 sm:px-6 lg:px-8">
       <div className="grid gap-4 md:grid-cols-3 lg:gap-6">
         {loading
           ? Array.from({ length: 3 }).map((_, index) => <PlaceholderCard key={index} className="border-none" height="h-36" />)
-          : visibleStats.map((stat, index) => {
+          : stats.map((stat, index) => {
               const Icon = statIcons[index % statIcons.length];
               return (
                 <article
@@ -94,7 +86,7 @@ export function HomeFeaturedSection({
                 <img
                   src={featuredPrimary.images[0]}
                   alt={featuredPrimary.name}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                  className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]"
                   loading="lazy"
                 />
               </div>

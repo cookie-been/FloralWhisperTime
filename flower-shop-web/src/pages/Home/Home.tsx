@@ -18,15 +18,10 @@ const fallbackHeroSlides = [
   { image: "/home-hero/hero-4.jpg", label: "空间花艺", note: "适合品牌陈设、活动与空间布置的整体表达" },
 ];
 
-const fallbackStats: SiteStat[] = [
-  { value: "860+", label: "已服务客户" },
-  { value: "320+", label: "花艺作品" },
-  { value: "6", label: "主题分类" },
-];
-
 export function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [featured, setFeatured] = useState<Flower[]>([]);
+  const [allFlowers, setAllFlowers] = useState<Flower[]>([]);
   const [story, setStory] = useState<BrandStory | null>(null);
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [shop, setShop] = useState<ShopInfo | null>(null);
@@ -35,7 +30,14 @@ export function Home() {
 
   const featuredPrimary = featured[0] ?? null;
   const featuredSecondary = featured.slice(1, 5);
-  const stats = siteConfig?.stats?.length ? siteConfig.stats : fallbackStats;
+  const stats = useMemo<SiteStat[]>(
+    () => [
+      { value: String(categories.filter((category) => category.id !== "all").length), label: "主题分类" },
+      { value: String(allFlowers.filter((item) => item.featured).length), label: "精选作品" },
+      { value: String(allFlowers.length), label: "全部作品" },
+    ],
+    [allFlowers, categories],
+  );
 
   const heroSlides = useMemo(
     () =>
@@ -57,12 +59,20 @@ export function Home() {
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([getCategories(), getFlowers({ sortBy: "featured", limit: 5 }), getBrandStory(), getSiteConfig(), getShopInfo()])
-      .then(([categoryResult, flowerResult, storyResult, siteConfigResult, shopResult]) => {
+    Promise.allSettled([
+      getCategories(),
+      getFlowers({ sortBy: "featured", limit: 5 }),
+      getFlowers({ sortBy: "featured", limit: 500 }),
+      getBrandStory(),
+      getSiteConfig(),
+      getShopInfo(),
+    ])
+      .then(([categoryResult, featuredResult, allFlowersResult, storyResult, siteConfigResult, shopResult]) => {
         if (!active) return;
 
         if (categoryResult.status === "fulfilled") setCategories(categoryResult.value);
-        if (flowerResult.status === "fulfilled") setFeatured(flowerResult.value.list);
+        if (featuredResult.status === "fulfilled") setFeatured(featuredResult.value.list);
+        if (allFlowersResult.status === "fulfilled") setAllFlowers(allFlowersResult.value.list);
         if (storyResult.status === "fulfilled") setStory(storyResult.value);
         if (siteConfigResult.status === "fulfilled") setSiteConfig(siteConfigResult.value);
         if (shopResult.status === "fulfilled") setShop(shopResult.value);
