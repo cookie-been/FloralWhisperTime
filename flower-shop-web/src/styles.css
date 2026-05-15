@@ -275,6 +275,10 @@ a {
   gap: 12px;
 }
 
+.admin-filter-grid > * {
+  min-width: 0;
+}
+
 .admin-filter-caption {
   margin: 0 0 14px;
   color: #6d7e72;
@@ -710,6 +714,12 @@ a {
     width: 100%;
   }
 
+  .admin-quick-filters > .ant-btn,
+  .admin-filter-presets > .ant-btn {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+  }
+
   .gallery-pagination.ant-pagination {
     row-gap: 10px;
   }
@@ -727,6 +737,24 @@ a {
   .admin-filter-summary-copy {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .admin-filter-summary > .ant-btn {
+    width: 100%;
+  }
+
+  .admin-filter-summary .ant-space {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .admin-filter-summary .ant-space .ant-space-item {
+    flex: 1 1 100%;
+  }
+
+  .admin-filter-summary .ant-space .ant-btn {
+    width: 100%;
   }
 
   .admin-sticky-toolbar {

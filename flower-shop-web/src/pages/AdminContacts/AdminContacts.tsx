@@ -303,8 +303,9 @@ export function AdminContacts() {
             查看全部
           </Button>
         </div>
-        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1fr)_220px_140px]">
+        <div className="admin-filter-grid sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_140px]">
           <Input
+            className="min-w-0 sm:col-span-2 xl:col-span-1"
             allowClear
             value={keyword}
             prefix={<Search size={16} />}
@@ -324,7 +325,7 @@ export function AdminContacts() {
               load(1, pageSize, keyword, value).catch(() => undefined);
             }}
           />
-          <Button type="primary" onClick={() => load(1, pageSize, keyword, status).catch(() => undefined)}>
+          <Button className="w-full xl:w-auto" type="primary" onClick={() => load(1, pageSize, keyword, status).catch(() => undefined)}>
             筛选留言
           </Button>
         </div>

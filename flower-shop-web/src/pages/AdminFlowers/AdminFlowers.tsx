@@ -565,8 +565,9 @@ export function AdminFlowers() {
             查看全部
           </Button>
         </div>
-        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1.3fr)_220px_220px]">
+        <div className="admin-filter-grid sm:grid-cols-2 xl:grid-cols-[minmax(0,1.3fr)_220px_220px]">
           <Input
+            className="min-w-0 sm:col-span-2 xl:col-span-1"
             size="large"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
