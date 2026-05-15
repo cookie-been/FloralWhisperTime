@@ -154,6 +154,34 @@ export function getAdminOperationLogs(query: OperationLogQuery = {}) {
   return request<PaginatedResult<OperationLogItem>>(withQuery("/api/admin/operation-logs", query));
 }
 
+export async function downloadAdminOperationLogs(query: OperationLogQuery = {}) {
+  const token = getAdminToken();
+  if (!token) {
+    throw new Error("请先登录管理后台");
+  }
+
+  const path = withQuery("/api/admin/operation-logs/export", query);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "下载失败" }));
+    throw new Error(error.message ?? "下载失败");
+  }
+
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = `operation-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+}
+
 export function getAdminOperationLogDetail(id: number) {
   return request<OperationLogDetail>(`/api/admin/operation-logs/${id}`);
 }

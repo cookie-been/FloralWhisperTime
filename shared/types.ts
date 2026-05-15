@@ -202,4 +202,6 @@ export interface OperationLogQuery {
   success?: boolean;
   keyword?: string;
   restorable?: boolean;
+  createdFrom?: string;
+  createdTo?: string;
 }

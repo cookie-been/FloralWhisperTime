@@ -24,10 +24,12 @@ import com.floralwhisper.service.SiteService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -118,8 +120,28 @@ public class AdminController {
       @RequestParam(required = false) String operatorName,
       @RequestParam(required = false) Boolean success,
       @RequestParam(required = false) String keyword,
-      @RequestParam(required = false) Boolean restorable) {
-    return operationLogQueryService.list(page, limit, module, action, operatorName, success, keyword, restorable);
+      @RequestParam(required = false) Boolean restorable,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdFrom,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdTo) {
+    return operationLogQueryService.list(
+        page, limit, module, action, operatorName, success, keyword, restorable, createdFrom, createdTo);
+  }
+
+  @GetMapping(value = "/operation-logs/export", produces = "text/csv;charset=UTF-8")
+  public void exportOperationLogs(
+      @RequestParam(required = false) String module,
+      @RequestParam(required = false) String action,
+      @RequestParam(required = false) String operatorName,
+      @RequestParam(required = false) Boolean success,
+      @RequestParam(required = false) String keyword,
+      @RequestParam(required = false) Boolean restorable,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdFrom,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime createdTo,
+      HttpServletResponse response) throws java.io.IOException {
+    response.setContentType("text/csv;charset=UTF-8");
+    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"operation-logs.csv\"");
+    response.getWriter().write(buildOperationLogCsv(operationLogQueryService.listForExport(
+        module, action, operatorName, success, keyword, restorable, createdFrom, createdTo)));
   }
 
   @GetMapping("/operation-logs/{id}")
@@ -184,5 +206,37 @@ public class AdminController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteTeamMember(@PathVariable String id) {
     siteService.deleteTeamMember(id);
+  }
+
+  private String buildOperationLogCsv(List<OperationLogResponse> logs) {
+    StringBuilder builder = new StringBuilder("\uFEFF");
+    builder
+        .append("ID,模块,动作,目标类型,目标ID,操作人,结果,请求摘要,失败原因,IP,恢复来源日志ID,可恢复,创建时间\n");
+    for (OperationLogResponse item : logs) {
+      builder
+          .append(csv(item.getId()))
+          .append(',').append(csv(item.getModule()))
+          .append(',').append(csv(item.getAction()))
+          .append(',').append(csv(item.getTargetType()))
+          .append(',').append(csv(item.getTargetId()))
+          .append(',').append(csv(item.getOperatorName()))
+          .append(',').append(csv(Boolean.TRUE.equals(item.getSuccess()) ? "SUCCESS" : "FAILED"))
+          .append(',').append(csv(item.getRequestSummary()))
+          .append(',').append(csv(item.getErrorMessage()))
+          .append(',').append(csv(item.getIpAddress()))
+          .append(',').append(csv(item.getRestoredFromLogId()))
+          .append(',').append(csv(item.getRestorable()))
+          .append(',').append(csv(item.getCreatedAt()))
+          .append('\n');
+    }
+    return builder.toString();
+  }
+
+  private String csv(Object value) {
+    if (value == null) {
+      return "\"\"";
+    }
+    String raw = String.valueOf(value).replace("\"", "\"\"");
+    return "\"" + raw + "\"";
   }
 }

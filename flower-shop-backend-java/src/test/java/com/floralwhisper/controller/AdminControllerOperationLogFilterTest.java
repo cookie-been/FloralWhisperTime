@@ -2,11 +2,14 @@ package com.floralwhisper.controller;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.floralwhisper.dto.PaginatedResult;
+import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.service.OperationLogQueryService;
 import com.floralwhisper.security.JwtService;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -65,7 +68,7 @@ class AdminControllerOperationLogFilterTest {
 
   @Test
   void operationLogsAcceptRestorableFilter() throws Exception {
-    when(operationLogQueryService.list(1, 10, null, null, null, null, null, true))
+    when(operationLogQueryService.list(1, 10, null, null, null, null, null, true, null, null))
         .thenReturn(new PaginatedResult<>(java.util.List.of(), 0, 1, 10));
 
     mockMvc.perform(get("/api/admin/operation-logs")
@@ -74,5 +77,53 @@ class AdminControllerOperationLogFilterTest {
             .param("restorable", "true")
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void operationLogsAcceptCreatedAtRangeFilters() throws Exception {
+    when(operationLogQueryService.list(
+        1,
+        10,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        LocalDateTime.of(2026, 5, 14, 0, 0),
+        LocalDateTime.of(2026, 5, 14, 23, 59, 59)))
+        .thenReturn(new PaginatedResult<>(java.util.List.of(), 0, 1, 10));
+
+    mockMvc.perform(get("/api/admin/operation-logs")
+            .param("page", "1")
+            .param("limit", "10")
+            .param("createdFrom", "2026-05-14T00:00:00")
+            .param("createdTo", "2026-05-14T23:59:59")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void operationLogsExportReturnsCsvAttachment() throws Exception {
+    OperationLogResponse item = new OperationLogResponse();
+    item.setId(8L);
+    item.setModule("FLOWER");
+    item.setAction("UPDATE");
+    item.setTargetType("FLOWER");
+    item.setTargetId("flower_008");
+    item.setOperatorName("admin");
+    item.setRequestSummary("{\"name\":\"星河晨露\"}");
+    item.setSuccess(true);
+    item.setRestorable(true);
+    item.setCreatedAt(LocalDateTime.of(2026, 5, 15, 10, 8));
+    when(operationLogQueryService.listForExport(
+        null, null, null, null, null, null, null, null))
+        .thenReturn(java.util.List.of(item));
+
+    mockMvc.perform(get("/api/admin/operation-logs/export")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Content-Type", "text/csv;charset=UTF-8"))
+        .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("operation-logs")));
   }
 }

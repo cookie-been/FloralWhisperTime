@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Drawer, Empty, Grid, Input, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { CheckCircle2, ClipboardList, Copy, RefreshCw, RotateCcw, Search, ShieldAlert } from "lucide-react";
+import { CheckCircle2, ClipboardList, Copy, Download, RefreshCw, RotateCcw, Search, ShieldAlert } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { getAdminOperationLogDetail, getAdminOperationLogs, restoreAdminOperationLog } from "@/services/api";
-import type { OperationLogDetail, OperationLogItem, PaginatedResult } from "@/types";
+import { downloadAdminOperationLogs, getAdminOperationLogDetail, getAdminOperationLogs, restoreAdminOperationLog } from "@/services/api";
+import type { OperationLogDetail, OperationLogItem, OperationLogQuery, PaginatedResult } from "@/types";
 
 function formatDateTime(value?: string) {
   if (!value) return "暂无";
@@ -93,6 +93,18 @@ async function copyText(value: string, successText: string) {
 type ResultFilter = "all" | "true" | "false";
 type QuickView = "all" | "failed" | "restorable" | "restore";
 
+function formatRangeBoundary(value?: string, mode: "start" | "end" = "start") {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  if (mode === "start") {
+    date.setHours(0, 0, 0, 0);
+  } else {
+    date.setHours(23, 59, 59, 999);
+  }
+  return date.toISOString().slice(0, 19);
+}
+
 export function AdminOperationLogs() {
   const screens = Grid.useBreakpoint();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -109,6 +121,8 @@ export function AdminOperationLogs() {
   const initialSuccess = searchParams.get("success");
   const initialAction = searchParams.get("action");
   const initialRestorable = searchParams.get("restorable");
+  const initialCreatedFrom = searchParams.get("createdFrom") ?? "";
+  const initialCreatedTo = searchParams.get("createdTo") ?? "";
   const [success, setSuccess] = useState<ResultFilter>(
     initialSuccess === "true" || initialSuccess === "false" ? initialSuccess : "all",
   );
@@ -116,6 +130,8 @@ export function AdminOperationLogs() {
   const [restorable, setRestorable] = useState<boolean | undefined>(
     initialRestorable === "true" ? true : initialRestorable === "false" ? false : undefined,
   );
+  const [createdFrom, setCreatedFrom] = useState(initialCreatedFrom);
+  const [createdTo, setCreatedTo] = useState(initialCreatedTo);
 
   const load = async (
     nextPage = page,
@@ -125,10 +141,12 @@ export function AdminOperationLogs() {
     nextSuccess = success,
     nextAction = action,
     nextRestorable = restorable,
+    nextCreatedFrom = createdFrom,
+    nextCreatedTo = createdTo,
   ) => {
     setLoading(true);
     try {
-      const result = await getAdminOperationLogs({
+      const query: OperationLogQuery = {
         page: nextPage,
         limit: nextPageSize,
         keyword: nextKeyword.trim() || undefined,
@@ -136,7 +154,10 @@ export function AdminOperationLogs() {
         action: nextAction || undefined,
         success: nextSuccess === "all" ? undefined : nextSuccess === "true",
         restorable: nextRestorable,
-      });
+        createdFrom: formatRangeBoundary(nextCreatedFrom, "start"),
+        createdTo: formatRangeBoundary(nextCreatedTo, "end"),
+      };
+      const result = await getAdminOperationLogs(query);
       setData(result);
       setPage(result.page);
       setPageSize(result.limit);
@@ -148,7 +169,7 @@ export function AdminOperationLogs() {
   };
 
   useEffect(() => {
-    void load(1, 10, keyword, module, success, action, restorable);
+    void load(1, 10, keyword, module, success, action, restorable, createdFrom, createdTo);
   }, []);
 
   useEffect(() => {
@@ -158,8 +179,10 @@ export function AdminOperationLogs() {
     if (success !== "all") next.set("success", success);
     if (action) next.set("action", action);
     if (restorable !== undefined) next.set("restorable", String(restorable));
+    if (createdFrom) next.set("createdFrom", createdFrom);
+    if (createdTo) next.set("createdTo", createdTo);
     setSearchParams(next, { replace: true });
-  }, [action, keyword, module, restorable, setSearchParams, success]);
+  }, [action, createdFrom, createdTo, keyword, module, restorable, setSearchParams, success]);
 
   const currentQuickView = useMemo<QuickView>(() => {
     if (action === "RESTORE") return "restore";
@@ -200,10 +223,11 @@ export function AdminOperationLogs() {
     if (success === "false") parts.push("仅失败");
     if (restorable === true) parts.push("仅可恢复");
     if (restorable === false) parts.push("仅不可恢复");
+    if (createdFrom || createdTo) parts.push(`时间 ${createdFrom || "开始"} 至 ${createdTo || "结束"}`);
     return parts;
-  }, [action, keyword, module, restorable, success]);
+  }, [action, createdFrom, createdTo, keyword, module, restorable, success]);
 
-  const hasActiveFilters = Boolean(keyword.trim()) || Boolean(module) || Boolean(action) || success !== "all" || restorable !== undefined;
+  const hasActiveFilters = Boolean(keyword.trim()) || Boolean(module) || Boolean(action) || success !== "all" || restorable !== undefined || Boolean(createdFrom) || Boolean(createdTo);
 
   const openDetail = async (id: number) => {
     setDrawerOpen(true);
@@ -224,7 +248,7 @@ export function AdminOperationLogs() {
       const detail = await restoreAdminOperationLog(id, "后台人工确认恢复");
       message.success("已按日志快照恢复数据");
       setActiveDetail(detail);
-      await load(page, pageSize, keyword, module, success, action, restorable);
+      await load(page, pageSize, keyword, module, success, action, restorable, createdFrom, createdTo);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "恢复失败");
     } finally {
@@ -237,27 +261,27 @@ export function AdminOperationLogs() {
       setSuccess("all");
       setAction(undefined);
       setRestorable(undefined);
-      void load(1, pageSize, keyword, module, "all", undefined, undefined);
+      void load(1, pageSize, keyword, module, "all", undefined, undefined, createdFrom, createdTo);
       return;
     }
     if (view === "failed") {
       setSuccess("false");
       setAction(undefined);
       setRestorable(undefined);
-      void load(1, pageSize, keyword, module, "false", undefined, undefined);
+      void load(1, pageSize, keyword, module, "false", undefined, undefined, createdFrom, createdTo);
       return;
     }
     if (view === "restorable") {
       setSuccess("all");
       setAction(undefined);
       setRestorable(true);
-      void load(1, pageSize, keyword, module, "all", undefined, true);
+      void load(1, pageSize, keyword, module, "all", undefined, true, createdFrom, createdTo);
       return;
     }
     setSuccess("all");
     setAction("RESTORE");
     setRestorable(undefined);
-    void load(1, pageSize, keyword, module, "all", "RESTORE", undefined);
+    void load(1, pageSize, keyword, module, "all", "RESTORE", undefined, createdFrom, createdTo);
   };
 
   const resetFilters = () => {
@@ -266,7 +290,26 @@ export function AdminOperationLogs() {
     setSuccess("all");
     setAction(undefined);
     setRestorable(undefined);
-    void load(1, pageSize, "", undefined, "all", undefined, undefined);
+    setCreatedFrom("");
+    setCreatedTo("");
+    void load(1, pageSize, "", undefined, "all", undefined, undefined, "", "");
+  };
+
+  const handleExport = async () => {
+    try {
+      await downloadAdminOperationLogs({
+        keyword: keyword.trim() || undefined,
+        module: module || undefined,
+        action: action || undefined,
+        success: success === "all" ? undefined : success === "true",
+        restorable,
+        createdFrom: formatRangeBoundary(createdFrom, "start"),
+        createdTo: formatRangeBoundary(createdTo, "end"),
+      });
+      message.success("操作日志导出成功");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "导出失败");
+    }
   };
 
   const columns: ColumnsType<OperationLogItem> = [
@@ -406,12 +449,12 @@ export function AdminOperationLogs() {
             恢复记录
           </Button>
         </div>
-        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1.25fr)_180px_180px_180px_auto]">
+        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1.1fr)_180px_180px_180px_150px_150px_auto_auto]">
           <Input
             allowClear
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
-            onPressEnter={() => void load(1, pageSize, keyword, module, success, action, restorable)}
+            onPressEnter={() => void load(1, pageSize, keyword, module, success, action, restorable, createdFrom, createdTo)}
             placeholder="按目标 ID、错误信息或请求摘要搜索"
             prefix={<Search size={16} className="text-muted" />}
           />
@@ -453,12 +496,27 @@ export function AdminOperationLogs() {
               { label: "仅失败", value: "false" },
             ]}
           />
+          <Input
+            type="date"
+            value={createdFrom}
+            onChange={(event) => setCreatedFrom(event.target.value)}
+            placeholder="开始日期"
+          />
+          <Input
+            type="date"
+            value={createdTo}
+            onChange={(event) => setCreatedTo(event.target.value)}
+            placeholder="结束日期"
+          />
           <Button
             type="primary"
             icon={<RefreshCw size={16} />}
-            onClick={() => void load(1, pageSize, keyword, module, success, action, restorable)}
+            onClick={() => void load(1, pageSize, keyword, module, success, action, restorable, createdFrom, createdTo)}
           >
             刷新日志
+          </Button>
+          <Button icon={<Download size={16} />} onClick={() => void handleExport()}>
+            导出 CSV
           </Button>
         </div>
         <div className="admin-filter-summary">
@@ -522,7 +580,7 @@ export function AdminOperationLogs() {
             size: screens.sm ? undefined : "small",
             pageSizeOptions: ["10", "20", "50"],
             showTotal: (total) => `共 ${total} 条日志`,
-            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, success, action, restorable),
+            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, success, action, restorable, createdFrom, createdTo),
           }}
           onRow={(record) => ({
             onClick: (event) => {

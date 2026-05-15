@@ -8,6 +8,7 @@ import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.entity.OperationLog;
 import com.floralwhisper.mapper.OperationLogMapper;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
@@ -40,33 +41,36 @@ public class OperationLogQueryService {
       String operatorName,
       Boolean success,
       String keyword,
-      Boolean restorable) {
+      Boolean restorable,
+      LocalDateTime createdFrom,
+      LocalDateTime createdTo) {
     int currentPage = page == null || page < 1 ? 1 : page;
     int pageSize = limit == null || limit < 1 ? 20 : limit;
-    String normalizedKeyword = keyword == null ? "" : keyword.trim();
-
-    LambdaQueryWrapper<OperationLog> query = new LambdaQueryWrapper<OperationLog>()
-        .eq(module != null && !module.isBlank(), OperationLog::getModule, module == null ? null : module.trim())
-        .eq(action != null && !action.isBlank(), OperationLog::getAction, action == null ? null : action.trim())
-        .eq(operatorName != null && !operatorName.isBlank(), OperationLog::getOperatorName, operatorName == null ? null : operatorName.trim())
-        .eq(success != null, OperationLog::getSuccess, success)
-        .and(!normalizedKeyword.isBlank(), wrapper -> wrapper
-            .like(OperationLog::getTargetId, normalizedKeyword)
-            .or()
-            .like(OperationLog::getRequestSummary, normalizedKeyword)
-            .or()
-            .like(OperationLog::getErrorMessage, normalizedKeyword))
-        .orderByDesc(OperationLog::getCreatedAt)
-        .orderByDesc(OperationLog::getId);
-
-    List<OperationLogResponse> filtered = operationLogMapper.selectList(query).stream()
-        .map(this::toResponse)
-        .filter(item -> restorable == null || item.getRestorable().equals(restorable))
-        .toList();
+    List<OperationLogResponse> filtered = queryLogs(
+        module,
+        action,
+        operatorName,
+        success,
+        keyword,
+        restorable,
+        createdFrom,
+        createdTo);
     int from = Math.min((currentPage - 1) * pageSize, filtered.size());
     int to = Math.min(from + pageSize, filtered.size());
     List<OperationLogResponse> items = filtered.subList(from, to);
     return new PaginatedResult<>(items, filtered.size(), currentPage, pageSize);
+  }
+
+  public List<OperationLogResponse> listForExport(
+      String module,
+      String action,
+      String operatorName,
+      Boolean success,
+      String keyword,
+      Boolean restorable,
+      LocalDateTime createdFrom,
+      LocalDateTime createdTo) {
+    return queryLogs(module, action, operatorName, success, keyword, restorable, createdFrom, createdTo);
   }
 
   public OperationLogDetailResponse getDetail(Long id) {
@@ -99,6 +103,41 @@ public class OperationLogQueryService {
         && Boolean.TRUE.equals(entity.getSuccess())
         && RESTORABLE_TARGET_TYPES.contains(entity.getTargetType())
         && !"RESTORE".equalsIgnoreCase(entity.getAction());
+  }
+
+  private List<OperationLogResponse> queryLogs(
+      String module,
+      String action,
+      String operatorName,
+      Boolean success,
+      String keyword,
+      Boolean restorable,
+      LocalDateTime createdFrom,
+      LocalDateTime createdTo) {
+    String normalizedKeyword = keyword == null ? "" : keyword.trim();
+
+    LambdaQueryWrapper<OperationLog> query = new LambdaQueryWrapper<OperationLog>()
+        .eq(module != null && !module.isBlank(), OperationLog::getModule, module == null ? null : module.trim())
+        .eq(action != null && !action.isBlank(), OperationLog::getAction, action == null ? null : action.trim())
+        .eq(operatorName != null && !operatorName.isBlank(), OperationLog::getOperatorName, operatorName == null ? null : operatorName.trim())
+        .eq(success != null, OperationLog::getSuccess, success)
+        .ge(createdFrom != null, OperationLog::getCreatedAt, createdFrom)
+        .le(createdTo != null, OperationLog::getCreatedAt, createdTo)
+        .and(!normalizedKeyword.isBlank(), wrapper -> wrapper
+            .like(OperationLog::getTargetId, normalizedKeyword)
+            .or()
+            .like(OperationLog::getRequestSummary, normalizedKeyword)
+            .or()
+            .like(OperationLog::getErrorMessage, normalizedKeyword))
+        .orderByDesc(OperationLog::getCreatedAt)
+        .orderByDesc(OperationLog::getId);
+
+    return operationLogMapper.selectList(query).stream()
+        .map(this::toResponse)
+        .filter(item -> restorable == null || item.getRestorable().equals(restorable))
+        .filter(item -> createdFrom == null || !item.getCreatedAt().isBefore(createdFrom))
+        .filter(item -> createdTo == null || !item.getCreatedAt().isAfter(createdTo))
+        .toList();
   }
 
   private OperationLogResponse toResponse(OperationLog entity) {
