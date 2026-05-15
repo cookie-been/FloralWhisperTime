@@ -2,6 +2,9 @@
 
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/host-bootstrap.sh"
+
 PROJECT_NAME="${PROJECT_NAME:-}"
 APP_ROOT="${APP_ROOT:-/opt/floralwhispertime}"
 RELEASES_DIR="${APP_ROOT}/releases"
@@ -62,6 +65,7 @@ load_release_info() {
 }
 
 ensure_release_prerequisites() {
+  host_ensure_release_runtime
   require_release_cmd docker
   require_release_cmd curl
   require_release_cmd sed

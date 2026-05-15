@@ -36,6 +36,7 @@
 
 - 从当前 git 远程拉取最新代码（默认 `origin` 和当前分支）
 - 首次根据 `.env.example` 生成 `.env`
+- 在全新 Linux 服务器缺少 `docker`、`docker compose`、`curl`、`python3`、`maven` 时自动安装运行依赖
 - 自动生成数据库密码、管理员密码、签名密钥
 - 校验生产环境关键配置，阻止默认弱密码直接上线
 - 创建上传目录
@@ -56,12 +57,15 @@
 ./deploy.sh --pull
 ./deploy.sh --skip-build
 ./deploy.sh --allow-insecure-env
+./deploy.sh --skip-runtime-install
 ```
 
 说明：
 
 - 默认会阻止使用 `.env.example` 中的默认弱密码直接部署
 - 仅开发或演示环境可使用 `--allow-insecure-env` 显式跳过这层保护
+- 默认支持在 Debian / Ubuntu / CentOS / RHEL / Rocky / AlmaLinux 新机上自动补齐 Docker 运行环境
+- 自动安装依赖时需要当前用户具备 `root` 或 `sudo` 权限；若不希望脚本安装系统依赖，可显式传 `--skip-runtime-install`
 - 生产环境建议基于 `.env.production.example` 生成正式 `.env`
 - 如果同一台机器需要并行跑测试、预发、正式多套环境，建议显式传 `--project-name`，避免复用默认 compose 容器名、网络名和数据卷
 - 环境变量说明可参考 [docs/env-reference.md](/workspace/FloralWhisperTime/docs/env-reference.md)
@@ -96,6 +100,7 @@
 - 保留系统运行所需的基础分类、AI 配置单例和站点基础单例结构
 - 不预置演示作品、演示图片、演示团队、演示时间轴、留言和操作日志
 - 默认仅保留管理员登录能力，账号由环境变量控制，默认账号为 `admin`
+- 发布包安装/升级脚本也会在全新 Linux 服务器上自动补齐 Docker 与 Compose 运行环境
 
 将发布包上传到目标服务器后，按文档执行：
 

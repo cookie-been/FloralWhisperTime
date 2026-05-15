@@ -5,9 +5,13 @@
 ## 1. 服务器要求
 
 - Linux
-- Docker
-- Docker Compose
 - 可访问公网拉取基础镜像
+- 当前用户具备 `root` 或 `sudo` 权限（用于新机自动安装 Docker 运行环境）
+
+说明：
+
+- `release-install.sh` / `release-upgrade.sh` 会在缺少 Docker、Docker Compose、curl 时自动安装
+- 当前支持 Debian / Ubuntu / CentOS / RHEL / Rocky / AlmaLinux 常见发行版
 
 ## 2. 首次安装
 
@@ -36,6 +40,7 @@ sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 - 不包含默认团队成员和默认时间轴条目
 - 仅保留必要的系统配置结构与默认管理员登录能力
 - 首次交付后需在后台补充站点信息、关于我们、AI 配置和正式业务内容
+- 安装过程中如目标机器缺少 Docker 运行环境，脚本会先自动补齐再继续部署
 
 如果要改安装目录：
 

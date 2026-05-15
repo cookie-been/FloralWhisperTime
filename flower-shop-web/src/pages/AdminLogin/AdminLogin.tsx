@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, Form, Input, message } from "antd";
-import { ArrowRight, Lock, Sparkles, User } from "lucide-react";
+import { ArrowRight, Lock, User } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { getAdminSession, getAdminToken, getSiteConfig, loginAdmin } from "@/services/api";
 import type { SiteConfig } from "@/types";
@@ -124,23 +124,6 @@ export function AdminLogin() {
               </div>
             ) : null}
           </div>
-        </div>
-
-        <div className="hidden gap-3 text-white/88 lg:grid lg:max-w-4xl lg:grid-cols-4">
-          {[
-            { label: "运营总览", note: "先看状态再编辑" },
-            { label: "作品与留言", note: "集中处理作品与访客咨询" },
-            { label: "站点配置", note: "首页、门店与关于内容统一维护" },
-            { label: "AI 与审计", note: "生图参数、系统状态与操作日志" },
-          ].map((item) => (
-            <div key={item.label} className="rounded-xl border border-[#efe2d3]/18 bg-[#f4ede3]/10 px-4 py-4 backdrop-blur">
-              <div className="flex items-center gap-2 text-white">
-                <Sparkles size={15} />
-                <p className="text-sm font-semibold">{item.label}</p>
-              </div>
-              <p className="mt-2 text-sm leading-6 text-white/66">{item.note}</p>
-            </div>
-          ))}
         </div>
       </div>
     </section>

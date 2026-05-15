@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.util.HexFormat;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +36,7 @@ public class AuthService {
   private final Clock clock;
   private final ZoneId zoneId;
 
+  @Autowired
   public AuthService(
       AppProperties properties,
       JwtService jwtService,

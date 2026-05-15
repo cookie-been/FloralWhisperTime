@@ -21,6 +21,9 @@ TIMEOUT_SECONDS=300
 GENERATED_ADMIN_PASSWORD=""
 STRICT_ENV_VALIDATION=1
 ALLOW_INSECURE_ENV=0
+AUTO_INSTALL_RUNTIME=1
+
+source "$SCRIPT_DIR/host-bootstrap.sh"
 
 log() {
   printf '[deploy] %s\n' "$*"
@@ -49,6 +52,7 @@ Options:
   --timeout SECONDS    Health check timeout, default 300
   --attach             Run docker compose in foreground
   --allow-insecure-env Allow deployment with default or weak env secrets
+  --skip-runtime-install Do not auto-install missing docker/curl/git/maven/python3
   -h, --help           Show this help
 EOF
 }
@@ -249,6 +253,10 @@ post_deploy_self_check() {
 }
 
 ensure_prerequisites() {
+  if (( AUTO_INSTALL_RUNTIME == 1 )); then
+    host_ensure_source_runtime
+  fi
+
   require_cmd docker
   require_cmd curl
   require_cmd sed
@@ -257,6 +265,9 @@ ensure_prerequisites() {
   require_cmd python3
   require_cmd mvn
   if (( GIT_PULL == 1 )); then
+    if (( AUTO_INSTALL_RUNTIME == 1 )); then
+      host_ensure_git
+    fi
     require_cmd git
   fi
 
@@ -417,6 +428,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --allow-insecure-env)
       ALLOW_INSECURE_ENV=1
+      shift
+      ;;
+    --skip-runtime-install)
+      AUTO_INSTALL_RUNTIME=0
       shift
       ;;
     -h|--help)

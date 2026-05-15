@@ -1,14 +1,20 @@
 # 安装手册
 
-本文档面向交付后的部署人员，说明如何在 Linux + Docker 环境中完成首装。
+本文档面向交付后的部署人员，说明如何在 Linux 服务器上完成首装。若目标机器缺少 Docker / Docker Compose，当前一键部署脚本会自动安装并启动相关运行环境。
 
 ## 1. 环境要求
 
 - Linux 服务器
-- Docker 与 Docker Compose
 - Git
 - 可访问外网镜像源
 - 至少 2 CPU / 4 GB 内存
+- 若需自动安装运行环境，当前用户应具备 `root` 或 `sudo` 权限
+
+说明：
+
+- 源码部署脚本会在缺少 `docker`、`docker compose`、`curl`、`python3`、`maven` 时自动安装
+- 离线发布包安装/升级脚本会在缺少 `docker`、`docker compose`、`curl` 时自动安装
+- 当前自动安装覆盖 Debian / Ubuntu / CentOS / RHEL / Rocky / AlmaLinux 常见发行版
 
 建议：
 
@@ -87,6 +93,7 @@ cp .env.production.example .env
 
 脚本会自动：
 
+- 安装缺失的 Docker 运行环境与基础依赖
 - 拉取最新代码
 - 构建前后端镜像
 - 启动 `mysql + backend + web`
@@ -97,6 +104,7 @@ cp .env.production.example .env
 
 - 未指定 `--project-name` 时，Docker Compose 会使用默认项目名，容器、网络和数据卷也会共用该命名空间
 - 在测试部署、预发部署、正式部署并存的场景下，应固定不同的 `--project-name`
+- 若服务器已由运维统一安装 Docker，也可追加 `--skip-runtime-install` 禁用自动安装逻辑
 
 当前版本默认还会带上：
 
@@ -115,6 +123,7 @@ cp .env.production.example .env
 
 脚本会自动：
 
+- 安装缺失的 Docker 运行环境与基础依赖
 - 将当前 release 注册到 `/opt/floralwhispertime/releases/<release-id>`
 - 初始化共享目录 `/opt/floralwhispertime/shared`
 - 首次创建 `/opt/floralwhispertime/shared/.env`

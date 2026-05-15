@@ -19,9 +19,10 @@
 默认前提：
 
 - 目标服务器为 Linux
-- 已安装 Docker 与 Docker Compose
 - 可访问公网拉取基础镜像
 - 同机只部署一套正式环境
+
+当前发布包脚本支持在全新 Linux 服务器上自动安装 Docker 与 Docker Compose，前提是当前用户具备 `root` 或 `sudo` 权限。已覆盖 Debian / Ubuntu / CentOS / RHEL / Rocky / AlmaLinux 常见发行版。
 
 ## 2. 本地生成发布包
 
@@ -155,6 +156,7 @@ cd floralwhispertime-release-<release-id>
 
 首次安装会自动：
 
+- 安装缺失的 Docker / Docker Compose / curl 运行依赖
 - 将当前 release 复制到 `/opt/floralwhispertime/releases/<release-id>`
 - 初始化 `/opt/floralwhispertime/shared/uploads`
 - 初始化 `/opt/floralwhispertime/shared/backups`
@@ -203,6 +205,7 @@ cd floralwhispertime-release-<release-id>
 
 升级流程：
 
+- 自动补齐缺失的 Docker / Docker Compose / curl 运行依赖
 - 导入新业务镜像
 - 复用 `/opt/floralwhispertime/shared/.env`
 - 使用新 release 的 compose 文件重建服务
