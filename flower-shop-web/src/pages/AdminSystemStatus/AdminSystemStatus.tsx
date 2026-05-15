@@ -133,6 +133,7 @@ export function AdminSystemStatus() {
     if (status.aiEnabled && !status.aiKeyConfigured) issues.push("AI 已启用但密钥未配置");
     if (!status.latestBackupPresent) issues.push("尚未发现可用备份");
     if (status.requirePasswordChange) issues.push("管理员初始密码尚未修改");
+    if (status.security?.securityLevel === "risk") issues.push("仍存在默认安全配置");
 
     if (issues.length === 0) {
       return { level: "success", title: "系统运行正常", message: "关键依赖、目录与核心配置状态均正常，可继续进行运营、部署与客户交付。" };
@@ -157,6 +158,7 @@ export function AdminSystemStatus() {
       { label: "上传目录容量", value: status.uploadDirectorySize || "未知", note: status.uploadDirectoryReady ? `文件数 ${status.uploadFileCount}` : "上传目录异常", icon: HardDriveDownload },
       { label: "AI 配置", value: status.aiEnabled ? "已启用" : "未启用", note: status.aiKeyConfigured ? "密钥已配置" : "密钥未配置", icon: Sparkles },
       { label: "交付初始化", value: status.deliveryInitialized ? "已完成" : "待完成", note: status.requirePasswordChange ? "仍需先修改管理员初始密码" : "已完成基础安全初始化", icon: KeyRound },
+      { label: "安全等级", value: status.security?.securityLevel === "good" ? "良好" : status.security?.securityLevel === "warning" ? "待完善" : "高风险", note: status.security?.securitySummary || "暂未获取安全状态摘要", icon: KeyRound },
       { label: "最近备份", value: status.latestBackupPresent ? status.latestBackupName : "暂无", note: "用于升级前回滚和恢复", icon: KeyRound },
       { label: "操作日志", value: status.operationLogCount, note: `保留策略 ${status.operationLogRetentionDays} 天`, icon: Archive },
     ];
@@ -335,6 +337,19 @@ export function AdminSystemStatus() {
               <p className="mt-2 text-muted">
                 最近改密时间：{formatDateTime(status.adminPasswordChangedAt)}
               </p>
+            </div>
+            <div className="admin-subpanel px-4 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-semibold text-[#1b281e]">安全状态</p>
+                <Tag color={status.security?.securityLevel === "good" ? "green" : status.security?.securityLevel === "warning" ? "gold" : "red"}>
+                  {status.security?.securityLevel === "good" ? "良好" : status.security?.securityLevel === "warning" ? "待完善" : "高风险"}
+                </Tag>
+              </div>
+              <p className="mt-2 text-muted">{status.security?.securitySummary || "暂未获取安全状态摘要"}</p>
+              <p className="mt-2 text-muted">管理员密码：{status.security?.adminPasswordInitialized ? "已初始化" : "仍需初始化"}</p>
+              <p className="mt-2 text-muted">JWT 密钥：{status.security?.jwtSecretCustomized ? "已替换默认值" : "仍为默认值"}</p>
+              <p className="mt-2 text-muted">数据加密密钥：{status.security?.dataEncryptionKeyCustomized ? "已替换默认值" : "仍为默认值"}</p>
+              <p className="mt-2 text-muted">AI 密钥存储：{status.security?.aiKeyEncryptedAtRest ? "已加密存储" : "未加密存储"}</p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>

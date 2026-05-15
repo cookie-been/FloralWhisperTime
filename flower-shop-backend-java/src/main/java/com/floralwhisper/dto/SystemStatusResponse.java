@@ -5,6 +5,17 @@ import lombok.Data;
 
 @Data
 public class SystemStatusResponse {
+  @Data
+  public static class SecurityOverview {
+    private boolean adminPasswordInitialized;
+    private boolean usingDefaultAdminPassword;
+    private boolean jwtSecretCustomized;
+    private boolean dataEncryptionKeyCustomized;
+    private boolean aiKeyEncryptedAtRest;
+    private String securityLevel;
+    private String securitySummary;
+  }
+
   private String service;
   private String version;
   private String deploymentEnvironment;
@@ -47,4 +58,5 @@ public class SystemStatusResponse {
   private boolean requirePasswordChange;
   private boolean deliveryInitialized;
   private ProtectionSnapshot protection;
+  private SecurityOverview security;
 }

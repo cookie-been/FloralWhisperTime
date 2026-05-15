@@ -383,7 +383,49 @@ public class SiteService {
     response.setRequirePasswordChange(adminSecurityState == null || Boolean.TRUE.equals(adminSecurityState.getRequirePasswordChange()));
     response.setDeliveryInitialized(adminSecurityState != null && !Boolean.TRUE.equals(adminSecurityState.getRequirePasswordChange()));
     response.setProtection(buildProtectionSnapshot());
+    response.setSecurity(buildSecurityOverview(adminSecurityState, aiSettings));
     return response;
+  }
+
+  private SystemStatusResponse.SecurityOverview buildSecurityOverview(
+      AdminSecurityState adminSecurityState,
+      AiSettings aiSettings) {
+    SystemStatusResponse.SecurityOverview overview = new SystemStatusResponse.SecurityOverview();
+    boolean adminPasswordInitialized =
+        adminSecurityState != null && !Boolean.TRUE.equals(adminSecurityState.getRequirePasswordChange());
+    boolean usingDefaultAdminPassword = !adminPasswordInitialized;
+    boolean jwtSecretCustomized =
+        notBlank(appProperties.getJwt().getSecret())
+            && !"floral-whisper-time-java-dev-secret-change-me".equals(appProperties.getJwt().getSecret().trim());
+    boolean dataEncryptionKeyCustomized =
+        notBlank(appProperties.getSecurity().getDataEncryptionKey())
+            && !"floral-whisper-time-dev-data-key-2026".equals(appProperties.getSecurity().getDataEncryptionKey().trim());
+    boolean aiKeyEncryptedAtRest =
+        !notBlank(aiSettings.getApiKey()) || secretCryptoService.isEncrypted(aiSettings.getApiKey());
+
+    overview.setAdminPasswordInitialized(adminPasswordInitialized);
+    overview.setUsingDefaultAdminPassword(usingDefaultAdminPassword);
+    overview.setJwtSecretCustomized(jwtSecretCustomized);
+    overview.setDataEncryptionKeyCustomized(dataEncryptionKeyCustomized);
+    overview.setAiKeyEncryptedAtRest(aiKeyEncryptedAtRest);
+
+    int passedChecks = 0;
+    if (adminPasswordInitialized) passedChecks++;
+    if (jwtSecretCustomized) passedChecks++;
+    if (dataEncryptionKeyCustomized) passedChecks++;
+    if (aiKeyEncryptedAtRest) passedChecks++;
+
+    if (passedChecks == 4) {
+      overview.setSecurityLevel("good");
+      overview.setSecuritySummary("管理员密码、JWT 密钥、数据加密密钥和 AI 密钥存储状态均符合交付要求。");
+    } else if (passedChecks >= 2) {
+      overview.setSecurityLevel("warning");
+      overview.setSecuritySummary("当前已完成部分安全初始化，但仍建议补齐默认密钥替换或管理员密码初始化。");
+    } else {
+      overview.setSecurityLevel("risk");
+      overview.setSecuritySummary("当前仍存在默认密码或默认密钥配置，暂不建议直接用于正式商业交付。");
+    }
+    return overview;
   }
 
   private ProtectionSnapshot buildProtectionSnapshot() {

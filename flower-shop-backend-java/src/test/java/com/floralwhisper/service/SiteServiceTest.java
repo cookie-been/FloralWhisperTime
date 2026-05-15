@@ -495,6 +495,13 @@ class SiteServiceTest {
     assertEquals("2025-11-16 08:15:00", response.getOperationLogArchiveBefore());
     assertFalse(response.isRequirePasswordChange());
     assertTrue(response.isDeliveryInitialized());
+    assertNotNull(response.getSecurity());
+    assertTrue(response.getSecurity().isAdminPasswordInitialized());
+    assertFalse(response.getSecurity().isUsingDefaultAdminPassword());
+    assertFalse(response.getSecurity().isJwtSecretCustomized());
+    assertFalse(response.getSecurity().isDataEncryptionKeyCustomized());
+    assertTrue(response.getSecurity().isAiKeyEncryptedAtRest());
+    assertEquals("warning", response.getSecurity().getSecurityLevel());
   }
 
   @Test
@@ -573,6 +580,13 @@ class SiteServiceTest {
     assertEquals("", response.getOperationLogArchiveBefore());
     assertTrue(response.isRequirePasswordChange());
     assertFalse(response.isDeliveryInitialized());
+    assertNotNull(response.getSecurity());
+    assertFalse(response.getSecurity().isAdminPasswordInitialized());
+    assertTrue(response.getSecurity().isUsingDefaultAdminPassword());
+    assertFalse(response.getSecurity().isJwtSecretCustomized());
+    assertFalse(response.getSecurity().isDataEncryptionKeyCustomized());
+    assertTrue(response.getSecurity().isAiKeyEncryptedAtRest());
+    assertEquals("risk", response.getSecurity().getSecurityLevel());
   }
 
   @Test

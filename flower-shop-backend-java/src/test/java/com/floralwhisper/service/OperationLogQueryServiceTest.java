@@ -111,6 +111,27 @@ class OperationLogQueryServiceTest {
     assertEquals(12L, detail.getRelatedLogs().get(0).getId());
   }
 
+  @Test
+  void detailMasksSensitiveAiSettingsSnapshot() {
+    OperationLogMapper mapper = mock(OperationLogMapper.class);
+    AuditPayloadSanitizer sanitizer = new AuditPayloadSanitizer(new com.fasterxml.jackson.databind.ObjectMapper());
+
+    OperationLog log = createLogAt(30L, "AI", "UPDATE", "AI_SETTINGS", true, LocalDateTime.of(2026, 5, 15, 12, 0));
+    log.setBeforeSnapshot("{\"provider\":\"volcengine\",\"apiKey\":\"enc:v1:abcdefg123456\"}");
+    log.setAfterSnapshot("{\"provider\":\"volcengine\",\"apiKey\":\"enc:v1:xyz987654321\"}");
+    when(mapper.selectById(30L)).thenReturn(log);
+    when(mapper.selectList(any())).thenReturn(List.of());
+
+    OperationLogQueryService service = new OperationLogQueryService(mapper, sanitizer);
+
+    OperationLogDetailResponse detail = service.getDetail(30L);
+
+    assertTrue(detail.getBeforeSnapshot().contains("\"apiKey\""));
+    assertTrue(detail.getBeforeSnapshot().contains("****"));
+    assertFalse(detail.getBeforeSnapshot().contains("abcdefg123456"));
+    assertFalse(detail.getAfterSnapshot().contains("xyz987654321"));
+  }
+
   private OperationLog createLog(Long id, String module, String action, String targetType, boolean success) {
     return createLogAt(id, module, action, targetType, success, LocalDateTime.of(2026, 5, 15, 10, id.intValue()));
   }

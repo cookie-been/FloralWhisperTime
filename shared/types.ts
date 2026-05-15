@@ -113,6 +113,16 @@ export interface ProtectionSnapshot {
   busyRejectedCount: number;
 }
 
+export interface SecurityOverview {
+  adminPasswordInitialized: boolean;
+  usingDefaultAdminPassword: boolean;
+  jwtSecretCustomized: boolean;
+  dataEncryptionKeyCustomized: boolean;
+  aiKeyEncryptedAtRest: boolean;
+  securityLevel: "good" | "warning" | "risk" | string;
+  securitySummary: string;
+}
+
 export interface SiteConfig {
   brandName: string;
   heroEyebrow: string;
@@ -206,6 +216,7 @@ export interface SystemStatus {
   requirePasswordChange: boolean;
   deliveryInitialized: boolean;
   protection?: ProtectionSnapshot;
+  security?: SecurityOverview;
 }
 
 export interface AdminSession {
