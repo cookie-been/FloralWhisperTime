@@ -167,7 +167,7 @@ export function AdminContacts() {
             <p className="font-semibold text-[#1b281e]">{name}</p>
             {!record.readAt ? <Tag color="green">待处理</Tag> : null}
           </div>
-          <p className="mt-1 text-xs text-muted">{record.id}</p>
+          <p className="mt-1 text-xs text-muted">提交于 {formatDateTime(record.createdAt)}</p>
         </div>
       ),
     },

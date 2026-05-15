@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "antd";
-import { getBrandStory, getCategories, getFlowers, getShopInfo, getSiteConfig } from "@/services/api";
+import { getBrandStory, getCategories, getFlowers, getShopInfo, getSiteConfig, listAllFlowers } from "@/services/api";
 import {
   HomeBrandStorySection,
   HomeFeaturedSection,
@@ -62,7 +62,7 @@ export function Home() {
     Promise.allSettled([
       getCategories(),
       getFlowers({ sortBy: "featured", limit: 5 }),
-      getFlowers({ sortBy: "featured", limit: 500 }),
+      listAllFlowers({ sortBy: "featured" }),
       getBrandStory(),
       getSiteConfig(),
       getShopInfo(),
@@ -72,7 +72,7 @@ export function Home() {
 
         if (categoryResult.status === "fulfilled") setCategories(categoryResult.value);
         if (featuredResult.status === "fulfilled") setFeatured(featuredResult.value.list);
-        if (allFlowersResult.status === "fulfilled") setAllFlowers(allFlowersResult.value.list);
+        if (allFlowersResult.status === "fulfilled") setAllFlowers(allFlowersResult.value);
         if (storyResult.status === "fulfilled") setStory(storyResult.value);
         if (siteConfigResult.status === "fulfilled") setSiteConfig(siteConfigResult.value);
         if (shopResult.status === "fulfilled") setShop(shopResult.value);
