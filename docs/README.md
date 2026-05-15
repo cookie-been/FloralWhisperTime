@@ -10,6 +10,8 @@
 
 ## 部署与运维
 
+- [安装手册](./installation-guide.md)
+- [商业交付说明](./commercial-delivery.md)
 - [部署前后巡检清单](./deployment-checklist.md)
 - [生产环境变量说明](./env-reference.md)
 - [Nginx HTTPS 接入示例](./nginx-https-example.md)
@@ -27,5 +29,6 @@
 4. `docs/api.md`
 5. `docs/env-reference.md`
 6. `docs/deployment-checklist.md`
+7. `docs/installation-guide.md`
 
 上线或运维时，再按需查阅备份、升级、回滚和 HTTPS 相关文档。

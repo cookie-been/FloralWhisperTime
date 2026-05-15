@@ -57,6 +57,18 @@ read_env_value() {
   printf '%s' "$value"
 }
 
+set_env_value() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+
+  if grep -q "^${key}=" "$file"; then
+    sed -i "s#^${key}=.*#${key}=${value}#" "$file"
+  else
+    printf '%s=%s\n' "$key" "$value" >>"$file"
+  fi
+}
+
 compose_cmd() {
   docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
@@ -75,6 +87,14 @@ resolve_web_port() {
 
 current_git_branch() {
   git -C "$REPO_ROOT" branch --show-current
+}
+
+current_git_revision() {
+  git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || printf 'dev'
+}
+
+current_utc_timestamp() {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
 ensure_prerequisites() {
@@ -162,6 +182,17 @@ run_backup() {
 
   log "Running backup before upgrade"
   "$BACKUP_SCRIPT" --env-file "$ENV_FILE"
+}
+
+write_runtime_metadata() {
+  local git_revision deployed_at
+  git_revision="$(current_git_revision)"
+  deployed_at="$(current_utc_timestamp)"
+
+  set_env_value "$ENV_FILE" "APP_GIT_REVISION" "$git_revision"
+  set_env_value "$ENV_FILE" "APP_DEPLOYED_AT" "$deployed_at"
+
+  log "Recorded runtime metadata: git_revision=$git_revision deployed_at=$deployed_at"
 }
 
 run_compose_upgrade() {
@@ -283,6 +314,7 @@ else
 fi
 
 run_backup
+write_runtime_metadata
 run_compose_upgrade
 record_upgrade_log
 

@@ -118,6 +118,18 @@ read_env_value() {
   printf '%s' "$value"
 }
 
+current_git_revision() {
+  if [[ -d "$REPO_ROOT/.git" ]]; then
+    git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || printf 'dev'
+    return
+  fi
+  printf 'dev'
+}
+
+current_utc_timestamp() {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
 init_env_file() {
   if [[ -f "$ENV_FILE" ]]; then
     return
@@ -183,6 +195,17 @@ validate_production_env() {
   [[ "$admin_auth_secret" != "replace-with-a-long-random-secret" ]] || fail "ADMIN_AUTH_SECRET still uses default placeholder"
   [[ "${#admin_auth_secret}" -ge 32 ]] || fail "ADMIN_AUTH_SECRET is too short, must be at least 32 characters"
   [[ "$web_port" =~ ^[0-9]+$ ]] || fail "WEB_PORT must be numeric"
+}
+
+write_runtime_metadata() {
+  local git_revision deployed_at
+  git_revision="$(current_git_revision)"
+  deployed_at="$(current_utc_timestamp)"
+
+  set_env_value "$ENV_FILE" "APP_GIT_REVISION" "$git_revision"
+  set_env_value "$ENV_FILE" "APP_DEPLOYED_AT" "$deployed_at"
+
+  log "Recorded runtime metadata: git_revision=$git_revision deployed_at=$deployed_at"
 }
 
 post_deploy_self_check() {
@@ -407,6 +430,8 @@ fi
 if [[ ! -f "$ENV_FILE" ]]; then
   fail "Env file not found: $ENV_FILE"
 fi
+
+write_runtime_metadata
 
 WEB_PORT="${WEB_PORT_OVERRIDE:-$(read_env_value "$ENV_FILE" "WEB_PORT")}"
 WEB_PORT="${WEB_PORT:-8080}"
