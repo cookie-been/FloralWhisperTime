@@ -43,5 +43,7 @@ public class SystemStatusResponse {
   private long operationLogCount;
   private int operationLogRetentionDays;
   private String operationLogArchiveBefore;
+  private boolean requirePasswordChange;
+  private boolean deliveryInitialized;
   private ProtectionSnapshot protection;
 }

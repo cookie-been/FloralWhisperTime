@@ -1,8 +1,8 @@
-import { Button, Drawer, Grid, message } from "antd";
+import { Button, Drawer, Form, Grid, Input, Modal, message } from "antd";
 import { ArrowUpRight, LogOut, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { clearAdminToken } from "@/services/api";
+import { changeAdminPassword, clearAdminToken, getAdminSession, getCurrentAdmin } from "@/services/api";
 import { adminNavItems, adminPageMeta, adminPublicLink } from "./adminMeta";
 
 const adminRoutePreloaders: Record<string, () => Promise<unknown>> = {
@@ -74,7 +74,10 @@ export function AdminShell() {
   const navigate = useNavigate();
   const screens = Grid.useBreakpoint();
   const meta = resolveMeta(location.pathname);
+  const [passwordForm] = Form.useForm<{ currentPassword: string; newPassword: string; confirmPassword: string }>();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [session, setSession] = useState(() => getAdminSession());
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const logout = () => {
     clearAdminToken();
@@ -85,6 +88,27 @@ export function AdminShell() {
   useEffect(() => {
     setDrawerOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    getCurrentAdmin().then(setSession).catch(() => undefined);
+  }, []);
+
+  const requirePasswordChange = Boolean(session?.requirePasswordChange);
+
+  const handlePasswordChange = async () => {
+    const values = await passwordForm.validateFields();
+    setChangingPassword(true);
+    try {
+      const result = await changeAdminPassword(values.currentPassword, values.newPassword);
+      setSession({ username: result.username, requirePasswordChange: result.requirePasswordChange });
+      passwordForm.resetFields();
+      message.success("管理员密码已更新");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "修改密码失败");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f6f3ee] text-ink">
@@ -118,7 +142,7 @@ export function AdminShell() {
                 {screens.lg ? (
                   <>
                     <NavLink to={adminPublicLink.path}>
-                      <Button size="large" icon={<ArrowUpRight size={16} />}>
+                      <Button size="large" icon={<ArrowUpRight size={16} />} disabled={requirePasswordChange}>
                         {adminPublicLink.label}
                       </Button>
                     </NavLink>
@@ -127,7 +151,7 @@ export function AdminShell() {
                     </Button>
                   </>
                 ) : (
-                  <Button size="large" icon={<Menu size={16} />} onClick={() => setDrawerOpen(true)}>
+                  <Button size="large" icon={<Menu size={16} />} onClick={() => setDrawerOpen(true)} disabled={requirePasswordChange}>
                     菜单
                   </Button>
                 )}
@@ -178,9 +202,17 @@ export function AdminShell() {
                     end={item.path === "/admin"}
                     onMouseEnter={() => preloadAdminRoute(item.path)}
                     onFocus={() => preloadAdminRoute(item.path)}
+                    onClick={(event) => {
+                      if (requirePasswordChange) {
+                        event.preventDefault();
+                      }
+                    }}
                     className={({ isActive }) =>
                       [
                         "flex items-start gap-3 rounded-lg border px-3 py-3 transition",
+                        requirePasswordChange
+                          ? "cursor-not-allowed opacity-60"
+                          : "",
                         isActive
                           ? "border-[#d2dfd1] bg-[#eef5ed] text-[#1f3d2d]"
                           : "border-black/6 bg-white text-[#1b281e] hover:border-[#d9e5d7] hover:bg-[#f8fbf7]",
@@ -213,7 +245,7 @@ export function AdminShell() {
 
           <div className="mt-auto space-y-3 pt-8">
             <NavLink to={adminPublicLink.path}>
-              <Button block size="large" icon={<ArrowUpRight size={16} />}>
+              <Button block size="large" icon={<ArrowUpRight size={16} />} disabled={requirePasswordChange}>
                 {adminPublicLink.label}
               </Button>
             </NavLink>
@@ -223,6 +255,55 @@ export function AdminShell() {
           </div>
         </div>
       </Drawer>
+
+      <Modal
+        open={requirePasswordChange}
+        closable={false}
+        maskClosable={false}
+        keyboard={false}
+        title="首次登录请先修改管理员密码"
+        okText="保存新密码"
+        cancelButtonProps={{ style: { display: "none" } }}
+        confirmLoading={changingPassword}
+        onOk={() => void handlePasswordChange()}
+      >
+        <p className="mb-4 text-sm leading-6 text-muted">
+          当前环境仍在使用初始管理员密码。为保证交付安全，修改完成前将限制后台其他操作。
+        </p>
+        <Form form={passwordForm} layout="vertical">
+          <Form.Item name="currentPassword" label="当前密码" rules={[{ required: true, message: "请输入当前密码" }]}>
+            <Input.Password size="large" />
+          </Form.Item>
+          <Form.Item
+            name="newPassword"
+            label="新密码"
+            rules={[
+              { required: true, message: "请输入新密码" },
+              { min: 8, message: "新密码至少 8 位" },
+            ]}
+          >
+            <Input.Password size="large" />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认新密码"
+            dependencies={["newPassword"]}
+            rules={[
+              { required: true, message: "请再次输入新密码" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || value === getFieldValue("newPassword")) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("两次输入的新密码不一致"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password size="large" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Form, Input, message } from "antd";
 import { ArrowRight, Lock, Sparkles, User } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { getAdminToken, getSiteConfig, loginAdmin } from "@/services/api";
+import { getAdminSession, getAdminToken, getSiteConfig, loginAdmin } from "@/services/api";
 import type { SiteConfig } from "@/types";
 
 interface LoginForm {
@@ -17,6 +17,7 @@ export function AdminLogin() {
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const from = (location.state as { from?: string } | null)?.from ?? "/admin";
+  const session = getAdminSession();
 
   const backgroundSlides = useMemo(
     () =>
@@ -43,7 +44,7 @@ export function AdminLogin() {
     return () => window.clearInterval(timer);
   }, [backgroundSlides]);
 
-  if (getAdminToken()) {
+  if (getAdminToken() && session && !session.requirePasswordChange) {
     return <Navigate to={from} replace />;
   }
 
@@ -51,8 +52,8 @@ export function AdminLogin() {
     if (loading) return;
     setLoading(true);
     try {
-      await loginAdmin(values.username, values.password);
-      message.success("登录成功");
+      const result = await loginAdmin(values.username, values.password);
+      message.success(result.requirePasswordChange ? "登录成功，请先修改管理员密码" : "登录成功");
       navigate(from, { replace: true });
     } catch (error) {
       message.error(error instanceof Error ? error.message : "登录失败");

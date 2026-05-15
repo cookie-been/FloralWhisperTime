@@ -25,6 +25,8 @@ import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.ConfigImportResponse;
+import com.floralwhisper.dto.AdminPasswordChangeResponse;
+import com.floralwhisper.dto.AdminSessionResponse;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogArchiveFileResponse;
@@ -38,6 +40,7 @@ import com.floralwhisper.entity.Contact;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
+import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -51,6 +54,7 @@ import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import com.floralwhisper.security.JwtAuthenticationFilter;
+import com.floralwhisper.security.AdminPasswordChangeEnforcementFilter;
 import com.floralwhisper.security.JwtService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
@@ -81,7 +85,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 @WebMvcTest(AdminController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class, GlobalExceptionHandler.class, AdminControllerTest.TestConfig.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, AdminPasswordChangeEnforcementFilter.class, JwtService.class, GlobalExceptionHandler.class, AdminControllerTest.TestConfig.class})
 @TestPropertySource(properties = {
     "app.admin.username=admin",
     "app.admin.password=Floral@2026",
@@ -104,6 +108,8 @@ class AdminControllerTest {
 
   @MockBean
   private AuthService authService;
+  @MockBean
+  private AdminSecurityStateMapper adminSecurityStateMapper;
   @MockBean
   private ContactService contactService;
   @MockBean
@@ -143,7 +149,7 @@ class AdminControllerTest {
 
   @Test
   void loginReturnsTokenAndUsername() throws Exception {
-    when(authService.login(any())).thenReturn(new LoginResponse("jwt-token", "admin"));
+    when(authService.login(any())).thenReturn(new LoginResponse("jwt-token", "admin", false));
 
     mockMvc.perform(post("/api/admin/login")
             .contentType(MediaType.APPLICATION_JSON)
@@ -152,7 +158,8 @@ class AdminControllerTest {
                 """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.token").value("jwt-token"))
-        .andExpect(jsonPath("$.username").value("admin"));
+        .andExpect(jsonPath("$.username").value("admin"))
+        .andExpect(jsonPath("$.requirePasswordChange").value(false));
   }
 
   @Test
@@ -183,12 +190,61 @@ class AdminControllerTest {
 
   @Test
   void meReturnsCurrentAdminWhenTokenIsValid() throws Exception {
-    when(authService.currentAdmin()).thenReturn(Map.of("username", "admin"));
+    AdminSessionResponse response = new AdminSessionResponse();
+    response.setUsername("admin");
+    response.setRequirePasswordChange(false);
+    when(authService.currentAdmin()).thenReturn(response);
 
     mockMvc.perform(get("/api/admin/me")
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.username").value("admin"));
+        .andExpect(jsonPath("$.username").value("admin"))
+        .andExpect(jsonPath("$.requirePasswordChange").value(false));
+  }
+
+  @Test
+  void systemStatusRejectsWhenPasswordChangeIsRequired() throws Exception {
+    when(authService.isPasswordChangeRequired("admin")).thenReturn(true);
+
+    mockMvc.perform(get("/api/admin/system/status")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.message").value("首次登录后请先修改管理员密码"));
+  }
+
+  @Test
+  void meStillAccessibleWhenPasswordChangeIsRequired() throws Exception {
+    AdminSessionResponse response = new AdminSessionResponse();
+    response.setUsername("admin");
+    response.setRequirePasswordChange(true);
+    when(authService.currentAdmin()).thenReturn(response);
+    when(authService.isPasswordChangeRequired("admin")).thenReturn(true);
+
+    mockMvc.perform(get("/api/admin/me")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.username").value("admin"))
+        .andExpect(jsonPath("$.requirePasswordChange").value(true));
+  }
+
+  @Test
+  void changePasswordReturnsSuccessWhenTokenIsValid() throws Exception {
+    AdminPasswordChangeResponse response = new AdminPasswordChangeResponse();
+    response.setUsername("admin");
+    response.setRequirePasswordChange(false);
+    response.setChangedAt("2026-05-15 12:30:00");
+    when(authService.changePassword(eq("admin"), any())).thenReturn(response);
+
+    mockMvc.perform(post("/api/admin/change-password")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {"currentPassword":"Floral@2026","newPassword":"Floral@2026#New"}
+                """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.username").value("admin"))
+        .andExpect(jsonPath("$.requirePasswordChange").value(false))
+        .andExpect(jsonPath("$.changedAt").value("2026-05-15 12:30:00"));
   }
 
   @Test
@@ -239,6 +295,8 @@ class AdminControllerTest {
     response.setOperationLogCount(128L);
     response.setOperationLogRetentionDays(180);
     response.setOperationLogArchiveBefore("2025-11-16 08:15:00");
+    response.setRequirePasswordChange(false);
+    response.setDeliveryInitialized(true);
 
     when(siteService.getSystemStatus()).thenReturn(response);
 
@@ -273,7 +331,9 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.operationLogArchiveBefore").value("2025-11-16 08:15:00"))
         .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"))
         .andExpect(jsonPath("$.latestBackupModifiedAt").value("2026-05-15 08:28:08"))
-        .andExpect(jsonPath("$.latestBackupDownloadUrl").value("/api/admin/system/backups/latest/download"));
+        .andExpect(jsonPath("$.latestBackupDownloadUrl").value("/api/admin/system/backups/latest/download"))
+        .andExpect(jsonPath("$.requirePasswordChange").value(false))
+        .andExpect(jsonPath("$.deliveryInitialized").value(true));
   }
 
   @Test

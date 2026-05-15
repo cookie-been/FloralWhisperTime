@@ -1,4 +1,7 @@
 import type {
+  AdminLoginResult,
+  AdminPasswordChangeResult,
+  AdminSession,
   AboutPageContent,
   AboutTimelineEntry,
   AiSettings,
@@ -22,6 +25,7 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_TOKEN_KEY = "flower_shop_admin_token";
+const ADMIN_SESSION_KEY = "flower_shop_admin_session";
 const inFlightMutations = new Map<string, Promise<unknown>>();
 const responseCache = new Map<string, { expiresAt: number; value: unknown }>();
 const DEFAULT_REQUEST_TIMEOUT_MS = 12_000;
@@ -73,12 +77,28 @@ export function getAdminToken() {
   return localStorage.getItem(ADMIN_TOKEN_KEY);
 }
 
+export function getAdminSession() {
+  const raw = localStorage.getItem(ADMIN_SESSION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AdminSession;
+  } catch {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    return null;
+  }
+}
+
 export function clearAdminToken() {
   localStorage.removeItem(ADMIN_TOKEN_KEY);
+  localStorage.removeItem(ADMIN_SESSION_KEY);
 }
 
 function setAdminToken(token: string) {
   localStorage.setItem(ADMIN_TOKEN_KEY, token);
+}
+
+function setAdminSession(session: AdminSession) {
+  localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -206,17 +226,33 @@ export function getRelatedFlowers(flower: Flower, limit = 3) {
 
 export async function loginAdmin(username: string, password: string) {
   const result = await withMutationGuard("admin:login", () =>
-    request<{ token: string; username: string }>("/api/admin/login", {
+    request<AdminLoginResult>("/api/admin/login", {
       method: "POST",
       body: JSON.stringify({ username, password }),
     }),
   );
   setAdminToken(result.token);
+  setAdminSession({ username: result.username, requirePasswordChange: result.requirePasswordChange });
   return result;
 }
 
 export function getCurrentAdmin() {
-  return request<{ username: string }>("/api/admin/me");
+  return request<AdminSession>("/api/admin/me").then((result) => {
+    setAdminSession(result);
+    return result;
+  });
+}
+
+export function changeAdminPassword(currentPassword: string, newPassword: string) {
+  return withMutationGuard("admin:change-password", () =>
+    request<AdminPasswordChangeResult>("/api/admin/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }).then((result) => {
+      setAdminSession({ username: result.username, requirePasswordChange: result.requirePasswordChange });
+      return result;
+    }),
+  );
 }
 
 export function getAdminSystemStatus(options: RequestOptions = {}) {

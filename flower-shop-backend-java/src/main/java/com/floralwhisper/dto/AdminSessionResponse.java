@@ -1,12 +1,9 @@
 package com.floralwhisper.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
-public class LoginResponse {
-  private String token;
+public class AdminSessionResponse {
   private String username;
   private boolean requirePasswordChange;
 }

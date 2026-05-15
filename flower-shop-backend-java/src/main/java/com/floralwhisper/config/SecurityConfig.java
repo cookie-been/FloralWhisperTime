@@ -1,6 +1,7 @@
 package com.floralwhisper.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.floralwhisper.security.AdminPasswordChangeEnforcementFilter;
 import com.floralwhisper.security.JwtAuthenticationFilter;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
@@ -27,7 +28,11 @@ public class SecurityConfig {
   }
 
   @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, ObjectMapper objectMapper)
+  SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      JwtAuthenticationFilter jwtAuthenticationFilter,
+      AdminPasswordChangeEnforcementFilter adminPasswordChangeEnforcementFilter,
+      ObjectMapper objectMapper)
       throws Exception {
     http
         .csrf(csrf -> csrf.disable())
@@ -62,7 +67,8 @@ public class SecurityConfig {
           boolean expired = Boolean.TRUE.equals(request.getAttribute(JwtAuthenticationFilter.TOKEN_EXPIRED_ATTRIBUTE));
           objectMapper.writeValue(response.getWriter(), Map.of("message", expired ? "登录状态已过期，请重新登录" : "请先登录管理后台"));
         }))
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(adminPasswordChangeEnforcementFilter, JwtAuthenticationFilter.class);
 
     return http.build();
   }

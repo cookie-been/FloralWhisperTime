@@ -30,6 +30,7 @@ import com.floralwhisper.protection.ProtectionMetrics;
 import com.floralwhisper.protection.RouteProtectionGroup;
 import com.floralwhisper.entity.AboutPage;
 import com.floralwhisper.entity.AboutTimelineEntry;
+import com.floralwhisper.entity.AdminSecurityState;
 import com.floralwhisper.entity.BrandStory;
 import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.entity.OperationLog;
@@ -40,6 +41,7 @@ import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
+import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
 import com.floralwhisper.mapper.CategoryMapper;
@@ -203,6 +205,7 @@ class SiteServiceTest {
             shopInfoMapper,
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
+            mock(AdminSecurityStateMapper.class),
             mock(AboutTimelineEntryMapper.class),
             mock(AiSettingsMapper.class),
             brandStoryMapper,
@@ -343,6 +346,12 @@ class SiteServiceTest {
     siteConfig.setLicenseWarningDays(30);
     siteConfig.setLicenseNotes("演示授权");
     when(siteConfigMapper.selectById(1L)).thenReturn(siteConfig);
+    AdminSecurityStateMapper adminSecurityStateMapper = mock(AdminSecurityStateMapper.class);
+    AdminSecurityState adminSecurityState = new AdminSecurityState();
+    adminSecurityState.setId(1L);
+    adminSecurityState.setUsername("admin");
+    adminSecurityState.setRequirePasswordChange(false);
+    when(adminSecurityStateMapper.selectById(1L)).thenReturn(adminSecurityState);
 
     DataSource dataSource = mock(DataSource.class);
     Connection connection = mock(Connection.class);
@@ -372,6 +381,7 @@ class SiteServiceTest {
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
+            adminSecurityStateMapper,
             mock(AboutTimelineEntryMapper.class),
             aiSettingsMapper,
             mock(BrandStoryMapper.class),
@@ -427,6 +437,8 @@ class SiteServiceTest {
     assertEquals(128L, response.getOperationLogCount());
     assertEquals(180, response.getOperationLogRetentionDays());
     assertEquals("2025-11-16 08:15:00", response.getOperationLogArchiveBefore());
+    assertFalse(response.isRequirePasswordChange());
+    assertTrue(response.isDeliveryInitialized());
   }
 
   @Test
@@ -441,6 +453,8 @@ class SiteServiceTest {
     when(operationLogMapper.selectOne(any())).thenReturn(null);
     SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
     when(siteConfigMapper.selectById(1L)).thenReturn(null);
+    AdminSecurityStateMapper adminSecurityStateMapper = mock(AdminSecurityStateMapper.class);
+    when(adminSecurityStateMapper.selectById(1L)).thenReturn(null);
 
     DataSource dataSource = mock(DataSource.class);
     when(dataSource.getConnection()).thenThrow(new SQLException("down"));
@@ -451,6 +465,7 @@ class SiteServiceTest {
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
+            adminSecurityStateMapper,
             mock(AboutTimelineEntryMapper.class),
             aiSettingsMapper,
             mock(BrandStoryMapper.class),
@@ -500,6 +515,8 @@ class SiteServiceTest {
     assertEquals(0L, response.getOperationLogCount());
     assertEquals(180, response.getOperationLogRetentionDays());
     assertEquals("", response.getOperationLogArchiveBefore());
+    assertTrue(response.isRequirePasswordChange());
+    assertFalse(response.isDeliveryInitialized());
   }
 
   @Test
@@ -514,6 +531,12 @@ class SiteServiceTest {
     when(operationLogMapper.selectOne(any())).thenReturn(null);
     SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
     when(siteConfigMapper.selectById(1L)).thenReturn(siteConfigForExport());
+    AdminSecurityStateMapper adminSecurityStateMapper = mock(AdminSecurityStateMapper.class);
+    AdminSecurityState adminSecurityState = new AdminSecurityState();
+    adminSecurityState.setId(1L);
+    adminSecurityState.setUsername("admin");
+    adminSecurityState.setRequirePasswordChange(false);
+    when(adminSecurityStateMapper.selectById(1L)).thenReturn(adminSecurityState);
 
     ProtectionMetrics protectionMetrics = new ProtectionMetrics();
     protectionMetrics.recordRejected(RouteProtectionGroup.PUBLIC_READ);
@@ -526,6 +549,7 @@ class SiteServiceTest {
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
+            adminSecurityStateMapper,
             mock(AboutTimelineEntryMapper.class),
             aiSettingsMapper,
             mock(BrandStoryMapper.class),
@@ -580,6 +604,7 @@ class SiteServiceTest {
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
+            mock(AdminSecurityStateMapper.class),
             mock(AboutTimelineEntryMapper.class),
             aiSettingsMapper,
             mock(BrandStoryMapper.class),
@@ -630,6 +655,7 @@ class SiteServiceTest {
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
+            mock(AdminSecurityStateMapper.class),
             mock(AboutTimelineEntryMapper.class),
             aiSettingsMapper,
             mock(BrandStoryMapper.class),
@@ -885,6 +911,7 @@ class SiteServiceTest {
         shopInfoMapper,
         shopHourMapper,
         aboutPageMapper,
+        mock(AdminSecurityStateMapper.class),
         aboutTimelineEntryMapper,
         aiSettingsMapper,
         brandStoryMapper,
@@ -921,6 +948,7 @@ class SiteServiceTest {
     context.registerBean(ShopInfoMapper.class, () -> shopInfoMapper);
     context.registerBean(ShopHourMapper.class, () -> shopHourMapper);
     context.registerBean(AboutPageMapper.class, () -> aboutPageMapper);
+    context.registerBean(AdminSecurityStateMapper.class, () -> mock(AdminSecurityStateMapper.class));
     context.registerBean(AboutTimelineEntryMapper.class, () -> aboutTimelineEntryMapper);
     context.registerBean(AiSettingsMapper.class, () -> aiSettingsMapper);
     context.registerBean(BrandStoryMapper.class, () -> brandStoryMapper);

@@ -132,6 +132,7 @@ export function AdminSystemStatus() {
     if (!status.uploadDirectoryReady) issues.push("上传目录不可写");
     if (status.aiEnabled && !status.aiKeyConfigured) issues.push("AI 已启用但密钥未配置");
     if (!status.latestBackupPresent) issues.push("尚未发现可用备份");
+    if (status.requirePasswordChange) issues.push("管理员初始密码尚未修改");
 
     if (issues.length === 0) {
       return { level: "success", title: "系统运行正常", message: "关键依赖、目录与核心配置状态均正常，可继续进行运营、部署与客户交付。" };
@@ -155,6 +156,7 @@ export function AdminSystemStatus() {
       { label: "运行时长", value: status.uptimeLabel || "未知", note: "用于判断服务是否发生过近期重启", icon: ServerCog },
       { label: "上传目录容量", value: status.uploadDirectorySize || "未知", note: status.uploadDirectoryReady ? `文件数 ${status.uploadFileCount}` : "上传目录异常", icon: HardDriveDownload },
       { label: "AI 配置", value: status.aiEnabled ? "已启用" : "未启用", note: status.aiKeyConfigured ? "密钥已配置" : "密钥未配置", icon: Sparkles },
+      { label: "交付初始化", value: status.deliveryInitialized ? "已完成" : "待完成", note: status.requirePasswordChange ? "仍需先修改管理员初始密码" : "已完成基础安全初始化", icon: KeyRound },
       { label: "最近备份", value: status.latestBackupPresent ? status.latestBackupName : "暂无", note: "用于升级前回滚和恢复", icon: KeyRound },
       { label: "操作日志", value: status.operationLogCount, note: `保留策略 ${status.operationLogRetentionDays} 天`, icon: Archive },
     ];
@@ -319,6 +321,17 @@ export function AdminSystemStatus() {
               <p className="mt-2 text-muted">到期：{formatDateTime(status.licenseExpiresAt)}</p>
               <p className="mt-2 text-muted">预警：提前 {status.licenseWarningDays || 30} 天</p>
               {status.licenseNotes ? <p className="mt-2 text-muted">备注：{status.licenseNotes}</p> : null}
+            </div>
+            <div className="admin-subpanel px-4 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-semibold text-[#1b281e]">交付初始化</p>
+                <Tag color={status.deliveryInitialized ? "green" : "gold"}>
+                  {status.deliveryInitialized ? "已完成" : "待完成"}
+                </Tag>
+              </div>
+              <p className="mt-2 text-muted">
+                {status.requirePasswordChange ? "当前仍在使用初始管理员密码，需先完成改密。" : "管理员密码已完成初始化，可继续正式运营。"}
+              </p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>

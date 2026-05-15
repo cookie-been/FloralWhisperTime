@@ -27,6 +27,7 @@ import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.dto.TimeRangeResponse;
 import com.floralwhisper.entity.AboutPage;
 import com.floralwhisper.entity.AboutTimelineEntry;
+import com.floralwhisper.entity.AdminSecurityState;
 import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.entity.BrandStory;
 import com.floralwhisper.entity.BrandStoryImage;
@@ -38,6 +39,7 @@ import com.floralwhisper.entity.SiteConfig;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
+import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
@@ -93,6 +95,7 @@ public class SiteService {
   private final ShopInfoMapper shopInfoMapper;
   private final ShopHourMapper shopHourMapper;
   private final AboutPageMapper aboutPageMapper;
+  private final AdminSecurityStateMapper adminSecurityStateMapper;
   private final AboutTimelineEntryMapper aboutTimelineEntryMapper;
   private final AiSettingsMapper aiSettingsMapper;
   private final BrandStoryMapper brandStoryMapper;
@@ -116,6 +119,7 @@ public class SiteService {
       ShopInfoMapper shopInfoMapper,
       ShopHourMapper shopHourMapper,
       AboutPageMapper aboutPageMapper,
+      AdminSecurityStateMapper adminSecurityStateMapper,
       AboutTimelineEntryMapper aboutTimelineEntryMapper,
       AiSettingsMapper aiSettingsMapper,
       BrandStoryMapper brandStoryMapper,
@@ -134,6 +138,7 @@ public class SiteService {
         shopInfoMapper,
         shopHourMapper,
         aboutPageMapper,
+        adminSecurityStateMapper,
         aboutTimelineEntryMapper,
         aiSettingsMapper,
         brandStoryMapper,
@@ -157,6 +162,7 @@ public class SiteService {
       ShopInfoMapper shopInfoMapper,
       ShopHourMapper shopHourMapper,
       AboutPageMapper aboutPageMapper,
+      AdminSecurityStateMapper adminSecurityStateMapper,
       AboutTimelineEntryMapper aboutTimelineEntryMapper,
       AiSettingsMapper aiSettingsMapper,
       BrandStoryMapper brandStoryMapper,
@@ -176,6 +182,7 @@ public class SiteService {
         shopInfoMapper,
         shopHourMapper,
         aboutPageMapper,
+        adminSecurityStateMapper,
         aboutTimelineEntryMapper,
         aiSettingsMapper,
         brandStoryMapper,
@@ -198,6 +205,7 @@ public class SiteService {
       ShopInfoMapper shopInfoMapper,
       ShopHourMapper shopHourMapper,
       AboutPageMapper aboutPageMapper,
+      AdminSecurityStateMapper adminSecurityStateMapper,
       AboutTimelineEntryMapper aboutTimelineEntryMapper,
       AiSettingsMapper aiSettingsMapper,
       BrandStoryMapper brandStoryMapper,
@@ -218,6 +226,7 @@ public class SiteService {
         shopInfoMapper,
         shopHourMapper,
         aboutPageMapper,
+        adminSecurityStateMapper,
         aboutTimelineEntryMapper,
         aiSettingsMapper,
         brandStoryMapper,
@@ -241,6 +250,7 @@ public class SiteService {
       ShopInfoMapper shopInfoMapper,
       ShopHourMapper shopHourMapper,
       AboutPageMapper aboutPageMapper,
+      AdminSecurityStateMapper adminSecurityStateMapper,
       AboutTimelineEntryMapper aboutTimelineEntryMapper,
       AiSettingsMapper aiSettingsMapper,
       BrandStoryMapper brandStoryMapper,
@@ -261,6 +271,7 @@ public class SiteService {
     this.shopInfoMapper = shopInfoMapper;
     this.shopHourMapper = shopHourMapper;
     this.aboutPageMapper = aboutPageMapper;
+    this.adminSecurityStateMapper = adminSecurityStateMapper;
     this.aboutTimelineEntryMapper = aboutTimelineEntryMapper;
     this.aiSettingsMapper = aiSettingsMapper;
     this.brandStoryMapper = brandStoryMapper;
@@ -315,6 +326,7 @@ public class SiteService {
   public SystemStatusResponse getSystemStatus() {
     SystemStatusResponse response = new SystemStatusResponse();
     AiSettings aiSettings = ensureAiSettings();
+    AdminSecurityState adminSecurityState = adminSecurityStateMapper.selectById(SINGLETON_ID);
     File uploadsDir = resolveDirectory(appProperties.getUpload().getDir(), "uploads");
     File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
     File latestBackup = resolveLatestBackup(backupsDir);
@@ -360,6 +372,8 @@ public class SiteService {
     response.setOperationLogCount(resolveOperationLogCount());
     response.setOperationLogRetentionDays(resolveOperationLogRetentionDays());
     response.setOperationLogArchiveBefore(resolveOperationLogArchiveBefore());
+    response.setRequirePasswordChange(adminSecurityState == null || Boolean.TRUE.equals(adminSecurityState.getRequirePasswordChange()));
+    response.setDeliveryInitialized(adminSecurityState != null && !Boolean.TRUE.equals(adminSecurityState.getRequirePasswordChange()));
     response.setProtection(buildProtectionSnapshot());
     return response;
   }

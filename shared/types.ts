@@ -202,7 +202,22 @@ export interface SystemStatus {
   operationLogCount: number;
   operationLogRetentionDays: number;
   operationLogArchiveBefore: string;
+  requirePasswordChange: boolean;
+  deliveryInitialized: boolean;
   protection?: ProtectionSnapshot;
+}
+
+export interface AdminSession {
+  username: string;
+  requirePasswordChange: boolean;
+}
+
+export interface AdminLoginResult extends AdminSession {
+  token: string;
+}
+
+export interface AdminPasswordChangeResult extends AdminSession {
+  changedAt: string;
 }
 
 export interface OperationLogArchiveResult {

@@ -6,6 +6,9 @@ import com.floralwhisper.dto.AboutTimelineEntryRequest;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.AiSettingsUpdateRequest;
+import com.floralwhisper.dto.AdminPasswordChangeRequest;
+import com.floralwhisper.dto.AdminPasswordChangeResponse;
+import com.floralwhisper.dto.AdminSessionResponse;
 import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.LoginRequest;
@@ -27,6 +30,7 @@ import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
 import com.floralwhisper.service.SiteService;
 import jakarta.validation.Valid;
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
@@ -80,8 +84,14 @@ public class AdminController {
   }
 
   @GetMapping("/me")
-  public Map<String, String> me() {
+  public AdminSessionResponse me() {
     return authService.currentAdmin();
+  }
+
+  @PostMapping("/change-password")
+  public AdminPasswordChangeResponse changePassword(Principal principal, @Valid @RequestBody AdminPasswordChangeRequest request) {
+    String username = principal == null ? "" : principal.getName();
+    return authService.changePassword(username, request);
   }
 
   @GetMapping("/system/status")
