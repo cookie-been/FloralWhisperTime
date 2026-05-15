@@ -34,8 +34,8 @@ export function Contact() {
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mb-10">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <div className="mb-8 sm:mb-10">
         <p className="section-eyebrow">联系咨询</p>
         <h1 className="section-title section-title-accent mt-2 text-3xl sm:text-4xl">联系我们</h1>
         <p className="mt-3 max-w-2xl leading-7 text-muted">
@@ -44,27 +44,27 @@ export function Contact() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-        <div className="surface-card p-6">
+        <div className="surface-card p-5 sm:p-6">
           <h2 className="section-title text-xl">门店信息</h2>
           <div className="mt-6 space-y-5 text-muted">
-            <p className="flex gap-3">
-              <Phone className="shrink-0 text-forest" size={20} />
-              {phone}
+            <p className="flex items-start gap-3 leading-7">
+              <Phone className="mt-1 shrink-0 text-forest" size={20} />
+              <span className="break-all">{phone}</span>
             </p>
-            <p className="flex gap-3">
-              <MessageCircle className="shrink-0 text-forest" size={20} />
-              {wechat}
+            <p className="flex items-start gap-3 leading-7">
+              <MessageCircle className="mt-1 shrink-0 text-forest" size={20} />
+              <span className="break-all">{wechat}</span>
             </p>
-            <p className="flex gap-3">
-              <MapPin className="shrink-0 text-forest" size={20} />
-              {address}
+            <p className="flex items-start gap-3 leading-7">
+              <MapPin className="mt-1 shrink-0 text-forest" size={20} />
+              <span>{address}</span>
             </p>
-            <p className="flex gap-3">
-              <Clock className="shrink-0 text-forest" size={20} />
-              {siteConfig?.businessHoursText ?? "周一至周五 09:30-21:00，周末 10:00-21:30"}
+            <p className="flex items-start gap-3 leading-7">
+              <Clock className="mt-1 shrink-0 text-forest" size={20} />
+              <span>{siteConfig?.businessHoursText ?? "周一至周五 09:30-21:00，周末 10:00-21:30"}</span>
             </p>
           </div>
-          <div className="mt-8 aspect-[4/3] overflow-hidden rounded-lg border border-forest/10 bg-mint">
+          <div className="mt-7 aspect-[4/3.2] overflow-hidden rounded-lg border border-forest/10 bg-mint sm:mt-8 sm:aspect-[4/3]">
             <iframe
               title={`${shop?.name ?? "花语时光"}地图`}
               className="h-full w-full"
@@ -73,7 +73,7 @@ export function Contact() {
           </div>
         </div>
 
-        <div className="surface-card p-6">
+        <div className="surface-card p-5 sm:p-6">
           <h2 className="section-title text-xl">预约咨询</h2>
           <Form form={form} layout="vertical" className="mt-6" onFinish={onFinish}>
             <Form.Item name="name" label="姓名" rules={[{ required: true, message: "请输入姓名" }]}>

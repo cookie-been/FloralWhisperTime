@@ -18,8 +18,8 @@ export function FlowerCard({ flower, compact = false }: FlowerCardProps) {
           loading="lazy"
         />
       </div>
-      <div className={compact ? "flex h-full flex-col p-4" : "flex h-full flex-col p-5"}>
-        <div className="flex items-start justify-between gap-3">
+      <div className={compact ? "flex h-full flex-col p-4" : "flex h-full flex-col p-4 sm:p-5"}>
+        <div className={compact ? "flex items-start justify-between gap-3" : "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"}>
           <div>
             <h3 className={compact ? "text-base font-semibold text-ink" : "text-lg font-semibold text-ink"}>{flower.name}</h3>
             <p className={compact ? "mt-1 line-clamp-2 text-sm leading-6 text-muted" : "mt-2 line-clamp-3 text-sm leading-7 text-muted"}>{flower.description}</p>

@@ -90,14 +90,14 @@ export function Gallery() {
   return (
     <section className="min-h-screen bg-[#f4f1eb]">
       <div className="border-b border-black/6 bg-[#f8f5ef]">
-        <div className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+        <div className="mx-auto w-full max-w-[1680px] px-4 py-7 sm:px-6 sm:py-10 lg:px-10">
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr] xl:items-end">
             <div>
               <p className="section-eyebrow">作品浏览</p>
               <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">作品画廊</h1>
               <p className="mt-3 max-w-2xl leading-7 text-muted">按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。</p>
             </div>
-            <div className="grid gap-4 rounded-lg border border-black/6 bg-white/72 p-4 backdrop-blur md:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="grid gap-3 rounded-lg border border-black/6 bg-white/72 p-3.5 backdrop-blur sm:gap-4 sm:p-4 md:grid-cols-[minmax(0,1fr)_220px]">
               <Select
                 className="md:hidden"
                 value={query.categoryId}
@@ -143,7 +143,7 @@ export function Gallery() {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-[1680px] px-4 py-7 sm:px-6 sm:py-8 lg:px-10">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
           <p className="text-sm font-medium text-muted">共展示 {total} 件作品，当前第 {currentPage} / {totalPages} 页</p>
           <p className="text-sm text-muted">当前排序：{query.sortBy === "featured" ? "精选优先" : query.sortBy === "latest" ? "最新作品" : query.sortBy === "price_asc" ? "价格从低到高" : "价格从高到低"}</p>
@@ -157,13 +157,13 @@ export function Gallery() {
           </div>
         ) : flowers.length > 0 ? (
           <>
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3 2xl:grid-cols-4">
               {flowers.map((flower) => (
                 <FlowerCard key={flower.id} flower={flower} />
               ))}
             </div>
-            <div className="mt-10 flex flex-col items-center gap-3">
-              <p className="text-center text-sm text-muted">本页展示 {flowers.length} 件作品，可继续翻页浏览完整画廊。</p>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10">
+              <p className="text-center text-sm leading-6 text-muted">本页展示 {flowers.length} 件作品，可继续翻页浏览完整画廊。</p>
               <Pagination
                 className="gallery-pagination"
                 size="small"
