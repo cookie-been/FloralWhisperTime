@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Form, Grid, Input, InputNumber, Switch, Tabs, Upload, message } from "antd";
+import { Button, Form, Grid, Input, InputNumber, Tabs, Upload, message } from "antd";
 import type { RcFile } from "antd/es/upload";
-import { ArrowUpRight, Building2, Image as ImageIcon, KeyRound, MapPin, Sparkles } from "lucide-react";
+import { Building2, Image as ImageIcon, MapPin, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { AdminAbout } from "@/pages/AdminAbout/AdminAbout";
-import { getAdminAiSettings, getBrandStory, getShopInfo, getSiteConfig, updateAdminAiSettings, updateSiteConfig, uploadFlowerImage } from "@/services/api";
-import type { AiSettings, BrandStory, ShopInfo, SiteConfig } from "@/types";
+import { getBrandStory, getShopInfo, getSiteConfig, updateSiteConfig, uploadFlowerImage } from "@/services/api";
+import type { BrandStory, ShopInfo, SiteConfig } from "@/types";
 
 type SettingsForm = SiteConfig & {
   phone: string;
@@ -19,8 +19,6 @@ type SettingsForm = SiteConfig & {
   storyImages: string;
 };
 
-type AiSettingsForm = AiSettings;
-
 const joinText = (items: string[]) => items.join("，");
 const splitText = (value: string) =>
   value
@@ -30,19 +28,15 @@ const splitText = (value: string) =>
 
 const sectionItems = [
   { key: "brand", label: "品牌与首页" },
-  { key: "stats", label: "首页统计" },
   { key: "contact", label: "门店与联系" },
   { key: "story", label: "品牌故事" },
-  { key: "ai", label: "AI生图配置" },
 ] as const;
 
 export function AdminSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<SettingsForm>();
-  const [aiForm] = Form.useForm<AiSettingsForm>();
   const [loading, setLoading] = useState(false);
-  const [savingAi, setSavingAi] = useState(false);
   const [booting, setBooting] = useState(true);
   const [uploadingHero, setUploadingHero] = useState(false);
   const activeTab = searchParams.get("tab") === "about" ? "about" : "site";
@@ -57,27 +51,18 @@ export function AdminSettings() {
   const storyTitle = Form.useWatch("storyTitle", form) ?? "";
   const storyContent = Form.useWatch("storyContent", form) ?? "";
   const storyImages = Form.useWatch("storyImages", form) ?? "";
-  const aiEnabled = Form.useWatch("enabled", aiForm) ?? false;
-  const aiProvider = Form.useWatch("provider", aiForm) ?? "";
-  const aiModel = Form.useWatch("model", aiForm) ?? "";
-  const aiSize = Form.useWatch("size", aiForm) ?? "";
-  const aiTextModel = Form.useWatch("textModel", aiForm) ?? "";
-  const aiKeyConfigured = Form.useWatch("apiKeyConfigured", aiForm) ?? false;
-  const aiKeyMasked = Form.useWatch("apiKeyMasked", aiForm) ?? "";
 
   const sectionRefs = {
     brand: useRef<HTMLDivElement | null>(null),
-    stats: useRef<HTMLDivElement | null>(null),
     contact: useRef<HTMLDivElement | null>(null),
     story: useRef<HTMLDivElement | null>(null),
-    ai: useRef<HTMLDivElement | null>(null),
   };
 
   const storyPreviewImages = useMemo(() => splitText(storyImages), [storyImages]);
 
   useEffect(() => {
-    Promise.all([getSiteConfig(), getShopInfo(), getBrandStory(), getAdminAiSettings()])
-      .then(([siteConfig, shopInfo, story, aiSettings]) => {
+    Promise.all([getSiteConfig(), getShopInfo(), getBrandStory()])
+      .then(([siteConfig, shopInfo, story]) => {
         form.setFieldsValue({
           ...siteConfig,
           phone: shopInfo.phone,
@@ -90,11 +75,10 @@ export function AdminSettings() {
           storyContent: story.content,
           storyImages: joinText(story.images),
         });
-        aiForm.setFieldsValue(aiSettings);
       })
       .catch((error) => message.error(error.message))
       .finally(() => setBooting(false));
-  }, [aiForm, form]);
+  }, [form]);
 
   const save = async () => {
     if (loading) return;
@@ -110,21 +94,6 @@ export function AdminSettings() {
       message.error(error instanceof Error ? error.message : "保存失败");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const saveAiSettings = async () => {
-    if (savingAi) return;
-    const values = await aiForm.validateFields();
-    setSavingAi(true);
-    try {
-      const result = await updateAdminAiSettings(values);
-      aiForm.setFieldsValue({ ...result, apiKey: "" });
-      message.success("AI 配置已保存");
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : "AI 配置保存失败");
-    } finally {
-      setSavingAi(false);
     }
   };
 
@@ -216,36 +185,6 @@ export function AdminSettings() {
         </div>
       </section>
 
-      <section ref={sectionRefs.stats} className="admin-panel p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
-          <ArrowUpRight size={16} className="text-forest" />
-          首页统计
-        </div>
-        <p className="mt-2 text-sm leading-6 text-muted">这些数字会在首页以摘要形式呈现，建议控制在 3-4 项内，内容尽量简短直观。</p>
-        <Form.List name="stats">
-          {(fields, { add, remove }) => (
-            <div className="mt-5 space-y-3">
-              {fields.map((field) => (
-                <div key={field.key} className="admin-subpanel grid gap-3 px-4 py-4 md:grid-cols-[1fr_1fr_auto]">
-                  <Form.Item {...field} name={[field.name, "value"]} label="数值" className="mb-0" rules={[{ required: true, message: "请输入数值" }]}>
-                    <Input placeholder="860+" />
-                  </Form.Item>
-                  <Form.Item {...field} name={[field.name, "label"]} label="说明" className="mb-0" rules={[{ required: true, message: "请输入说明" }]}>
-                    <Input placeholder="已服务客户" />
-                  </Form.Item>
-                  <div className="flex items-end">
-                    <Button danger onClick={() => remove(field.name)}>
-                      删除
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              <Button onClick={() => add({ value: "", label: "" })}>新增统计项</Button>
-            </div>
-          )}
-        </Form.List>
-      </section>
-
       <section ref={sectionRefs.contact} className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="admin-panel p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
@@ -334,70 +273,6 @@ export function AdminSettings() {
         </div>
       </section>
 
-      <section ref={sectionRefs.ai} className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="admin-panel p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
-            <KeyRound size={16} className="text-forest" />
-            AI生图配置
-          </div>
-          <p className="mt-2 text-sm leading-6 text-muted">在这里统一维护 AI 生图和作品信息建议能力的开关、密钥、模型与接口地址。保存后后台作品管理中的 AI 工作台会立即使用最新配置。</p>
-          <Form form={aiForm} layout="vertical">
-          <div className="mt-4 grid gap-x-4 md:grid-cols-2">
-            <Form.Item name="enabled" label="启用状态" valuePropName="checked">
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-            </Form.Item>
-            <Form.Item name="provider" label="提供商">
-              <Input placeholder="volcengine" />
-            </Form.Item>
-            <Form.Item name="model" label="模型">
-              <Input placeholder="Doubao-Seedream-5.0-lite" />
-            </Form.Item>
-            <Form.Item name="generatePath" label="生成路径">
-              <Input placeholder="/images/generations" />
-            </Form.Item>
-            <Form.Item name="size" label="图片尺寸">
-              <Input placeholder="1920x1920" />
-            </Form.Item>
-            <Form.Item name="textModel" label="文本模型">
-              <Input placeholder="doubao-1-5-pro-32k-250115" />
-            </Form.Item>
-            <Form.Item name="textGeneratePath" label="文本生成路径">
-              <Input placeholder="/chat/completions" />
-            </Form.Item>
-            <Form.Item name="textTemperature" label="文本温度">
-              <InputNumber className="w-full" min={0} max={2} step={0.1} />
-            </Form.Item>
-            <Form.Item name="textMaxTokens" label="文本最大输出">
-              <InputNumber className="w-full" min={256} max={4096} step={64} />
-            </Form.Item>
-          </div>
-          <Form.Item name="apiKey" label={aiKeyConfigured ? `API Key（已配置：${aiKeyMasked || "已脱敏"}）` : "API Key"}>
-            <Input.Password placeholder={aiKeyConfigured ? "留空则保持原密钥不变，输入新值将覆盖" : "输入新的服务密钥后保存"} visibilityToggle />
-          </Form.Item>
-          <Form.Item name="baseUrl" label="服务地址">
-            <Input placeholder="https://operator.las.cn-beijing.volces.com/api/v1" />
-          </Form.Item>
-          <Button type="primary" loading={savingAi} onClick={() => void saveAiSettings()}>
-            保存 AI 配置
-          </Button>
-          </Form>
-        </div>
-
-        <div className="space-y-6">
-          <div className="admin-panel p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">配置摘要</p>
-            <p className="mt-3 text-base font-semibold text-[#1b281e]">{aiEnabled ? "AI 生图已启用" : "AI 生图未启用"}</p>
-            <p className="mt-2 text-sm leading-6 text-muted">当前提供商：{aiProvider || "未配置"}；生图模型：{aiModel || "未配置"}；文本模型：{aiTextModel || "未配置"}；当前尺寸：{aiSize || "未配置"}。</p>
-          </div>
-          <div className="admin-panel p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">维护建议</p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-muted">
-              <p>建议按环境使用独立密钥，避免把调试密钥长期用于正式内容生产。</p>
-              <p>模型、接口地址和尺寸都支持后台动态调整，方便后续切换新版本或适配不同模型限制。</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </Form>
   );
 
@@ -407,8 +282,8 @@ export function AdminSettings() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">统一配置台</p>
-            <h3 className="admin-section-title mt-2 text-xl">内容配置工作区</h3>
-            <p className="mt-2 text-sm leading-6 text-muted">将站点配置和关于我们配置统一放在一个菜单里维护，减少切换路径，所有动态内容在同一处完成管理。</p>
+            <h3 className="admin-section-title mt-2 text-xl">站点配置工作区</h3>
+            <p className="mt-2 text-sm leading-6 text-muted">将站点配置和关于我们配置统一放在一个菜单里维护，减少切换路径，所有动态内容在同一处完成管理。首页统计不在这里维护，前台会直接读取系统真实数据。</p>
           </div>
           {activeTab === "site" ? (
             <Button type="primary" size="large" loading={loading} onClick={save} block={!screens.sm}>

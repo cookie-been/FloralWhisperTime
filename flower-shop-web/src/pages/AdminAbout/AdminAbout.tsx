@@ -409,7 +409,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
             <h3 className="admin-section-title mt-2 text-xl">{embedded ? "关于我们内容维护" : "关于页内容工作台"}</h3>
             <p className="mt-2 text-sm leading-6 text-muted">
               {embedded
-                ? "当前在内容配置菜单内维护关于页首图、标题副标题、品牌故事、发展时间轴和团队成员，保存后前台 About 页面会同步更新。"
+                ? "当前在站点配置菜单内维护关于页首图、标题副标题、品牌故事、发展时间轴和团队成员，保存后前台 About 页面会同步更新。"
                 : "统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。"}
             </p>
           </div>

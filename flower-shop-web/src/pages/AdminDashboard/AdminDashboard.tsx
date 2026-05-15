@@ -248,6 +248,9 @@ export function AdminDashboard() {
                 <Link to="/admin/settings" className="w-full sm:w-auto">
                   <Button size="large" block className="w-full sm:w-auto">编辑首页内容</Button>
                 </Link>
+                <Link to="/admin/ai-settings" className="w-full sm:w-auto">
+                  <Button size="large" block className="w-full sm:w-auto">编辑 AI 配置</Button>
+                </Link>
               </div>
             </div>
             <div className="relative min-h-[240px] bg-[#f1ece5]">
@@ -280,6 +283,13 @@ export function AdminDashboard() {
               <div>
                 <p className="text-sm font-semibold text-[#1b281e]">进入站点配置</p>
                 <p className="mt-1 text-sm text-muted">更新首页文案、联系信息与故事内容</p>
+              </div>
+              <ArrowRight size={18} className="text-forest" />
+            </Link>
+            <Link to="/admin/ai-settings" className="admin-action-card flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-[#1b281e]">进入 AI 生图配置</p>
+                <p className="mt-1 text-sm text-muted">维护生图开关、密钥、模型与接口参数</p>
               </div>
               <ArrowRight size={18} className="text-forest" />
             </Link>

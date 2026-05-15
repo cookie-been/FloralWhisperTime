@@ -125,11 +125,12 @@ export function AdminLogin() {
           </div>
         </div>
 
-        <div className="hidden gap-3 text-white/88 lg:grid lg:max-w-3xl lg:grid-cols-3">
+        <div className="hidden gap-3 text-white/88 lg:grid lg:max-w-4xl lg:grid-cols-4">
           {[
             { label: "运营总览", note: "先看状态再编辑" },
             { label: "作品工作台", note: "列表与抽屉并行操作" },
             { label: "站点配置", note: "首页与品牌内容统一维护" },
+            { label: "AI 生图配置", note: "密钥与模型参数独立维护" },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-[#efe2d3]/18 bg-[#f4ede3]/10 px-4 py-4 backdrop-blur">
               <div className="flex items-center gap-2 text-white">

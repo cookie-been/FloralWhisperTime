@@ -108,7 +108,6 @@ export interface SiteConfig {
   heroImage: string;
   primaryCtaText: string;
   secondaryCtaText: string;
-  stats: SiteStat[];
   contactIntro: string;
   businessHoursText: string;
   footerDescription: string;

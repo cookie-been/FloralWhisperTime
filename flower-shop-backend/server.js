@@ -286,11 +286,6 @@ function getDefaultSiteConfig(db) {
     heroImage: "https://picsum.photos/seed/floral-hero/1920/1080",
     primaryCtaText: "浏览作品",
     secondaryCtaText: "联系门店",
-    stats: [
-      { value: "860+", label: "已服务客户" },
-      { value: "320+", label: "花艺作品" },
-      { value: "6", label: "主题分类" },
-    ],
     contactIntro: "欢迎预约花束、婚礼花艺、商业空间花艺和节日定制服务。",
     businessHoursText: "周一至周五 09:30-21:00，周末 10:00-21:30",
     footerDescription: "纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。",
@@ -311,14 +306,6 @@ function normalizeSiteConfig(body, db) {
     heroImage: normalizeUrlValue(body.heroImage ?? current.heroImage, "首屏背景图"),
     primaryCtaText: normalizeBoundedString(body.primaryCtaText ?? current.primaryCtaText, { label: "主按钮文字", max: 40 }),
     secondaryCtaText: normalizeBoundedString(body.secondaryCtaText ?? current.secondaryCtaText, { label: "副按钮文字", max: 40 }),
-    stats: Array.isArray(body.stats)
-      ? body.stats
-          .map((item) => ({
-            value: normalizeBoundedString(item.value, { label: "统计数值", max: 20, allowEmpty: false }),
-            label: normalizeBoundedString(item.label, { label: "统计说明", max: 40, allowEmpty: false }),
-          }))
-          .filter((item) => item.value && item.label)
-      : current.stats,
     contactIntro: normalizeBoundedString(body.contactIntro ?? current.contactIntro, { label: "联系简介", max: 240 }),
     businessHoursText: normalizeBoundedString(body.businessHoursText ?? current.businessHoursText, { label: "营业时间文案", max: 120 }),
     footerDescription: normalizeBoundedString(body.footerDescription ?? current.footerDescription, { label: "页脚简介", max: 240 }),

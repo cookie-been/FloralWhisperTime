@@ -1,4 +1,4 @@
-import { BarChart3, ClipboardList, Flower2, Globe, HardDriveDownload, MessageSquareMore, Settings } from "lucide-react";
+import { BarChart3, ClipboardList, Flower2, Globe, HardDriveDownload, MessageSquareMore, Settings, Sparkles } from "lucide-react";
 
 export const adminNavItems = [
   {
@@ -18,9 +18,16 @@ export const adminNavItems = [
   {
     key: "settings",
     path: "/admin/settings",
-    label: "内容配置",
-    description: "统一维护站点首页、门店信息与关于我们",
+    label: "站点配置",
+    description: "统一维护首页、门店信息与关于我们",
     icon: Settings,
+  },
+  {
+    key: "ai-settings",
+    path: "/admin/ai-settings",
+    label: "AI 生图配置",
+    description: "维护生图开关、密钥、模型与接口参数",
+    icon: Sparkles,
   },
   {
     key: "contacts",
@@ -64,8 +71,13 @@ export const adminPageMeta = {
   },
   "/admin/settings": {
     eyebrow: "动态配置",
-    title: "内容配置",
+    title: "站点配置",
     description: "统一维护站点首页、门店信息、品牌故事与关于我们内容。",
+  },
+  "/admin/ai-settings": {
+    eyebrow: "AI 工作台",
+    title: "AI 生图配置",
+    description: "统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。",
   },
   "/admin/contacts": {
     eyebrow: "访客留言",

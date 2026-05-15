@@ -84,7 +84,7 @@ export function AdminShell() {
                   <p className="mt-1 text-xs uppercase tracking-[0.2em] text-white/52">Floral Whisper Time</p>
                 </div>
               </div>
-              <p className="mt-2 text-sm leading-6 text-white/70">从作品、首页与门店内容三个层面维护品牌展示。</p>
+              <p className="mt-2 text-sm leading-6 text-white/70">从作品、站点内容与 AI 能力三个层面维护品牌展示。</p>
             </div>
           </div>
           <AdminNav />
@@ -148,7 +148,7 @@ export function AdminShell() {
                 <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[#6d7e72]">Floral Whisper Time</p>
               </div>
             </div>
-            <p className="mt-2 text-sm leading-6 text-muted">移动端以抽屉方式浏览后台导航与操作入口。</p>
+            <p className="mt-2 text-sm leading-6 text-muted">移动端以抽屉方式浏览作品、站点、AI 和留言等后台入口。</p>
           </div>
 
           <div className="admin-mobile-nav mt-5">
