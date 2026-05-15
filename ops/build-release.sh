@@ -104,6 +104,7 @@ prepare_release_tree() {
   cp "$REPO_ROOT/docker-compose.release.yml" "$RELEASE_STAGING_DIR/"
   cp "$REPO_ROOT/.env.production.example" "$RELEASE_STAGING_DIR/"
   cp "$REPO_ROOT/release-package.INSTALL.md" "$RELEASE_STAGING_DIR/INSTALL.md"
+  cp "$REPO_ROOT/release-package.DELIVERY_CHECKLIST.md" "$RELEASE_STAGING_DIR/DELIVERY_CHECKLIST.md"
   cp \
     "$REPO_ROOT/release-check.sh" \
     "$REPO_ROOT/release-inspect.sh" \

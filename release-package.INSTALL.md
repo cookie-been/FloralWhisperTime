@@ -98,3 +98,4 @@ sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 
 - `docs/release-package-deployment.md`
 - `RELEASE_NOTES.md`
+- `DELIVERY_CHECKLIST.md`

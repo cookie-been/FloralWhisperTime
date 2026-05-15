@@ -87,6 +87,7 @@
 - 发布包与包内文件校验脚本
 - 服务器端安装、升级、回滚、状态脚本
 - `RELEASE_NOTES.md` 版本说明
+- `DELIVERY_CHECKLIST.md` 交付清单
 - `.env.production.example`
 - `RELEASE_INFO`
 

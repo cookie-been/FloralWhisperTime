@@ -66,6 +66,7 @@ floralwhispertime-release-<release-id>/
   .env.production.example
   RELEASE_INFO
   RELEASE_NOTES.md
+  DELIVERY_CHECKLIST.md
   CHECKSUMS.sha256
   release-check.sh
   release-inspect.sh
