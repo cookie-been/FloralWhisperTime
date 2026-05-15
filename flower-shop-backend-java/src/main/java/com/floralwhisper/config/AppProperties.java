@@ -16,6 +16,7 @@ public class AppProperties {
   private Cors cors = new Cors();
   private Import importer = new Import();
   private Runtime runtime = new Runtime();
+  private ConcurrencyProtectionProperties protection = new ConcurrencyProtectionProperties();
 
   @Data
   public static class Admin {

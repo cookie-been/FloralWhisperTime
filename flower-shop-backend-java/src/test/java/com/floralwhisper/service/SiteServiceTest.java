@@ -64,6 +64,14 @@ class SiteServiceTest {
   Path tempDir;
 
   @Test
+  void protectionDefaultsExposeExpectedThresholds() {
+    AppProperties properties = new AppProperties();
+
+    assertEquals(60, properties.getProtection().getPublicRead().getCapacity());
+    assertEquals(2, properties.getProtection().getHeavy().getAiConcurrent());
+  }
+
+  @Test
   void updateSiteConfigNoLongerWritesLegacyStatsTable() {
     SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
     ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
