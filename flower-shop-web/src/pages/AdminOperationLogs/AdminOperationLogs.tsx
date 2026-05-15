@@ -105,6 +105,75 @@ function formatRangeBoundary(value?: string, mode: "start" | "end" = "start") {
   return date.toISOString().slice(0, 19);
 }
 
+function formatDiffValue(value: unknown) {
+  if (value === undefined) return "未提供";
+  if (value === null) return "null";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return JSON.stringify(value, null, 2);
+}
+
+function flattenSnapshot(value: unknown, prefix = "", result: Map<string, string> = new Map()) {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      flattenSnapshot(item, `${prefix}[${index}]`, result);
+    });
+    if (!value.length && prefix) result.set(prefix, "[]");
+    return result;
+  }
+
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (!entries.length && prefix) result.set(prefix, "{}");
+    entries.forEach(([key, item]) => {
+      const nextKey = prefix ? `${prefix}.${key}` : key;
+      flattenSnapshot(item, nextKey, result);
+    });
+    return result;
+  }
+
+  if (prefix) {
+    result.set(prefix, formatDiffValue(value));
+  }
+  return result;
+}
+
+function buildSnapshotDiff(beforeSnapshot?: string, afterSnapshot?: string) {
+  if (!beforeSnapshot && !afterSnapshot) {
+    return { changes: [], error: "当前日志没有可对比的结构化快照。" };
+  }
+
+  try {
+    const beforeParsed = beforeSnapshot ? JSON.parse(beforeSnapshot) : undefined;
+    const afterParsed = afterSnapshot ? JSON.parse(afterSnapshot) : undefined;
+    const beforeMap = flattenSnapshot(beforeParsed);
+    const afterMap = flattenSnapshot(afterParsed);
+    const keys = Array.from(new Set([...beforeMap.keys(), ...afterMap.keys()])).sort();
+    const changes = keys
+      .map((path) => {
+        const before = beforeMap.get(path) ?? "未提供";
+        const after = afterMap.get(path) ?? "未提供";
+        return {
+          path,
+          before,
+          after,
+          status: before === "未提供" ? "added" : after === "未提供" ? "removed" : before === after ? "same" : "changed",
+        };
+      })
+      .filter((item) => item.status !== "same");
+
+    return {
+      changes,
+      error: changes.length ? "" : "当前日志的前后快照没有结构化字段差异。",
+    };
+  } catch {
+    return {
+      changes: [],
+      error: "当前快照不是标准 JSON，无法自动生成差异对比。",
+    };
+  }
+}
+
 export function AdminOperationLogs() {
   const screens = Grid.useBreakpoint();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -118,6 +187,7 @@ export function AdminOperationLogs() {
   const [pageSize, setPageSize] = useState(10);
   const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
   const [module, setModule] = useState<string | undefined>(searchParams.get("module") ?? undefined);
+  const [operatorName, setOperatorName] = useState(searchParams.get("operatorName") ?? "");
   const initialSuccess = searchParams.get("success");
   const initialAction = searchParams.get("action");
   const initialRestorable = searchParams.get("restorable");
@@ -138,6 +208,7 @@ export function AdminOperationLogs() {
     nextPageSize = pageSize,
     nextKeyword = keyword,
     nextModule = module,
+    nextOperatorName = operatorName,
     nextSuccess = success,
     nextAction = action,
     nextRestorable = restorable,
@@ -151,6 +222,7 @@ export function AdminOperationLogs() {
         limit: nextPageSize,
         keyword: nextKeyword.trim() || undefined,
         module: nextModule || undefined,
+        operatorName: nextOperatorName.trim() || undefined,
         action: nextAction || undefined,
         success: nextSuccess === "all" ? undefined : nextSuccess === "true",
         restorable: nextRestorable,
@@ -169,20 +241,21 @@ export function AdminOperationLogs() {
   };
 
   useEffect(() => {
-    void load(1, 10, keyword, module, success, action, restorable, createdFrom, createdTo);
+    void load(1, 10, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo);
   }, []);
 
   useEffect(() => {
     const next = new URLSearchParams();
     if (keyword.trim()) next.set("keyword", keyword.trim());
     if (module) next.set("module", module);
+    if (operatorName.trim()) next.set("operatorName", operatorName.trim());
     if (success !== "all") next.set("success", success);
     if (action) next.set("action", action);
     if (restorable !== undefined) next.set("restorable", String(restorable));
     if (createdFrom) next.set("createdFrom", createdFrom);
     if (createdTo) next.set("createdTo", createdTo);
     setSearchParams(next, { replace: true });
-  }, [action, createdFrom, createdTo, keyword, module, restorable, setSearchParams, success]);
+  }, [action, createdFrom, createdTo, keyword, module, operatorName, restorable, setSearchParams, success]);
 
   const currentQuickView = useMemo<QuickView>(() => {
     if (action === "RESTORE") return "restore";
@@ -218,6 +291,7 @@ export function AdminOperationLogs() {
     const parts: string[] = [];
     if (keyword.trim()) parts.push(`关键词“${keyword.trim()}”`);
     if (module) parts.push(formatModule(module));
+    if (operatorName.trim()) parts.push(`操作人 ${operatorName.trim()}`);
     if (action) parts.push(`动作 ${formatAction(action)}`);
     if (success === "true") parts.push("仅成功");
     if (success === "false") parts.push("仅失败");
@@ -225,9 +299,22 @@ export function AdminOperationLogs() {
     if (restorable === false) parts.push("仅不可恢复");
     if (createdFrom || createdTo) parts.push(`时间 ${createdFrom || "开始"} 至 ${createdTo || "结束"}`);
     return parts;
-  }, [action, createdFrom, createdTo, keyword, module, restorable, success]);
+  }, [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success]);
 
-  const hasActiveFilters = Boolean(keyword.trim()) || Boolean(module) || Boolean(action) || success !== "all" || restorable !== undefined || Boolean(createdFrom) || Boolean(createdTo);
+  const hasActiveFilters =
+    Boolean(keyword.trim()) ||
+    Boolean(module) ||
+    Boolean(operatorName.trim()) ||
+    Boolean(action) ||
+    success !== "all" ||
+    restorable !== undefined ||
+    Boolean(createdFrom) ||
+    Boolean(createdTo);
+
+  const snapshotDiff = useMemo(
+    () => buildSnapshotDiff(activeDetail?.beforeSnapshot, activeDetail?.afterSnapshot),
+    [activeDetail?.afterSnapshot, activeDetail?.beforeSnapshot],
+  );
 
   const openDetail = async (id: number) => {
     setDrawerOpen(true);
@@ -248,7 +335,7 @@ export function AdminOperationLogs() {
       const detail = await restoreAdminOperationLog(id, "后台人工确认恢复");
       message.success("已按日志快照恢复数据");
       setActiveDetail(detail);
-      await load(page, pageSize, keyword, module, success, action, restorable, createdFrom, createdTo);
+      await load(page, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "恢复失败");
     } finally {
@@ -261,38 +348,39 @@ export function AdminOperationLogs() {
       setSuccess("all");
       setAction(undefined);
       setRestorable(undefined);
-      void load(1, pageSize, keyword, module, "all", undefined, undefined, createdFrom, createdTo);
+      void load(1, pageSize, keyword, module, operatorName, "all", undefined, undefined, createdFrom, createdTo);
       return;
     }
     if (view === "failed") {
       setSuccess("false");
       setAction(undefined);
       setRestorable(undefined);
-      void load(1, pageSize, keyword, module, "false", undefined, undefined, createdFrom, createdTo);
+      void load(1, pageSize, keyword, module, operatorName, "false", undefined, undefined, createdFrom, createdTo);
       return;
     }
     if (view === "restorable") {
       setSuccess("all");
       setAction(undefined);
       setRestorable(true);
-      void load(1, pageSize, keyword, module, "all", undefined, true, createdFrom, createdTo);
+      void load(1, pageSize, keyword, module, operatorName, "all", undefined, true, createdFrom, createdTo);
       return;
     }
     setSuccess("all");
     setAction("RESTORE");
     setRestorable(undefined);
-    void load(1, pageSize, keyword, module, "all", "RESTORE", undefined, createdFrom, createdTo);
+    void load(1, pageSize, keyword, module, operatorName, "all", "RESTORE", undefined, createdFrom, createdTo);
   };
 
   const resetFilters = () => {
     setKeyword("");
     setModule(undefined);
+    setOperatorName("");
     setSuccess("all");
     setAction(undefined);
     setRestorable(undefined);
     setCreatedFrom("");
     setCreatedTo("");
-    void load(1, pageSize, "", undefined, "all", undefined, undefined, "", "");
+    void load(1, pageSize, "", undefined, "", "all", undefined, undefined, "", "");
   };
 
   const handleExport = async () => {
@@ -300,6 +388,7 @@ export function AdminOperationLogs() {
       await downloadAdminOperationLogs({
         keyword: keyword.trim() || undefined,
         module: module || undefined,
+        operatorName: operatorName.trim() || undefined,
         action: action || undefined,
         success: success === "all" ? undefined : success === "true",
         restorable,
@@ -449,12 +538,12 @@ export function AdminOperationLogs() {
             恢复记录
           </Button>
         </div>
-        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1.1fr)_180px_180px_180px_150px_150px_auto_auto]">
+        <div className="admin-filter-grid lg:grid-cols-[minmax(0,1fr)_180px_160px_180px_180px_150px_150px_auto_auto]">
           <Input
             allowClear
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
-            onPressEnter={() => void load(1, pageSize, keyword, module, success, action, restorable, createdFrom, createdTo)}
+            onPressEnter={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
             placeholder="按目标 ID、错误信息或请求摘要搜索"
             prefix={<Search size={16} className="text-muted" />}
           />
@@ -472,6 +561,12 @@ export function AdminOperationLogs() {
               { label: "团队成员", value: "TEAM" },
               { label: "AI 配置", value: "AI" },
             ]}
+          />
+          <Input
+            allowClear
+            value={operatorName}
+            onChange={(event) => setOperatorName(event.target.value)}
+            placeholder="筛选操作人"
           />
           <Select
             allowClear
@@ -511,7 +606,7 @@ export function AdminOperationLogs() {
           <Button
             type="primary"
             icon={<RefreshCw size={16} />}
-            onClick={() => void load(1, pageSize, keyword, module, success, action, restorable, createdFrom, createdTo)}
+            onClick={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
           >
             刷新日志
           </Button>
@@ -580,7 +675,7 @@ export function AdminOperationLogs() {
             size: screens.sm ? undefined : "small",
             pageSizeOptions: ["10", "20", "50"],
             showTotal: (total) => `共 ${total} 条日志`,
-            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, success, action, restorable, createdFrom, createdTo),
+            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo),
           }}
           onRow={(record) => ({
             onClick: (event) => {
@@ -710,6 +805,46 @@ export function AdminOperationLogs() {
                 />
               </div>
               <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-lg bg-white px-4 py-4 text-xs leading-6 text-[#33463a]">{activeDetail.afterSnapshot || "暂无"}</pre>
+            </div>
+
+            <div className="admin-subpanel px-4 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">字段差异</p>
+                  <p className="admin-cell-note mt-2">自动比对前后快照的结构化字段，便于快速确认本次改动范围。</p>
+                </div>
+                {snapshotDiff.changes.length ? (
+                  <Tag color="green">{snapshotDiff.changes.length} 项变更</Tag>
+                ) : null}
+              </div>
+              {snapshotDiff.changes.length ? (
+                <div className="admin-diff-list mt-4">
+                  {snapshotDiff.changes.map((item) => (
+                    <div key={`${item.path}-${item.status}`} className="admin-diff-item">
+                      <div className="admin-diff-item-head">
+                        <p>{item.path}</p>
+                        <Tag color={item.status === "added" ? "success" : item.status === "removed" ? "error" : "gold"}>
+                          {item.status === "added" ? "新增" : item.status === "removed" ? "移除" : "变更"}
+                        </Tag>
+                      </div>
+                      <div className="admin-diff-item-grid">
+                        <div>
+                          <span>变更前</span>
+                          <pre>{item.before}</pre>
+                        </div>
+                        <div>
+                          <span>变更后</span>
+                          <pre>{item.after}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="admin-empty-inline mt-4">
+                  <p>{snapshotDiff.error}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
