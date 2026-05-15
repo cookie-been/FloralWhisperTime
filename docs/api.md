@@ -182,7 +182,6 @@ Authorization: Bearer <token>
 说明：
 
 - 公开 `GET /api/site-config` 不再返回 AI 配置
-- 公开 `GET /api/site-config` 不返回授权客户、授权编号、授权类型、到期时间、预警天数、备注
 - AI 配置仅允许管理员通过后台专用接口读取和修改
 
 ### 4.7 门店信息
@@ -391,10 +390,6 @@ Authorization: Bearer <token>
 - `latestBackupModifiedAt`：最近备份目录最后更新时间
 - `latestBackupDownloadUrl`：最近备份下载接口地址
 - `latestBackupPresent`：是否发现备份目录
-- `licenseCustomerName` / `licenseCode` / `licenseType` / `licenseExpiresAt` / `licenseWarningDays` / `licenseNotes`：后台授权信息
-- `licenseStatus`：`active`、`expiring`、`expired`、`missing`
-- `licenseStatusLabel`：授权状态中文描述
-
 ## 5.4 配置导出
 
 #### `GET /api/admin/system/config-export`
@@ -452,14 +447,7 @@ Authorization: Bearer <token>
 
 #### `GET /api/admin/site-config`
 
-管理员读取完整站点配置，除公开站点配置字段外，额外返回：
-
-- `licenseCustomerName`
-- `licenseCode`
-- `licenseType`
-- `licenseExpiresAt`
-- `licenseWarningDays`
-- `licenseNotes`
+管理员读取完整站点配置，用于维护首页首屏、门店信息、品牌故事、关于我们和后台展示文案等动态内容。
 
 #### `GET /api/admin/system/backups/latest/download`
 

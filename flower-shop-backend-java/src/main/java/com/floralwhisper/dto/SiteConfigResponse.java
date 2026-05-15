@@ -79,10 +79,4 @@ public class SiteConfigResponse {
   private String adminOperationLogsEyebrow;
   private String adminOperationLogsTitle;
   private String adminOperationLogsDescription;
-  private String licenseCustomerName;
-  private String licenseCode;
-  private String licenseType;
-  private LocalDateTime licenseExpiresAt;
-  private Integer licenseWarningDays;
-  private String licenseNotes;
 }

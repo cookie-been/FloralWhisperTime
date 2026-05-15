@@ -298,12 +298,6 @@ class SiteServiceTest {
     siteConfig.setAdminOperationLogsEyebrow("审计恢复");
     siteConfig.setAdminOperationLogsTitle("操作日志");
     siteConfig.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
-    siteConfig.setLicenseCustomerName("演示客户");
-    siteConfig.setLicenseCode("FWT-DEMO-001");
-    siteConfig.setLicenseType("正式版");
-    siteConfig.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
-    siteConfig.setLicenseWarningDays(30);
-    siteConfig.setLicenseNotes("演示授权");
     when(siteConfigMapper.selectById(1L)).thenReturn(siteConfig);
 
     ShopInfo shopInfo = new ShopInfo();
@@ -539,7 +533,6 @@ class SiteServiceTest {
     legacyConfig.setHeroSlidesJson(null);
     legacyConfig.setAdminLoginSlidesJson(null);
     legacyConfig.setContactImagesJson(null);
-    legacyConfig.setLicenseWarningDays(null);
     when(siteConfigMapper.selectById(1L)).thenReturn(legacyConfig);
 
     SiteService siteService = createSiteService(
@@ -575,7 +568,6 @@ class SiteServiceTest {
     assertEquals("咨询花艺", response.getConsultButtonText());
     assertEquals("运营总览", response.getAdminDashboardTitle());
     assertEquals("操作日志", response.getAdminOperationLogsTitle());
-    assertEquals(30, adminResponse.getLicenseWarningDays());
     verify(siteConfigMapper, times(1)).updateById(legacyConfig);
   }
 
@@ -600,12 +592,6 @@ class SiteServiceTest {
     siteConfig.setId(1L);
     siteConfig.setBrandName("花语时光");
     siteConfig.setHeroTitle("花语时光");
-    siteConfig.setLicenseCustomerName("演示客户");
-    siteConfig.setLicenseCode("FWT-DEMO-001");
-    siteConfig.setLicenseType("正式版");
-    siteConfig.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
-    siteConfig.setLicenseWarningDays(30);
-    siteConfig.setLicenseNotes("演示授权");
     when(siteConfigMapper.selectById(1L)).thenReturn(siteConfig);
     AdminSecurityStateMapper adminSecurityStateMapper = mock(AdminSecurityStateMapper.class);
     AdminSecurityState adminSecurityState = new AdminSecurityState();
@@ -667,14 +653,6 @@ class SiteServiceTest {
     assertEquals("abc123def456", response.getGitRevision());
     assertEquals("2026-05-15 08:00:00", response.getBuildTime());
     assertEquals("2026-05-15 09:30:00", response.getDeployedAt());
-    assertEquals("演示客户", response.getLicenseCustomerName());
-    assertEquals("FWT-DEMO-001", response.getLicenseCode());
-    assertEquals("正式版", response.getLicenseType());
-    assertEquals("2026-06-01 00:00:00", response.getLicenseExpiresAt());
-    assertEquals(30, response.getLicenseWarningDays());
-    assertEquals("演示授权", response.getLicenseNotes());
-    assertEquals("expiring", response.getLicenseStatus());
-    assertEquals("授权将在 30 天内到期", response.getLicenseStatusLabel());
     assertTrue(response.isDatabaseConnected());
     assertEquals("8.0.36", response.getDatabaseVersion());
     assertEquals("128.50 MB", response.getDatabaseSize());
@@ -758,14 +736,6 @@ class SiteServiceTest {
     assertEquals("dev", response.getGitRevision());
     assertEquals("", response.getBuildTime());
     assertEquals("", response.getDeployedAt());
-    assertEquals("", response.getLicenseCustomerName());
-    assertEquals("", response.getLicenseCode());
-    assertEquals("", response.getLicenseType());
-    assertEquals("", response.getLicenseExpiresAt());
-    assertEquals(30, response.getLicenseWarningDays());
-    assertEquals("", response.getLicenseNotes());
-    assertEquals("missing", response.getLicenseStatus());
-    assertEquals("未配置授权信息", response.getLicenseStatusLabel());
     assertEquals("", response.getDatabaseVersion());
     assertEquals("", response.getDatabaseSize());
     assertEquals("", response.getDiskTotal());
@@ -1148,13 +1118,7 @@ class SiteServiceTest {
             "secondaryCtaText": "联系顾问",
             "contactIntro": "欢迎咨询商业部署",
             "businessHoursText": "每天 09:00-22:00",
-            "footerDescription": "商业交付示例",
-            "licenseCustomerName": "商业客户",
-            "licenseCode": "FWT-BIZ-001",
-            "licenseType": "商业授权",
-            "licenseExpiresAt": "2027-05-15T00:00:00",
-            "licenseWarningDays": 45,
-            "licenseNotes": "需年度巡检"
+            "footerDescription": "商业交付示例"
           },
           "shopInfo": {
             "name": "花语时光 Pro",
@@ -1381,12 +1345,6 @@ class SiteServiceTest {
     config.setContactPageTitle("联系我们");
     config.setContactPageSubmitText("提交留言");
     config.setConsultButtonText("咨询花艺");
-    config.setLicenseCustomerName("演示客户");
-    config.setLicenseCode("FWT-DEMO-001");
-    config.setLicenseType("正式版");
-    config.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
-    config.setLicenseWarningDays(30);
-    config.setLicenseNotes("演示授权");
     return config;
   }
 

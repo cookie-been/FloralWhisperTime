@@ -197,12 +197,6 @@ export interface SiteConfig {
   contactIntro: string;
   businessHoursText: string;
   footerDescription: string;
-  licenseCustomerName?: string;
-  licenseCode?: string;
-  licenseType?: string;
-  licenseExpiresAt?: string;
-  licenseWarningDays?: number;
-  licenseNotes?: string;
 }
 
 export interface TeamMember {
@@ -243,14 +237,6 @@ export interface SystemStatus {
   gitRevision: string;
   buildTime: string;
   deployedAt: string;
-  licenseCustomerName: string;
-  licenseCode: string;
-  licenseType: string;
-  licenseExpiresAt: string;
-  licenseWarningDays: number;
-  licenseNotes: string;
-  licenseStatus: "active" | "expiring" | "expired" | "missing" | string;
-  licenseStatusLabel: string;
   databaseConnected: boolean;
   databaseVersion: string;
   databaseSize: string;

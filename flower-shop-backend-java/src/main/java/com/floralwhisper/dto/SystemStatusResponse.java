@@ -22,14 +22,6 @@ public class SystemStatusResponse {
   private String gitRevision;
   private String buildTime;
   private String deployedAt;
-  private String licenseCustomerName;
-  private String licenseCode;
-  private String licenseType;
-  private String licenseExpiresAt;
-  private int licenseWarningDays;
-  private String licenseNotes;
-  private String licenseStatus;
-  private String licenseStatusLabel;
   private boolean databaseConnected;
   private String databaseVersion;
   private String databaseSize;

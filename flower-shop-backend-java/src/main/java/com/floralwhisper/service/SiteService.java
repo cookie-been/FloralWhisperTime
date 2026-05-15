@@ -390,15 +390,7 @@ public class SiteService {
   }
 
   public SiteConfigResponse getAdminSiteConfig() {
-    SiteConfigResponse response = getSiteConfig();
-    SiteConfig config = ensureSiteConfig();
-    response.setLicenseCustomerName(config.getLicenseCustomerName());
-    response.setLicenseCode(config.getLicenseCode());
-    response.setLicenseType(config.getLicenseType());
-    response.setLicenseExpiresAt(config.getLicenseExpiresAt());
-    response.setLicenseWarningDays(resolveLicenseWarningDays(config));
-    response.setLicenseNotes(config.getLicenseNotes());
-    return response;
+    return getSiteConfig();
   }
 
   public AiSettingsResponse getAdminAiSettings() {
@@ -413,8 +405,7 @@ public class SiteService {
     File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
     File latestBackup = resolveLatestBackup(backupsDir);
     DatabaseStatus databaseStatus = inspectDatabaseStatus();
-    SiteConfig config = ensureSiteConfig();
-    LicenseStatus licenseStatus = resolveLicenseStatus(config);
+    ensureSiteConfig();
 
     response.setService(resolveServiceName());
     response.setVersion(resolveVersion());
@@ -422,14 +413,6 @@ public class SiteService {
     response.setGitRevision(resolveGitRevision());
     response.setBuildTime(resolveBuildTime());
     response.setDeployedAt(resolveDeployedAt());
-    response.setLicenseCustomerName(nullToEmpty(config.getLicenseCustomerName()));
-    response.setLicenseCode(nullToEmpty(config.getLicenseCode()));
-    response.setLicenseType(nullToEmpty(config.getLicenseType()));
-    response.setLicenseExpiresAt(formatDateTime(config.getLicenseExpiresAt()));
-    response.setLicenseWarningDays(resolveLicenseWarningDays(config));
-    response.setLicenseNotes(nullToEmpty(config.getLicenseNotes()));
-    response.setLicenseStatus(licenseStatus.code());
-    response.setLicenseStatusLabel(licenseStatus.label());
     response.setDatabaseConnected(databaseStatus.connected());
     response.setDatabaseVersion(databaseStatus.version());
     response.setDatabaseSize(databaseStatus.size());
@@ -946,12 +929,6 @@ public class SiteService {
     config.setAdminOperationLogsEyebrow(text(request.getAdminOperationLogsEyebrow(), config.getAdminOperationLogsEyebrow()));
     config.setAdminOperationLogsTitle(text(request.getAdminOperationLogsTitle(), config.getAdminOperationLogsTitle()));
     config.setAdminOperationLogsDescription(text(request.getAdminOperationLogsDescription(), config.getAdminOperationLogsDescription()));
-    config.setLicenseCustomerName(text(request.getLicenseCustomerName(), config.getLicenseCustomerName()));
-    config.setLicenseCode(text(request.getLicenseCode(), config.getLicenseCode()));
-    config.setLicenseType(text(request.getLicenseType(), config.getLicenseType()));
-    config.setLicenseExpiresAt(request.getLicenseExpiresAt() != null ? request.getLicenseExpiresAt() : config.getLicenseExpiresAt());
-    config.setLicenseWarningDays(request.getLicenseWarningDays() != null ? request.getLicenseWarningDays() : resolveLicenseWarningDays(config));
-    config.setLicenseNotes(text(request.getLicenseNotes(), config.getLicenseNotes()));
     siteConfigMapper.updateById(config);
 
     ShopInfo shopInfo = ensureShopInfo();
@@ -1282,12 +1259,6 @@ public class SiteService {
       current.setAdminOperationLogsEyebrow(text(source.getAdminOperationLogsEyebrow(), current.getAdminOperationLogsEyebrow()));
       current.setAdminOperationLogsTitle(text(source.getAdminOperationLogsTitle(), current.getAdminOperationLogsTitle()));
       current.setAdminOperationLogsDescription(text(source.getAdminOperationLogsDescription(), current.getAdminOperationLogsDescription()));
-      current.setLicenseCustomerName(text(source.getLicenseCustomerName(), current.getLicenseCustomerName()));
-      current.setLicenseCode(text(source.getLicenseCode(), current.getLicenseCode()));
-      current.setLicenseType(text(source.getLicenseType(), current.getLicenseType()));
-      current.setLicenseExpiresAt(source.getLicenseExpiresAt() == null ? current.getLicenseExpiresAt() : source.getLicenseExpiresAt());
-      current.setLicenseWarningDays(source.getLicenseWarningDays() == null ? current.getLicenseWarningDays() : source.getLicenseWarningDays());
-      current.setLicenseNotes(text(source.getLicenseNotes(), current.getLicenseNotes()));
       siteConfigMapper.updateById(current);
     }
 
@@ -1817,10 +1788,6 @@ public class SiteService {
         current.setContactImagesJson("[]");
         dirty = true;
       }
-      if (current.getLicenseWarningDays() == null || current.getLicenseWarningDays() <= 0) {
-        current.setLicenseWarningDays(30);
-        dirty = true;
-      }
       if (dirty) {
         siteConfigMapper.updateById(current);
       }
@@ -1902,7 +1869,6 @@ public class SiteService {
     created.setAdminOperationLogsEyebrow("审计恢复");
     created.setAdminOperationLogsTitle("操作日志");
     created.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
-    created.setLicenseWarningDays(30);
     siteConfigMapper.insert(created);
     return created;
   }
@@ -1932,34 +1898,6 @@ public class SiteService {
     } catch (Exception exception) {
       throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "站点媒体配置保存失败");
     }
-  }
-
-  private int resolveLicenseWarningDays(SiteConfig config) {
-    if (config != null && config.getLicenseWarningDays() != null && config.getLicenseWarningDays() > 0) {
-      return config.getLicenseWarningDays();
-    }
-    return 30;
-  }
-
-  private LicenseStatus resolveLicenseStatus(SiteConfig config) {
-    if (config == null
-        || !notBlank(config.getLicenseCustomerName())
-        || !notBlank(config.getLicenseCode())
-        || config.getLicenseExpiresAt() == null) {
-      return new LicenseStatus("missing", "未配置授权信息");
-    }
-
-    LocalDateTime now = LocalDateTime.ofInstant(Instant.now(clock), zoneId == null ? ZoneId.systemDefault() : zoneId);
-    if (config.getLicenseExpiresAt().isBefore(now)) {
-      return new LicenseStatus("expired", "授权已到期");
-    }
-
-    long daysUntilExpiry = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), config.getLicenseExpiresAt().toLocalDate());
-    if (daysUntilExpiry <= resolveLicenseWarningDays(config)) {
-      return new LicenseStatus("expiring", "授权将在 " + resolveLicenseWarningDays(config) + " 天内到期");
-    }
-
-    return new LicenseStatus("active", "授权有效");
   }
 
   private String formatDateTime(LocalDateTime value) {

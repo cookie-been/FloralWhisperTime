@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Button, DatePicker, Form, Grid, Input, InputNumber, Spin, Tabs, Upload, message } from "antd";
+import { Button, Form, Grid, Input, InputNumber, Spin, Tabs, Upload, message } from "antd";
 import type { RcFile } from "antd/es/upload";
-import { Building2, Image as ImageIcon, KeyRound, MapPin, Sparkles } from "lucide-react";
+import { Building2, Image as ImageIcon, MapPin, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { getAdminSiteConfig, getBrandStory, getShopInfo, updateSiteConfig, uploadFlowerImage } from "@/services/api";
 import type { BrandStory, ShopInfo, SiteConfig } from "@/types";
@@ -11,7 +11,7 @@ const AdminAboutLazy = lazy(() =>
   import("@/pages/AdminAbout/AdminAbout").then((module) => ({ default: module.AdminAbout })),
 );
 
-type SettingsForm = Omit<SiteConfig, "licenseExpiresAt"> & {
+type SettingsForm = SiteConfig & {
   phone: string;
   wechat: string;
   address: string;
@@ -24,7 +24,6 @@ type SettingsForm = Omit<SiteConfig, "licenseExpiresAt"> & {
   heroSlidesText: string;
   adminLoginSlidesText: string;
   contactImagesText: string;
-  licenseExpiresAt?: dayjs.Dayjs;
 };
 
 const joinText = (items: string[]) => items.join("，");
@@ -34,11 +33,10 @@ const splitText = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const sectionItems = [
+const siteSectionItems = [
   { key: "brand", label: "品牌与首页" },
   { key: "contact", label: "门店与联系" },
   { key: "story", label: "品牌故事" },
-  { key: "license", label: "授权信息" },
 ] as const;
 
 export function AdminSettings() {
@@ -49,6 +47,10 @@ export function AdminSettings() {
   const [booting, setBooting] = useState(true);
   const [uploadingHero, setUploadingHero] = useState(false);
   const activeTab = searchParams.get("tab") === "about" ? "about" : "site";
+  const activeSiteSection = useMemo<string>(() => {
+    const section = searchParams.get("section");
+    return section && siteSectionItems.some((item) => item.key === section) ? section : "brand";
+  }, [searchParams]);
 
   const brandName = Form.useWatch("brandName", form) ?? "";
   const heroEyebrow = Form.useWatch("heroEyebrow", form) ?? "";
@@ -123,19 +125,6 @@ export function AdminSettings() {
   const heroSlidesText = Form.useWatch("heroSlidesText", form) ?? "";
   const adminLoginSlidesText = Form.useWatch("adminLoginSlidesText", form) ?? "";
   const contactImagesText = Form.useWatch("contactImagesText", form) ?? "";
-  const licenseCustomerName = Form.useWatch("licenseCustomerName", form) ?? "";
-  const licenseCode = Form.useWatch("licenseCode", form) ?? "";
-  const licenseType = Form.useWatch("licenseType", form) ?? "";
-  const licenseWarningDays = Form.useWatch("licenseWarningDays", form) ?? 30;
-  const licenseExpiresAt = Form.useWatch("licenseExpiresAt", form);
-
-  const sectionRefs = {
-    brand: useRef<HTMLDivElement | null>(null),
-    contact: useRef<HTMLDivElement | null>(null),
-    story: useRef<HTMLDivElement | null>(null),
-    license: useRef<HTMLDivElement | null>(null),
-  };
-
   const storyPreviewImages = useMemo(() => splitText(storyImages), [storyImages]);
   const heroPreviewSlides = useMemo(() => splitText(heroSlidesText), [heroSlidesText]);
   const adminLoginPreviewSlides = useMemo(() => splitText(adminLoginSlidesText), [adminLoginSlidesText]);
@@ -146,7 +135,6 @@ export function AdminSettings() {
       .then(([siteConfig, shopInfo, story]) => {
         form.setFieldsValue({
           ...siteConfig,
-          licenseExpiresAt: siteConfig.licenseExpiresAt ? dayjs(siteConfig.licenseExpiresAt) : undefined,
           phone: shopInfo.phone,
           wechat: shopInfo.wechat ?? "",
           address: shopInfo.address,
@@ -172,7 +160,6 @@ export function AdminSettings() {
     try {
       await updateSiteConfig({
         ...values,
-        licenseExpiresAt: values.licenseExpiresAt ? values.licenseExpiresAt.format("YYYY-MM-DDTHH:mm:ss") : undefined,
         storyImages: splitText(values.storyImages),
         heroSlides: splitText(values.heroSlidesText),
         adminLoginSlides: splitText(values.adminLoginSlidesText),
@@ -184,10 +171,6 @@ export function AdminSettings() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const scrollToSection = (key: keyof typeof sectionRefs) => {
-    sectionRefs[key].current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleHeroUpload = async (file: RcFile) => {
@@ -216,9 +199,8 @@ export function AdminSettings() {
     return <div className="admin-panel px-6 py-16 text-center text-muted">正在载入站点配置...</div>;
   }
 
-  const siteContent = (
-    <Form form={form} layout="vertical" className="space-y-6">
-      <section ref={sectionRefs.brand} className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+  const brandSection = (
+    <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <Sparkles size={16} className="text-forest" />
@@ -439,8 +421,10 @@ export function AdminSettings() {
           </div>
         </div>
       </section>
+  );
 
-      <section ref={sectionRefs.contact} className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+  const contactSection = (
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <MapPin size={16} className="text-forest" />
@@ -537,8 +521,10 @@ export function AdminSettings() {
           ) : null}
         </div>
       </section>
+  );
 
-      <section ref={sectionRefs.story} className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+  const storySection = (
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <ImageIcon size={16} className="text-forest" />
@@ -702,51 +688,38 @@ export function AdminSettings() {
           </div>
         </div>
       </section>
+  );
 
-      <section ref={sectionRefs.license} className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-        <div className="admin-panel admin-shell-card p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
-            <KeyRound size={16} className="text-forest" />
-            授权信息
-          </div>
-          <div className="mt-4 grid gap-x-4 md:grid-cols-2">
-            <Form.Item name="licenseCustomerName" label="客户名称">
-              <Input />
-            </Form.Item>
-            <Form.Item name="licenseCode" label="授权编号">
-              <Input />
-            </Form.Item>
-            <Form.Item name="licenseType" label="授权类型">
-              <Input placeholder="如：正式版 / 年费版 / 试用版" />
-            </Form.Item>
-            <Form.Item name="licenseWarningDays" label="到期预警天数">
-              <InputNumber className="w-full" min={1} max={365} />
-            </Form.Item>
-            <Form.Item name="licenseExpiresAt" label="授权到期时间">
-              <DatePicker className="w-full" showTime format="YYYY-MM-DD HH:mm:ss" />
-            </Form.Item>
-          </div>
-          <Form.Item name="licenseNotes" label="授权备注">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </div>
-
-        <div className="admin-panel admin-shell-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">授权预览</p>
-          <div className="admin-subpanel mt-4 px-4 py-4">
-            <p className="text-sm font-semibold text-[#1b281e]">{licenseCustomerName || "未填写客户名称"}</p>
-            <p className="mt-2 text-sm text-muted">编号：{licenseCode || "未填写"}</p>
-            <p className="mt-2 text-sm text-muted">类型：{licenseType || "未填写"}</p>
-            <p className="mt-2 text-sm text-muted">
-              到期时间：{licenseExpiresAt?.format("YYYY-MM-DD HH:mm:ss") || "未填写"}
-            </p>
-            <p className="mt-2 text-sm text-muted">
-              预警天数：{licenseWarningDays} 天
-            </p>
-          </div>
-        </div>
-      </section>
-
+  const siteContent = (
+    <Form form={form} layout="vertical">
+      <Tabs
+        activeKey={activeSiteSection}
+        onChange={(nextSection) => {
+          const nextParams = new URLSearchParams(searchParams);
+          nextParams.set("section", String(nextSection));
+          nextParams.delete("tab");
+          setSearchParams(nextParams, { replace: true });
+        }}
+        tabBarGutter={screens.sm ? 24 : 12}
+        className="admin-panel admin-shell-card p-4 sm:p-5"
+        items={[
+          {
+            key: "brand",
+            label: "品牌与首页",
+            children: <div className="pt-2">{brandSection}</div>,
+          },
+          {
+            key: "contact",
+            label: "门店与联系",
+            children: <div className="pt-2">{contactSection}</div>,
+          },
+          {
+            key: "story",
+            label: "品牌故事",
+            children: <div className="pt-2">{storySection}</div>,
+          },
+        ]}
+      />
     </Form>
   );
 
@@ -767,19 +740,24 @@ export function AdminSettings() {
         </div>
 
         {activeTab === "site" ? (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {sectionItems.map((item) => (
-              <Button key={item.key} onClick={() => scrollToSection(item.key)}>
-                {item.label}
-              </Button>
-            ))}
-          </div>
+          <p className="mt-4 text-sm text-muted">已按模块拆分为切换式展示，可分别维护品牌首页、门店联系和品牌故事等内容。</p>
         ) : null}
       </section>
 
       <Tabs
         activeKey={activeTab}
-        onChange={(nextTab) => setSearchParams(nextTab === "about" ? { tab: "about" } : {}, { replace: true })}
+        onChange={(nextTab) => {
+          const nextParams = new URLSearchParams(searchParams);
+          if (nextTab === "about") {
+            nextParams.set("tab", "about");
+          } else {
+            nextParams.delete("tab");
+            if (!nextParams.get("section")) {
+              nextParams.set("section", activeSiteSection);
+            }
+          }
+          setSearchParams(nextParams, { replace: true });
+        }}
         tabBarGutter={screens.sm ? 32 : 12}
         items={[
           {

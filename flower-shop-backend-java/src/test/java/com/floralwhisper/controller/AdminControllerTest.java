@@ -277,14 +277,6 @@ class AdminControllerTest {
     response.setGitRevision("abc123def456");
     response.setBuildTime("2026-05-15 08:00:00");
     response.setDeployedAt("2026-05-15 09:30:00");
-    response.setLicenseCustomerName("演示客户");
-    response.setLicenseCode("FWT-DEMO-001");
-    response.setLicenseType("正式版");
-    response.setLicenseExpiresAt("2026-06-01 00:00:00");
-    response.setLicenseWarningDays(30);
-    response.setLicenseNotes("演示授权");
-    response.setLicenseStatus("expiring");
-    response.setLicenseStatusLabel("授权将在 30 天内到期");
     response.setDatabaseConnected(true);
     response.setDatabaseVersion("8.0.36");
     response.setDatabaseSize("128.50 MB");
@@ -324,14 +316,14 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.gitRevision").value("abc123def456"))
         .andExpect(jsonPath("$.buildTime").value("2026-05-15 08:00:00"))
         .andExpect(jsonPath("$.deployedAt").value("2026-05-15 09:30:00"))
-        .andExpect(jsonPath("$.licenseCustomerName").value("演示客户"))
-        .andExpect(jsonPath("$.licenseCode").value("FWT-DEMO-001"))
-        .andExpect(jsonPath("$.licenseType").value("正式版"))
-        .andExpect(jsonPath("$.licenseExpiresAt").value("2026-06-01 00:00:00"))
-        .andExpect(jsonPath("$.licenseWarningDays").value(30))
-        .andExpect(jsonPath("$.licenseNotes").value("演示授权"))
-        .andExpect(jsonPath("$.licenseStatus").value("expiring"))
-        .andExpect(jsonPath("$.licenseStatusLabel").value("授权将在 30 天内到期"))
+        .andExpect(jsonPath("$.licenseCustomerName").doesNotExist())
+        .andExpect(jsonPath("$.licenseCode").doesNotExist())
+        .andExpect(jsonPath("$.licenseType").doesNotExist())
+        .andExpect(jsonPath("$.licenseExpiresAt").doesNotExist())
+        .andExpect(jsonPath("$.licenseWarningDays").doesNotExist())
+        .andExpect(jsonPath("$.licenseNotes").doesNotExist())
+        .andExpect(jsonPath("$.licenseStatus").doesNotExist())
+        .andExpect(jsonPath("$.licenseStatusLabel").doesNotExist())
         .andExpect(jsonPath("$.databaseConnected").value(true))
         .andExpect(jsonPath("$.databaseVersion").value("8.0.36"))
         .andExpect(jsonPath("$.databaseSize").value("128.50 MB"))
@@ -476,12 +468,6 @@ class AdminControllerTest {
     response.setContactPageTitle("联系我们");
     response.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
     response.setConsultButtonText("咨询花艺");
-    response.setLicenseCustomerName("演示客户");
-    response.setLicenseCode("FWT-DEMO-001");
-    response.setLicenseType("正式版");
-    response.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
-    response.setLicenseWarningDays(30);
-    response.setLicenseNotes("演示授权");
     when(siteService.getAdminSiteConfig()).thenReturn(response);
 
     mockMvc.perform(get("/api/admin/site-config")
@@ -503,12 +489,12 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.contactPageTitle").value("联系我们"))
         .andExpect(jsonPath("$.contactSubmitSuccessText").value("留言已提交，我们会尽快联系你"))
         .andExpect(jsonPath("$.consultButtonText").value("咨询花艺"))
-        .andExpect(jsonPath("$.licenseCustomerName").value("演示客户"))
-        .andExpect(jsonPath("$.licenseCode").value("FWT-DEMO-001"))
-        .andExpect(jsonPath("$.licenseType").value("正式版"))
-        .andExpect(jsonPath("$.licenseExpiresAt").value("2026-06-01T00:00:00"))
-        .andExpect(jsonPath("$.licenseWarningDays").value(30))
-        .andExpect(jsonPath("$.licenseNotes").value("演示授权"));
+        .andExpect(jsonPath("$.licenseCustomerName").doesNotExist())
+        .andExpect(jsonPath("$.licenseCode").doesNotExist())
+        .andExpect(jsonPath("$.licenseType").doesNotExist())
+        .andExpect(jsonPath("$.licenseExpiresAt").doesNotExist())
+        .andExpect(jsonPath("$.licenseWarningDays").doesNotExist())
+        .andExpect(jsonPath("$.licenseNotes").doesNotExist());
   }
 
   @Test

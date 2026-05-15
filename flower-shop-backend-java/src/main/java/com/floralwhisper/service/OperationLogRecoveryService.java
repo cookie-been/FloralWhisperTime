@@ -273,12 +273,6 @@ public class OperationLogRecoveryService {
     config.setContactIntro(siteConfig.getContactIntro());
     config.setBusinessHoursText(siteConfig.getBusinessHoursText());
     config.setFooterDescription(siteConfig.getFooterDescription());
-    config.setLicenseCustomerName(siteConfig.getLicenseCustomerName());
-    config.setLicenseCode(siteConfig.getLicenseCode());
-    config.setLicenseType(siteConfig.getLicenseType());
-    config.setLicenseExpiresAt(siteConfig.getLicenseExpiresAt());
-    config.setLicenseWarningDays(siteConfig.getLicenseWarningDays());
-    config.setLicenseNotes(siteConfig.getLicenseNotes());
     if (siteConfigMapper.selectById(SINGLETON_ID) == null) {
       siteConfigMapper.insert(config);
     } else {

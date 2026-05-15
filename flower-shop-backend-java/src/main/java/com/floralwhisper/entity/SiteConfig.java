@@ -2,7 +2,6 @@ package com.floralwhisper.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
@@ -83,10 +82,4 @@ public class SiteConfig {
   private String adminOperationLogsEyebrow;
   private String adminOperationLogsTitle;
   private String adminOperationLogsDescription;
-  private String licenseCustomerName;
-  private String licenseCode;
-  private String licenseType;
-  private LocalDateTime licenseExpiresAt;
-  private Integer licenseWarningDays;
-  private String licenseNotes;
 }

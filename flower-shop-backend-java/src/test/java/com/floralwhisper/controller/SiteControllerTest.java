@@ -155,10 +155,6 @@ class SiteControllerTest {
     response.setContactPageTitle("联系我们");
     response.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
     response.setConsultButtonText("咨询花艺");
-    response.setLicenseCustomerName("演示客户");
-    response.setLicenseCode("FWT-DEMO-001");
-    response.setLicenseType("正式版");
-    response.setLicenseNotes("演示授权");
     when(siteService.getSiteConfig()).thenReturn(response);
 
     mockMvc.perform(get("/api/site-config").header("X-Forwarded-For", "198.51.100.10"))

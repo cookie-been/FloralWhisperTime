@@ -154,18 +154,6 @@ public class SiteConfigUpdateRequest {
   private String adminOperationLogsTitle;
   @Size(max = 240, message = "后台操作日志说明不能超过 240 个字符")
   private String adminOperationLogsDescription;
-  @Size(max = 120, message = "客户名称不能超过 120 个字符")
-  private String licenseCustomerName;
-  @Size(max = 120, message = "授权编号不能超过 120 个字符")
-  private String licenseCode;
-  @Size(max = 60, message = "授权类型不能超过 60 个字符")
-  private String licenseType;
-  private LocalDateTime licenseExpiresAt;
-  @jakarta.validation.constraints.Min(value = 1, message = "预警天数至少为 1 天")
-  @jakarta.validation.constraints.Max(value = 365, message = "预警天数不能超过 365 天")
-  private Integer licenseWarningDays;
-  @Size(max = 500, message = "授权备注不能超过 500 个字符")
-  private String licenseNotes;
   @Size(max = 40, message = "电话不能超过 40 个字符")
   private String phone;
   @Size(max = 60, message = "微信不能超过 60 个字符")

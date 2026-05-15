@@ -699,20 +699,6 @@ export function AdminSystemStatus() {
             </div>
             <div className="admin-subpanel px-4 py-4">
               <div className="flex items-center justify-between gap-4">
-                <p className="font-semibold text-[#1b281e]">授权状态</p>
-                <Tag color={status.licenseStatus === "active" ? "green" : status.licenseStatus === "expiring" ? "gold" : status.licenseStatus === "expired" ? "red" : "default"}>
-                  {status.licenseStatusLabel || "未配置授权信息"}
-                </Tag>
-              </div>
-              <p className="mt-2 text-muted">客户：{status.licenseCustomerName || "待补充客户信息"}</p>
-              <p className="mt-2 text-muted">编号：{status.licenseCode || "待补充授权编号"}</p>
-              <p className="mt-2 text-muted">类型：{status.licenseType || "待补充授权类型"}</p>
-              <p className="mt-2 text-muted">到期：{formatDateTime(status.licenseExpiresAt)}</p>
-              <p className="mt-2 text-muted">预警：提前 {status.licenseWarningDays || 30} 天</p>
-              {status.licenseNotes ? <p className="mt-2 text-muted">备注：{status.licenseNotes}</p> : null}
-            </div>
-            <div className="admin-subpanel px-4 py-4">
-              <div className="flex items-center justify-between gap-4">
                 <p className="font-semibold text-[#1b281e]">交付初始化</p>
                 <Tag color={status.deliveryInitialized ? "green" : "gold"}>
                   {status.deliveryInitialized ? "已完成" : "待完成"}
