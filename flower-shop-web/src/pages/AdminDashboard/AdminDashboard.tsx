@@ -1,9 +1,9 @@
 import { Button, Empty, Grid, Progress, Spin, Tag, message } from "antd";
-import { ArrowRight, Flower2, Image as ImageIcon, MapPin, Sparkles, Star } from "lucide-react";
+import { AlertTriangle, ArrowRight, Flower2, History, Image as ImageIcon, MapPin, RotateCcw, Sparkles, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { getAdminContacts, getDashboardData } from "@/services/api";
-import type { BrandStory, Category, ContactMessage, Flower, PaginatedResult, ShopInfo, SiteConfig } from "@/types";
+import { getAdminContacts, getAdminOperationLogs, getDashboardData } from "@/services/api";
+import type { BrandStory, Category, ContactMessage, Flower, OperationLogItem, PaginatedResult, ShopInfo, SiteConfig } from "@/types";
 
 interface DashboardData {
   flowers: Flower[];
@@ -13,6 +13,8 @@ interface DashboardData {
   brandStory: BrandStory;
   latestContacts: PaginatedResult<ContactMessage>;
   unreadContacts: PaginatedResult<ContactMessage>;
+  failedOperationLogs: PaginatedResult<OperationLogItem>;
+  restorableOperationLogs: PaginatedResult<OperationLogItem>;
 }
 
 function formatDate(value?: string) {
@@ -32,8 +34,12 @@ export function AdminDashboard() {
       getDashboardData(),
       getAdminContacts({ page: 1, limit: 1, status: "all" }),
       getAdminContacts({ page: 1, limit: 1, status: "unread" }),
+      getAdminOperationLogs({ page: 1, limit: 5, success: false }),
+      getAdminOperationLogs({ page: 1, limit: 5, restorable: true }),
     ])
-      .then(([dashboardData, latestContacts, unreadContacts]) => setData({ ...dashboardData, latestContacts, unreadContacts }))
+      .then(([dashboardData, latestContacts, unreadContacts, failedOperationLogs, restorableOperationLogs]) =>
+        setData({ ...dashboardData, latestContacts, unreadContacts, failedOperationLogs, restorableOperationLogs }),
+      )
       .catch((error) => message.error(error instanceof Error ? error.message : "概览加载失败"))
       .finally(() => setLoading(false));
   }, []);
@@ -61,6 +67,8 @@ export function AdminDashboard() {
       }))
       .sort((a, b) => b.count - a.count);
     const featuredRate = data.flowers.length ? Math.round((featuredCount / data.flowers.length) * 100) : 0;
+    const latestFailedLog = data.failedOperationLogs.list[0];
+    const latestRestorableLog = data.restorableOperationLogs.list[0];
 
     return {
       categoryCount,
@@ -73,6 +81,8 @@ export function AdminDashboard() {
       recentFlowers,
       categoryDistribution,
       featuredRate,
+      latestFailedLog,
+      latestRestorableLog,
     };
   }, [data]);
 
@@ -107,6 +117,31 @@ export function AdminDashboard() {
       to: "/admin/contacts?status=unread",
     },
     { label: "最近上新", value: formatDate(summary.latestFlower?.createdAt), icon: ImageIcon, note: summary.latestFlower?.name ?? "尚未发现作品记录", to: "/admin/flowers" },
+  ];
+
+  const auditCards = [
+    {
+      label: "失败操作",
+      value: data.failedOperationLogs.total,
+      icon: AlertTriangle,
+      note: summary.latestFailedLog
+        ? `${summary.latestFailedLog.operatorName || "系统"} · ${summary.latestFailedLog.targetId || formatDate(summary.latestFailedLog.createdAt)}`
+        : "当前没有失败日志",
+      to: "/admin/operation-logs?success=false",
+      tone: "text-[#9f4b45]",
+      iconBg: "bg-[#f7e5e3]",
+    },
+    {
+      label: "可恢复日志",
+      value: data.restorableOperationLogs.total,
+      icon: RotateCcw,
+      note: summary.latestRestorableLog
+        ? `${summary.latestRestorableLog.targetType} · ${summary.latestRestorableLog.targetId || "结构化数据"}`
+        : "当前没有可恢复日志",
+      to: "/admin/operation-logs?restorable=true",
+      tone: "text-forest",
+      iconBg: "bg-[#edf4eb]",
+    },
   ];
 
   return (
@@ -259,6 +294,86 @@ export function AdminDashboard() {
               <p className="text-sm font-semibold text-[#1b281e]">{data.siteConfig.brandName}</p>
               <p className="mt-1 text-sm text-muted">{data.shopInfo.phone} · {data.shopInfo.address}</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="admin-panel p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="section-eyebrow">审计概览</p>
+              <h3 className="admin-section-title mt-2 text-xl">风险与恢复视图</h3>
+            </div>
+            <Link to="/admin/operation-logs" className="text-sm font-medium text-forest">
+              查看日志工作台
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {auditCards.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.label} to={item.to} className="admin-action-card block">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted">{item.label}</p>
+                      <p className={`mt-3 text-3xl font-semibold ${item.tone}`}>{item.value}</p>
+                      <p className="mt-2 text-sm leading-6 text-muted">{item.note}</p>
+                    </div>
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-lg ${item.iconBg} ${item.tone}`}>
+                      <Icon size={18} />
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 admin-subpanel px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">今日关注</p>
+            <p className="mt-3 text-sm leading-7 text-muted">
+              {summary.latestFailedLog
+                ? `最近失败操作发生在 ${formatDate(summary.latestFailedLog.createdAt)}，建议优先查看失败日志详情并确认是否需要回滚。`
+                : "当前没有失败操作，建议继续关注可恢复日志和最近的配置修改。"}
+            </p>
+          </div>
+        </div>
+
+        <div className="admin-panel p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="section-eyebrow">失败速览</p>
+              <h3 className="admin-section-title mt-2 text-xl">最近失败日志</h3>
+            </div>
+            <History size={18} className="text-forest" />
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {data.failedOperationLogs.list.length ? (
+              data.failedOperationLogs.list.map((item) => (
+                <Link key={item.id} to="/admin/operation-logs?success=false" className="surface-card block px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#1b281e]">
+                        {item.operatorName || "系统"} · {item.targetId || item.targetType}
+                      </p>
+                      <p className="mt-1 text-sm text-muted">
+                        {item.module} / {item.action} / {formatDate(item.createdAt)}
+                      </p>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#9f4b45]">{item.errorMessage || item.requestSummary || "失败日志"}</p>
+                    </div>
+                    <Tag color="error">失败</Tag>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="admin-empty-state min-h-[220px]">
+                <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                <h4>当前没有失败日志</h4>
+                <p>最近后台写操作执行正常，暂时没有需要优先排查的异常记录。</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
