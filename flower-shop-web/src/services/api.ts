@@ -82,6 +82,21 @@ export function getFlowers(query: FlowerQuery = {}) {
   return request<PaginatedResult<Flower>>(withQuery("/api/flowers", query));
 }
 
+export async function listAllFlowers(baseQuery: Omit<FlowerQuery, "page" | "limit"> = {}) {
+  const pageSize = 200;
+  const firstPage = await getFlowers({ ...baseQuery, page: 1, limit: pageSize });
+  const totalPages = Math.max(1, Math.ceil(firstPage.total / pageSize));
+  const remainingPages = totalPages > 1
+    ? await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          getFlowers({ ...baseQuery, page: index + 2, limit: pageSize }),
+        ),
+      )
+    : [];
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.list);
+}
+
 export function getFlowerById(id: string) {
   return request<Flower>(`/api/flowers/${id}`).catch((error) => {
     if (error instanceof Error && error.message === "作品不存在") return null;
@@ -359,19 +374,7 @@ export function getBrandStory() {
 }
 
 export async function getDashboardData() {
-  const pageSize = 200;
-  const firstFlowersPage = await getFlowers({ sortBy: "featured", page: 1, limit: pageSize });
-  const totalPages = Math.max(1, Math.ceil(firstFlowersPage.total / pageSize));
-  const remainingPages = totalPages > 1
-    ? await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, index) => getFlowers({ sortBy: "featured", page: index + 2, limit: pageSize })),
-      )
-    : [];
-
-  const flowers = {
-    ...firstFlowersPage,
-    list: [firstFlowersPage, ...remainingPages].flatMap((page) => page.list),
-  };
+  const flowers = await listAllFlowers({ sortBy: "featured" });
 
   const [categories, siteConfig, shopInfo, brandStory] = await Promise.all([
     getCategories(),
@@ -381,7 +384,7 @@ export async function getDashboardData() {
   ]);
 
   return {
-    flowers: flowers.list,
+    flowers,
     categories,
     siteConfig,
     shopInfo,

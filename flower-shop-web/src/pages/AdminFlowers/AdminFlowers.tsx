@@ -29,8 +29,8 @@ import {
   generateAdminAiFlowerSuggestion,
   generateAdminAiImage,
   getCategories,
-  getFlowers,
   updateFlower,
+  listAllFlowers,
   uploadFlowerImage,
   type AdminAiFlowerSuggestion,
 } from "@/services/api";
@@ -222,9 +222,9 @@ export function AdminFlowers() {
   const load = async () => {
     setLoading(true);
     try {
-      const [categoryList, flowerResult, adminAiSettings] = await Promise.all([getCategories(), getFlowers({ limit: 200 }), getAdminAiSettings()]);
+      const [categoryList, allFlowers, adminAiSettings] = await Promise.all([getCategories(), listAllFlowers({ sortBy: "featured" }), getAdminAiSettings()]);
       setCategories(categoryList);
-      setFlowers(flowerResult.list);
+      setFlowers(allFlowers);
       setAiSettings(adminAiSettings);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "加载失败");
@@ -483,7 +483,9 @@ export function AdminFlowers() {
       render: (_: unknown, record) => (
         <div>
           <p className="font-semibold text-[#1b281e]">{record.name}</p>
-          <p className="mt-1 text-xs text-muted">{record.id}</p>
+          <p className="mt-1 text-xs text-muted">
+            {categoryMap.get(record.categoryId) ?? "未分类"} · 花材 {record.materials.length} 项 · 标签 {record.tags.length} 个
+          </p>
           <p className="admin-cell-note line-clamp-2">{truncateText(record.description, 48) || "暂无作品描述"}</p>
         </div>
       ),
