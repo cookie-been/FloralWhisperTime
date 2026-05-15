@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, DatePicker, Form, Grid, Input, InputNumber, Tabs, Upload, message } from "antd";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Button, DatePicker, Form, Grid, Input, InputNumber, Spin, Tabs, Upload, message } from "antd";
 import type { RcFile } from "antd/es/upload";
 import { Building2, Image as ImageIcon, KeyRound, MapPin, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { AdminAbout } from "@/pages/AdminAbout/AdminAbout";
 import { getAdminSiteConfig, getBrandStory, getShopInfo, updateSiteConfig, uploadFlowerImage } from "@/services/api";
 import type { BrandStory, ShopInfo, SiteConfig } from "@/types";
 import dayjs from "dayjs";
+
+const AdminAboutLazy = lazy(() =>
+  import("@/pages/AdminAbout/AdminAbout").then((module) => ({ default: module.AdminAbout })),
+);
 
 type SettingsForm = Omit<SiteConfig, "licenseExpiresAt"> & {
   phone: string;
@@ -371,7 +374,18 @@ export function AdminSettings() {
           {
             key: "about",
             label: "关于我们",
-            children: <AdminAbout embedded />,
+            children:
+              activeTab === "about" ? (
+                <Suspense
+                  fallback={
+                    <div className="flex min-h-[40vh] items-center justify-center">
+                      <Spin size="large" />
+                    </div>
+                  }
+                >
+                  <AdminAboutLazy embedded />
+                </Suspense>
+              ) : null,
           },
         ]}
       />
