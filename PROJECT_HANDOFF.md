@@ -20,6 +20,7 @@
 ├── flower-shop-backend/        # 历史兼容 Node/Express 后端
 ├── shared/                     # Web 共享类型与数据结构
 ├── scripts/catalog/            # 作品批量生成与导入脚本
+├── logo/                       # 品牌 Logo 原始文件
 ├── docs/superpowers/           # 设计、计划、迁移与验收文档
 ├── docker-compose.yml          # 默认部署编排
 ├── deploy.sh                   # 一键部署脚本
@@ -41,7 +42,8 @@
 - 创建 `flower-shop-backend-java/uploads/`
 - 从源码构建前端和 Java 后端镜像
 - 启动 `mysql + backend + web`
-- 验证 `/api/health` 和首页可访问
+- 自动识别 Docker 实际发布的 Web 端口
+- 验证 `/api/health`、首页、管理员登录和系统状态接口
 
 常用参数：
 
@@ -55,8 +57,10 @@
 默认访问入口：
 
 ```text
-http://localhost:8080
+通常为 http://localhost:8080
 ```
+
+如部署时调整了 `WEB_PORT`，或当前环境端口已被占用，以 `deploy.sh` / `upgrade.sh` 输出的 `Site URL` 为准。
 
 ## 本地开发
 
@@ -120,9 +124,10 @@ flower-shop-mini
 
 补充说明：
 
-- 首页统计数据由系统真实数据自动计算，不再由后台人工维护
+- 首页统计数据由系统真实数据自动计算，并按分页聚合全部作品，不再由后台人工维护
 - AI 生图相关密钥、模型和接口参数通过独立的 `/admin/ai-settings` 页面维护
 - `/admin/operation-logs` 记录后台写操作与登录行为，并支持按快照恢复
+- 前后台统一使用 `logo/` 目录导出的品牌 Logo 作为站点 Logo 与标签图标
 
 ## 数据与持久化
 
@@ -172,8 +177,8 @@ Java 后端支持一次性 JSON 导入，用于从旧库迁移到 MySQL。
 
 ```bash
 docker compose ps
-curl -fsS http://localhost:8080/api/health
-curl -I http://localhost:8080/
+curl -fsS http://localhost:<实际WEB端口>/api/health
+curl -I http://localhost:<实际WEB端口>/
 ```
 
 更完整的 Docker 验收流程见：

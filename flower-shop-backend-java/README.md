@@ -2,6 +2,10 @@
 
 这是 `flower-shop-backend` 的 Java + MySQL 重构版本，使用 Spring Boot 3、MyBatis-Plus、Flyway 和 JWT，接口保持兼容现有 Web 和小程序。
 
+补充说明：
+
+- 前台首页统计、后台总览和后台作品管理都按分页聚合全部作品，不再依赖固定 `limit=200/500` 的截断数据
+
 ## 技术栈
 
 - Java 17

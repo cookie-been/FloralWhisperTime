@@ -17,8 +17,13 @@ http://localhost:3001
 Docker 部署时，浏览器通常直接通过 Web 服务同源访问：
 
 ```text
-http://localhost:8080/api
+http://localhost:<实际WEB端口>/api
 ```
+
+说明：
+
+- 默认通常为 `8080`
+- 如果部署时修改了 `WEB_PORT`，或当前环境存在端口占用，以部署脚本输出的 `Site URL` 为准
 
 ## 2. 认证机制
 
@@ -134,6 +139,10 @@ Authorization: Bearer <token>
 - `featured`
 - `sort`
 - `createdAt`
+
+说明：
+
+- 前端首页、后台总览、作品管理等需要统计全部作品的页面，应按分页聚合全部作品数据，不应只取前 200/500 条
 
 ### 4.4 作品详情
 
@@ -358,7 +367,7 @@ Authorization: Bearer <token>
 
 字段说明：
 
-- `service`：服务标识
+- `service`：服务底层标识，前端系统状态页会转成可读服务名称展示
 - `version`：当前部署版本
 - `databaseConnected`：数据库探测结果
 - `databaseVersion`：当前数据库版本
@@ -438,6 +447,11 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
   "limit": 10
 }
 ```
+
+说明：
+
+- 后台列表页默认展示面向运营的访客信息和提交时间
+- 记录标识仍保留在详情页中，便于后台追踪
 
 ## 5.6 标记留言已读
 

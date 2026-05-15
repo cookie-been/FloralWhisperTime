@@ -14,8 +14,9 @@
 2. 执行 `backup.sh`
 3. 打包 Java 后端
 4. 重建并重启 `backend + web`
-5. 自动校验 `/api/health` 和首页
-6. 记录升级日志到 `logs/upgrades/`
+5. 自动识别 Docker 实际发布的 Web 端口
+6. 自动校验 `/api/health` 和首页
+7. 记录升级日志到 `logs/upgrades/`
 
 ## 常用参数
 
@@ -30,4 +31,5 @@
 
 - 正式环境不建议跳过备份
 - 如果 git 工作区不干净，脚本默认会终止
+- 升级完成后访问地址以脚本输出的 `Site URL` 为准
 - 升级失败时请先查看 `logs/upgrades/` 和 `docker compose logs`

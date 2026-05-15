@@ -100,8 +100,11 @@ Browser / WeChat Mini Program
 - `/admin/login` 管理员登录
 - `/admin` 运营总览
 - `/admin/flowers` 作品管理
-- `/admin/settings` 内容配置
+- `/admin/settings` 站点配置
+- `/admin/ai-settings` AI 生图配置
 - `/admin/contacts` 用户留言
+- `/admin/system` 系统状态
+- `/admin/operation-logs` 操作日志
 
 ### 5.2 主要模块
 
@@ -109,6 +112,10 @@ Browser / WeChat Mini Program
 - `ProtectedAdminRoute`：后台鉴权路由守卫
 - `AdminShell`：后台整体框架与导航
 - `services/api.ts`：统一 API 请求封装
+
+补充：
+
+- `services/api.ts` 提供 `listAllFlowers()`，用于按分页拉取全部作品，保证首页统计、后台总览和作品管理在大数据量下仍能保持真实口径
 
 ### 5.3 数据访问方式
 
@@ -149,6 +156,9 @@ Web 通过 `src/services/api.ts` 发起请求：
 - `AdminController`
   - 管理员登录和身份校验
   - 用户留言管理
+  - 系统状态与备份下载
+  - AI 配置管理
+  - 操作日志查询与恢复
   - 关于我们页管理
   - 时间轴管理
   - 团队成员管理
@@ -174,6 +184,8 @@ Web 通过 `src/services/api.ts` 发起请求：
 - `AboutTimelineEntry`：关于我们时间轴
 - `TeamMember`：团队成员
 - `Contact`：用户留言
+- `OperationLog`：后台操作日志与恢复链路
+- `AiSettings`：后台 AI 配置
 
 ## 8. 认证与安全
 
@@ -224,6 +236,10 @@ Web 通过 `src/services/api.ts` 发起请求：
 - MySQL：`mysqladmin ping`
 - Backend：`GET /api/health`
 - Web：通过外部 HTTP 访问首页和反向代理接口验收
+
+补充：
+
+- 实际访问端口以 `deploy.sh` / `upgrade.sh` 输出的 `Site URL` 为准
 
 ## 11. 历史兼容与迁移
 

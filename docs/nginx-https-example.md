@@ -5,7 +5,7 @@
 ## 目标拓扑
 
 - `Nginx`：监听 `80/443`，负责 TLS、域名入口与反向代理
-- `flower-shop-web`：Docker 内部 Web 服务，默认暴露在宿主机 `127.0.0.1:8080`
+- `flower-shop-web`：Docker 内部 Web 服务，默认通常暴露在宿主机 `127.0.0.1:8080`
 - `flower-shop-backend-java`：由 Web 容器继续同源代理 `/api` 与 `/uploads`
 
 建议外部只开放：
@@ -17,7 +17,7 @@
 
 - `3306`
 - `3001`
-- `8080`
+- `8080`（如实际 WEB 端口不同，则替换为真实暴露端口）
 
 ## 部署前提
 
@@ -29,7 +29,7 @@
 
 2. 确认站点仅绑定在本机或内网地址。
 
-如果希望只允许 Nginx 访问 Web 端口，建议在 `.env.production` 中将 `WEB_PORT` 保持为 `8080`，并通过防火墙限制外部访问。
+如果希望只允许 Nginx 访问 Web 端口，建议在 `.env.production` 中明确设置 `WEB_PORT`，并通过防火墙限制外部访问。
 
 ## HTTP + HTTPS 配置示例
 
@@ -80,7 +80,7 @@ server {
     client_max_body_size 25m;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:<WEB_PORT>;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -96,7 +96,7 @@ server {
 
 说明：
 
-- 前端静态资源、`/api`、`/uploads` 都统一从 `http://127.0.0.1:8080` 进入
+- 前端静态资源、`/api`、`/uploads` 都统一从 `http://127.0.0.1:<WEB_PORT>` 进入
 - Web 容器内部已经处理 `/api` 和 `/uploads` 的后端转发，这里不需要再拆第二层路由
 - `client_max_body_size 25m` 兼容后台 AI 参考图上传场景
 
@@ -129,7 +129,7 @@ sudo systemctl reload nginx
 阻止公网直接访问应用端口：
 
 ```bash
-8080/tcp
+<WEB_PORT>/tcp
 3001/tcp
 3306/tcp
 ```
