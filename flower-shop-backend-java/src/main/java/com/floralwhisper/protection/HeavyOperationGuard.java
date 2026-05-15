@@ -14,14 +14,6 @@ public class HeavyOperationGuard {
   private final Semaphore configImportSemaphore;
   private final ProtectionMetrics protectionMetrics;
 
-  public HeavyOperationGuard(AppProperties properties) {
-    this(
-        createSemaphore(properties.getProtection().getConcurrency().getAi()),
-        createSemaphore(properties.getProtection().getConcurrency().getUpload()),
-        createSemaphore(properties.getProtection().getConcurrency().getConfigImport()),
-        new ProtectionMetrics());
-  }
-
   public HeavyOperationGuard(AppProperties properties, ProtectionMetrics protectionMetrics) {
     this(
         createSemaphore(properties.getProtection().getConcurrency().getAi()),
