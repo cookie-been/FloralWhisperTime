@@ -319,7 +319,7 @@ export function AdminContacts() {
         </div>
         <div className="admin-filter-summary">
           <div className="admin-filter-summary-copy">
-            <p>当前结果 {data?.list.length ?? 0} 条</p>
+            <p>当前结果 {data?.total ?? 0} 条</p>
             <span>
               {hasActiveFilters
                 ? `已应用 ${filterSummary.join(" · ")}`
@@ -437,7 +437,7 @@ export function AdminContacts() {
                   <p className="mt-1 text-base font-semibold text-[#1b281e]">{formatDateTime(activeContact.createdAt)}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted">留言编号</p>
+                  <p className="text-sm font-medium text-muted">记录标识</p>
                   <p className="mt-1 break-all text-sm text-[#33463a]">{activeContact.id}</p>
                 </div>
               </div>
