@@ -70,7 +70,7 @@
 void protectionDefaultsExposeExpectedThresholds() {
   AppProperties properties = new AppProperties();
   assertEquals(60, properties.getProtection().getPublicRead().getCapacity());
-  assertEquals(2, properties.getProtection().getHeavy().getAiConcurrent());
+  assertEquals(2, properties.getProtection().getConcurrency().getAi().getMaxConcurrent());
 }
 ```
 
@@ -108,21 +108,30 @@ private Protection protection = new Protection();
 
 @Data
 public static class Protection {
-  private RouteLimit publicRead = new RouteLimit(60, 10, 0, 0, true);
-  private RouteLimit publicWrite = new RouteLimit(12, 60, 0, 0, true);
-  private RouteLimit admin = new RouteLimit(30, 60, 0, 0, true);
-  private RouteLimit heavy = new RouteLimit(6, 60, 2, 4, true);
-  private Integer configImportConcurrent = 1;
+  private RateLimit publicRead = new RateLimit(60, 10, true);
+  private RateLimit publicWrite = new RateLimit(12, 60, true);
+  private RateLimit admin = new RateLimit(30, 60, true);
+  private RateLimit heavy = new RateLimit(6, 60, true);
+  private Concurrency concurrency = new Concurrency();
 }
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public static class RouteLimit {
+public static class RateLimit {
   private Integer capacity;
   private Integer refillSeconds;
-  private Integer aiConcurrent;
-  private Integer uploadConcurrent;
+  private Boolean enabled;
+}
+
+@Data
+public static class Concurrency {
+  private ConcurrencyLimit ai = new ConcurrencyLimit(2, true);
+  private ConcurrencyLimit upload = new ConcurrencyLimit(4, true);
+  private ConcurrencyLimit configImport = new ConcurrencyLimit(1, true);
+}
+
+@Data
+public static class ConcurrencyLimit {
+  private Integer maxConcurrent;
   private Boolean enabled;
 }
 ```
@@ -166,9 +175,16 @@ app:
       enabled: ${PROTECTION_HEAVY_ENABLED:true}
       capacity: ${PROTECTION_HEAVY_CAPACITY:6}
       refill-seconds: ${PROTECTION_HEAVY_REFILL_SECONDS:60}
-      ai-concurrent: ${PROTECTION_HEAVY_AI_CONCURRENT:2}
-      upload-concurrent: ${PROTECTION_HEAVY_UPLOAD_CONCURRENT:4}
-    config-import-concurrent: ${PROTECTION_CONFIG_IMPORT_CONCURRENT:1}
+    concurrency:
+      ai:
+        enabled: ${PROTECTION_CONCURRENCY_AI_ENABLED:true}
+        max-concurrent: ${PROTECTION_CONCURRENCY_AI_MAX_CONCURRENT:2}
+      upload:
+        enabled: ${PROTECTION_CONCURRENCY_UPLOAD_ENABLED:true}
+        max-concurrent: ${PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT:4}
+      config-import:
+        enabled: ${PROTECTION_CONCURRENCY_CONFIG_IMPORT_ENABLED:true}
+        max-concurrent: ${PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT:1}
 ```
 
 - [ ] **Step 4: 运行测试确认通过**
@@ -584,9 +600,9 @@ public class ProtectionSnapshot {
   private int publicWriteCapacity;
   private int adminCapacity;
   private int heavyCapacity;
-  private int aiConcurrent;
-  private int uploadConcurrent;
-  private int configImportConcurrent;
+  private int aiMaxConcurrent;
+  private int uploadMaxConcurrent;
+  private int configImportMaxConcurrent;
   private long rateLimitedCount;
   private long busyRejectedCount;
 }
@@ -609,9 +625,9 @@ export interface ProtectionSnapshot {
   publicWriteCapacity: number;
   adminCapacity: number;
   heavyCapacity: number;
-  aiConcurrent: number;
-  uploadConcurrent: number;
-  configImportConcurrent: number;
+  aiMaxConcurrent: number;
+  uploadMaxConcurrent: number;
+  configImportMaxConcurrent: number;
   rateLimitedCount: number;
   busyRejectedCount: number;
 }
@@ -686,9 +702,9 @@ git commit -m "增加并发保护状态展示"
 - PROTECTION_PUBLIC_WRITE_CAPACITY
 - PROTECTION_ADMIN_CAPACITY
 - PROTECTION_HEAVY_CAPACITY
-- PROTECTION_HEAVY_AI_CONCURRENT
-- PROTECTION_HEAVY_UPLOAD_CONCURRENT
-- PROTECTION_CONFIG_IMPORT_CONCURRENT
+- PROTECTION_CONCURRENCY_AI_MAX_CONCURRENT
+- PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT
+- PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT
 - SERVER_TOMCAT_THREADS_MAX
 - DB_MAX_POOL_SIZE
 ```
