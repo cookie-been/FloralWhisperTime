@@ -212,6 +212,7 @@ a {
 .admin-section-title {
   color: #1b281e;
   font-weight: 600;
+  line-height: 1.16;
   letter-spacing: 0;
 }
 
@@ -292,6 +293,25 @@ a {
   border: 1px solid rgba(41, 57, 46, 0.08);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(251, 248, 242, 0.94), rgba(247, 242, 233, 0.94));
+}
+
+.admin-shell-section {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.admin-shell-copy {
+  color: #6d7e72;
+  font-size: 0.9rem;
+  line-height: 1.75;
+}
+
+.admin-shell-card {
+  padding: 1.25rem;
+}
+
+.admin-shell-subcard {
+  padding: 1rem;
 }
 
 .admin-sticky-toolbar {
@@ -765,6 +785,10 @@ a {
     line-height: 1.16;
   }
 
+  .admin-section-title {
+    line-height: 1.2;
+  }
+
   .site-shell-copy {
     font-size: 0.92rem;
     line-height: 1.8;
@@ -777,6 +801,14 @@ a {
   .site-shell-block {
     padding-top: 3rem;
     padding-bottom: 3rem;
+  }
+
+  .admin-shell-card {
+    padding: 1rem;
+  }
+
+  .admin-shell-subcard {
+    padding: 0.875rem;
   }
 
   .ant-segmented {

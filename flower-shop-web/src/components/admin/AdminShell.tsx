@@ -108,11 +108,11 @@ export function AdminShell() {
 
         <div className="min-w-0">
           <header className="sticky top-0 z-20 border-b border-black/5 bg-[#f6f3ee]/92 backdrop-blur">
-            <div className="flex flex-wrap items-end justify-between gap-4 px-4 py-4 sm:px-8 sm:py-5">
+            <div className="admin-shell-section flex flex-wrap items-end justify-between gap-4 py-4 sm:px-8 sm:py-5">
               <div>
                 <p className="section-eyebrow">{meta.eyebrow}</p>
                 <h2 className="admin-section-title mt-2 text-2xl sm:text-3xl">{meta.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted">{meta.description}</p>
+                <p className="admin-shell-copy mt-2 text-sm">{meta.description}</p>
               </div>
               <div className="flex items-center gap-2">
                 {screens.lg ? (
@@ -135,7 +135,7 @@ export function AdminShell() {
             </div>
           </header>
 
-          <main className="px-4 py-6 sm:px-8 sm:py-8">
+          <main className="admin-shell-section py-6 sm:px-8 sm:py-8">
             <Outlet />
           </main>
         </div>

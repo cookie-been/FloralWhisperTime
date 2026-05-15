@@ -205,7 +205,7 @@ export function AdminSystemStatus() {
 
   return (
     <div className="space-y-6">
-      <section className="admin-panel p-5">
+      <section className="admin-panel admin-shell-card p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1 space-y-3">
             <Alert
@@ -267,7 +267,7 @@ export function AdminSystemStatus() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <div className="admin-panel p-6">
+        <div className="admin-panel admin-shell-card sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="section-eyebrow">服务状态</p>
@@ -329,7 +329,7 @@ export function AdminSystemStatus() {
         </div>
 
         <div className="space-y-6">
-          <div className="admin-panel p-6">
+          <div className="admin-panel admin-shell-card sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="section-eyebrow">AI 状态</p>
@@ -358,7 +358,7 @@ export function AdminSystemStatus() {
             </div>
           </div>
 
-          <div className="admin-panel p-6">
+          <div className="admin-panel admin-shell-card sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="section-eyebrow">备份状态</p>
@@ -396,7 +396,7 @@ export function AdminSystemStatus() {
             </div>
           </div>
 
-          <div className="admin-panel p-6">
+          <div className="admin-panel admin-shell-card sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="section-eyebrow">日志归档</p>

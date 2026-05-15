@@ -137,7 +137,7 @@ export function AdminSettings() {
   const siteContent = (
     <Form form={form} layout="vertical" className="space-y-6">
       <section ref={sectionRefs.brand} className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="admin-panel p-5">
+        <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <Sparkles size={16} className="text-forest" />
             品牌与首页
@@ -188,7 +188,7 @@ export function AdminSettings() {
               </div>
             </div>
           </div>
-          <div className="admin-panel p-5">
+          <div className="admin-panel admin-shell-card p-5">
             <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
               <Building2 size={16} className="text-forest" />
               品牌提示
@@ -200,7 +200,7 @@ export function AdminSettings() {
       </section>
 
       <section ref={sectionRefs.contact} className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="admin-panel p-5">
+        <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <MapPin size={16} className="text-forest" />
             门店与联系
@@ -233,7 +233,7 @@ export function AdminSettings() {
           </Form.Item>
         </div>
 
-        <div className="admin-panel p-5">
+        <div className="admin-panel admin-shell-card p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">信息预览</p>
           <p className="mt-3 text-base font-semibold text-[#1b281e]">门店信息预览</p>
           <div className="admin-subpanel mt-4 px-4 py-4">
@@ -245,7 +245,7 @@ export function AdminSettings() {
       </section>
 
       <section ref={sectionRefs.story} className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="admin-panel p-5">
+        <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <ImageIcon size={16} className="text-forest" />
             品牌故事
@@ -265,12 +265,12 @@ export function AdminSettings() {
         </div>
 
         <div className="space-y-6">
-          <div className="admin-panel p-5">
+          <div className="admin-panel admin-shell-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">故事摘要</p>
             <p className="mt-3 text-xl font-semibold text-[#1b281e]">{storyTitle || "品牌故事标题预览"}</p>
             <p className="mt-2 text-sm leading-7 text-muted">{storyContent || "故事正文预览会显示在这里，帮助你在保存前快速确认语气与长度。"} </p>
           </div>
-          <div className="admin-panel p-5">
+          <div className="admin-panel admin-shell-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">故事图片</p>
             {storyPreviewImages.length ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -288,7 +288,7 @@ export function AdminSettings() {
       </section>
 
       <section ref={sectionRefs.license} className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
-        <div className="admin-panel p-5">
+        <div className="admin-panel admin-shell-card p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
             <KeyRound size={16} className="text-forest" />
             授权信息
@@ -315,7 +315,7 @@ export function AdminSettings() {
           </Form.Item>
         </div>
 
-        <div className="admin-panel p-5">
+        <div className="admin-panel admin-shell-card p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">授权预览</p>
           <div className="admin-subpanel mt-4 px-4 py-4">
             <p className="text-sm font-semibold text-[#1b281e]">{licenseCustomerName || "未填写客户名称"}</p>
