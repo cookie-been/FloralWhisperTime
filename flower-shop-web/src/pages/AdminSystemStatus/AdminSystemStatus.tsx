@@ -1,8 +1,9 @@
-import { Alert, Button, Empty, Input, Modal, Spin, Switch, Tag, message } from "antd";
-import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles } from "lucide-react";
+import { Alert, Button, Empty, Input, Modal, Spin, Switch, Tag, Upload, message } from "antd";
+import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { archiveAdminOperationLogs, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminSystemStatus, isAbortError } from "@/services/api";
+import { archiveAdminOperationLogs, downloadAdminConfigExport, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminSystemStatus, importAdminConfig, isAbortError } from "@/services/api";
 import type { OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
+import type { RcFile } from "antd/es/upload";
 
 const AUTO_REFRESH_INTERVAL_MS = 60000;
 const AUTO_REFRESH_ERROR_THRESHOLD = 3;
@@ -40,6 +41,7 @@ export function AdminSystemStatus() {
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [archiveBefore, setArchiveBefore] = useState("");
   const [archiving, setArchiving] = useState(false);
+  const [importingConfig, setImportingConfig] = useState(false);
   const [latestArchiveResult, setLatestArchiveResult] = useState<OperationLogArchiveResult | null>(null);
   const [archiveFiles, setArchiveFiles] = useState<OperationLogArchiveFile[]>([]);
   const requestControllerRef = useRef<AbortController | null>(null);
@@ -132,7 +134,7 @@ export function AdminSystemStatus() {
     if (!status.latestBackupPresent) issues.push("尚未发现可用备份");
 
     if (issues.length === 0) {
-      return { level: "success", title: "系统运行正常", message: "关键依赖与目录状态均正常，可继续进行运营与部署操作。" };
+      return { level: "success", title: "系统运行正常", message: "关键依赖、目录与核心配置状态均正常，可继续进行运营、部署与客户交付。" };
     }
 
     const critical = !status.databaseConnected || !status.uploadDirectoryReady;
@@ -182,6 +184,21 @@ export function AdminSystemStatus() {
       setArchiving(false);
     }
   }, [archiveBefore, loadStatus]);
+
+  const handleConfigImport = useCallback(async (file: RcFile) => {
+    if (importingConfig) return false;
+    setImportingConfig(true);
+    try {
+      const result = await importAdminConfig(file);
+      message.success(`配置已导入：时间轴 ${result.timelineCount} 条，团队 ${result.teamCount} 人`);
+      await loadStatus("refresh");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "配置导入失败");
+    } finally {
+      setImportingConfig(false);
+    }
+    return false;
+  }, [importingConfig, loadStatus]);
 
   if (loading) {
     return (
@@ -284,8 +301,8 @@ export function AdminSystemStatus() {
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">部署信息</p>
-              <p className="mt-2 text-muted">环境：{status.deploymentEnvironment || "未知"}</p>
-              <p className="mt-2 break-all text-muted">提交：{status.gitRevision || "未记录"}</p>
+              <p className="mt-2 text-muted">环境：{status.deploymentEnvironment || "未识别环境"}</p>
+              <p className="mt-2 break-all text-muted">提交：{status.gitRevision || "未写入构建提交号"}</p>
               <p className="mt-2 text-muted">构建时间：{formatDateTime(status.buildTime)}</p>
               <p className="mt-2 text-muted">部署时间：{formatDateTime(status.deployedAt)}</p>
             </div>
@@ -296,9 +313,9 @@ export function AdminSystemStatus() {
                   {status.licenseStatusLabel || "未配置授权信息"}
                 </Tag>
               </div>
-              <p className="mt-2 text-muted">客户：{status.licenseCustomerName || "未填写"}</p>
-              <p className="mt-2 text-muted">编号：{status.licenseCode || "未填写"}</p>
-              <p className="mt-2 text-muted">类型：{status.licenseType || "未填写"}</p>
+              <p className="mt-2 text-muted">客户：{status.licenseCustomerName || "待补充客户信息"}</p>
+              <p className="mt-2 text-muted">编号：{status.licenseCode || "待补充授权编号"}</p>
+              <p className="mt-2 text-muted">类型：{status.licenseType || "待补充授权类型"}</p>
               <p className="mt-2 text-muted">到期：{formatDateTime(status.licenseExpiresAt)}</p>
               <p className="mt-2 text-muted">预警：提前 {status.licenseWarningDays || 30} 天</p>
               {status.licenseNotes ? <p className="mt-2 text-muted">备注：{status.licenseNotes}</p> : null}
@@ -306,24 +323,24 @@ export function AdminSystemStatus() {
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>
               <p className="mt-2 text-muted">{status.databaseConnected ? "已连接" : "连接失败"}</p>
-              <p className="mt-2 text-muted">数据库版本：{status.databaseVersion || "未知"}</p>
-              <p className="mt-2 text-muted">数据库容量：{status.databaseSize || "未知"}</p>
+              <p className="mt-2 text-muted">数据库版本：{status.databaseVersion || "未读取到版本信息"}</p>
+              <p className="mt-2 text-muted">数据库容量：{status.databaseSize || "未读取到容量信息"}</p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">上传目录</p>
               <p className="mt-2 break-all text-muted">{status.uploadDirectoryPath}</p>
               <p className="mt-2 text-muted">{status.uploadDirectoryReady ? "目录存在且可写" : "目录不可写或不存在"}</p>
-              <p className="mt-2 text-muted">目录容量：{status.uploadDirectorySize || "未知"}</p>
+              <p className="mt-2 text-muted">目录容量：{status.uploadDirectorySize || "暂未统计到目录容量"}</p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">服务运行时长</p>
-              <p className="mt-2 text-muted">{status.uptimeLabel || "未知"}</p>
+              <p className="mt-2 text-muted">{status.uptimeLabel || "暂未记录服务运行时长"}</p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">磁盘占用</p>
-              <p className="mt-2 text-muted">总容量：{status.diskTotal || "未知"}</p>
-              <p className="mt-2 text-muted">可用容量：{status.diskUsable || "未知"}</p>
-              <p className="mt-2 text-muted">已用比例：{status.diskUsageRate || "未知"}</p>
+              <p className="mt-2 text-muted">总容量：{status.diskTotal || "暂未读取到总容量"}</p>
+              <p className="mt-2 text-muted">可用容量：{status.diskUsable || "暂未读取到可用容量"}</p>
+              <p className="mt-2 text-muted">已用比例：{status.diskUsageRate || "暂未计算已用比例"}</p>
             </div>
           </div>
         </div>
@@ -359,6 +376,50 @@ export function AdminSystemStatus() {
           </div>
 
           <div className="admin-panel admin-shell-card sm:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="section-eyebrow">交付迁移</p>
+                <h3 className="admin-section-title mt-2 text-xl">配置导入导出</h3>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
+                  用于客户交付、环境迁移和售后恢复。导出包包含站点配置、门店信息、品牌故事、关于我们、时间轴、团队成员和 AI 配置，不会改动作品与留言数据。
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="primary"
+                  icon={<Download size={16} />}
+                  onClick={() => {
+                    downloadAdminConfigExport()
+                      .then(() => message.success("已开始下载配置导出包"))
+                      .catch((error) => message.error(error instanceof Error ? error.message : "配置导出失败"));
+                  }}
+                >
+                  导出配置
+                </Button>
+                <Upload beforeUpload={handleConfigImport} showUploadList={false} accept=".json,application/json">
+                  <Button loading={importingConfig} icon={<UploadCloud size={16} />}>
+                    导入配置
+                  </Button>
+                </Upload>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">适用场景</p>
+                <p className="mt-2 text-sm leading-6 text-muted">新客户环境初始化、测试环境回填、同品牌多实例复制，以及售后排障前的配置快照留存。</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">导入影响范围</p>
+                <p className="mt-2 text-sm leading-6 text-muted">会覆盖当前动态配置内容，建议导入前先导出一份当前配置包，作为回退基线。</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">执行建议</p>
+                <p className="mt-2 text-sm leading-6 text-muted">正式环境建议先下载最近备份，再执行配置导入；完成后刷新前台首页、关于页和后台设置页确认结果。</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-panel admin-shell-card sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="section-eyebrow">备份状态</p>
@@ -383,11 +444,11 @@ export function AdminSystemStatus() {
             <div className="mt-5 space-y-4 text-sm">
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">备份目录</p>
-                <p className="mt-2 break-all text-muted">{status.latestBackupPath || "暂无"}</p>
+                <p className="mt-2 break-all text-muted">{status.latestBackupPath || "当前未发现备份目录记录"}</p>
               </div>
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">备份标识</p>
-                <p className="mt-2 text-muted">{status.latestBackupName || "暂无"}</p>
+                <p className="mt-2 text-muted">{status.latestBackupName || "当前未发现可用备份"}</p>
               </div>
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">最近更新时间</p>

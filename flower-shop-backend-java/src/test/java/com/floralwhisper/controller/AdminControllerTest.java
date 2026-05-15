@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -20,6 +21,7 @@ import com.floralwhisper.config.SecurityConfig;
 import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
+import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogArchiveFileResponse;
@@ -70,6 +72,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
@@ -325,6 +328,57 @@ class AdminControllerTest {
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "application/gzip"))
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"latest-backup.tar.gz\""))
         .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().bytes("archive-demo".getBytes(StandardCharsets.UTF_8)));
+  }
+
+  @Test
+  void configExportStreamsJsonWhenTokenIsValid() throws Exception {
+    doAnswer(invocation -> {
+      OutputStream outputStream = invocation.getArgument(0);
+      outputStream.write("{\"version\":\"1.0.0\"}".getBytes(StandardCharsets.UTF_8));
+      return "site-config-export-20260515-101010.json";
+    }).when(siteService).writeConfigExport(any(OutputStream.class));
+
+    mockMvc.perform(get("/api/admin/system/config-export")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Type", "application/json"))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Content-Disposition", "attachment; filename=\"site-config-export-20260515-101010.json\""))
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().json("""
+            {"version":"1.0.0"}
+            """));
+  }
+
+  @Test
+  void configImportReturnsSummaryWhenTokenIsValid() throws Exception {
+    ConfigImportResponse response = new ConfigImportResponse();
+    response.setVersion("1.0.0");
+    response.setImportedAt("2026-05-15 10:20:30");
+    response.setTimelineCount(3);
+    response.setTeamCount(2);
+    response.setIncludedAiSettings(true);
+    when(siteService.importConfig(any())).thenReturn(response);
+
+    MockMultipartFile file = new MockMultipartFile(
+        "file",
+        "site-config-export.json",
+        "application/json",
+        """
+        {"version":"1.0.0"}
+        """.getBytes(StandardCharsets.UTF_8));
+
+    mockMvc.perform(multipart("/api/admin/system/config-import")
+            .file(file)
+            .with(request -> {
+              request.setMethod("POST");
+              return request;
+            })
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.version").value("1.0.0"))
+        .andExpect(jsonPath("$.importedAt").value("2026-05-15 10:20:30"))
+        .andExpect(jsonPath("$.timelineCount").value(3))
+        .andExpect(jsonPath("$.teamCount").value(2))
+        .andExpect(jsonPath("$.includedAiSettings").value(true));
   }
 
   @Test

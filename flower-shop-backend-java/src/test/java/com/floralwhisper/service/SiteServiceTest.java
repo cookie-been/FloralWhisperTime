@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,13 +15,18 @@ import static org.mockito.Mockito.when;
 import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
+import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
+import com.floralwhisper.entity.AboutPage;
+import com.floralwhisper.entity.AboutTimelineEntry;
 import com.floralwhisper.entity.BrandStory;
 import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.entity.OperationLog;
+import com.floralwhisper.entity.ShopHour;
 import com.floralwhisper.entity.ShopInfo;
 import com.floralwhisper.entity.SiteConfig;
+import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
@@ -34,6 +40,8 @@ import com.floralwhisper.mapper.SiteConfigMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.sql.Connection;
@@ -42,10 +50,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.mock.web.MockMultipartFile;
 
 class SiteServiceTest {
 
@@ -395,6 +406,202 @@ class SiteServiceTest {
     assertTrue(files.get(0).getDownloadUrl().contains("/api/admin/system/operation-logs/archive-files/operation-logs-archive-20260515-090000.csv/download"));
   }
 
+  @Test
+  void configExportWritesCompleteSnapshotJson() throws Exception {
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
+    ShopHourMapper shopHourMapper = mock(ShopHourMapper.class);
+    AboutPageMapper aboutPageMapper = mock(AboutPageMapper.class);
+    AboutTimelineEntryMapper aboutTimelineEntryMapper = mock(AboutTimelineEntryMapper.class);
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    BrandStoryMapper brandStoryMapper = mock(BrandStoryMapper.class);
+    BrandStoryImageMapper brandStoryImageMapper = mock(BrandStoryImageMapper.class);
+    TeamMemberMapper teamMemberMapper = mock(TeamMemberMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+
+    when(siteConfigMapper.selectById(1L)).thenReturn(siteConfigForExport());
+    when(shopInfoMapper.selectById(1L)).thenReturn(shopInfoForExport());
+    when(shopHourMapper.selectList(any())).thenReturn(defaultHours());
+    when(aboutPageMapper.selectById(1L)).thenReturn(aboutPageForExport());
+    when(aboutTimelineEntryMapper.selectList(any())).thenReturn(List.of(timelineEntry("timeline_2024", "2024", "完成品牌升级", 0)));
+    when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(true, "volcengine", "secret-key", "doubao-image", "doubao-text"));
+    when(brandStoryMapper.selectById(1L)).thenReturn(brandStoryForExport());
+    when(brandStoryImageMapper.selectList(any())).thenReturn(List.of(brandStoryImage("https://example.com/story-1.jpg", 0)));
+    when(teamMemberMapper.selectList(any())).thenReturn(List.of(teamMember("team_01", "林汐", "主理花艺师", "https://example.com/team-1.jpg", 5)));
+
+    SiteService siteService = createSiteService(
+        siteConfigMapper,
+        shopInfoMapper,
+        shopHourMapper,
+        aboutPageMapper,
+        aboutTimelineEntryMapper,
+        aiSettingsMapper,
+        brandStoryMapper,
+        brandStoryImageMapper,
+        mock(OperationLogMapper.class),
+        teamMemberMapper,
+        auditLogService);
+
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    String filename = siteService.writeConfigExport(outputStream);
+    String payload = outputStream.toString(java.nio.charset.StandardCharsets.UTF_8);
+
+    assertTrue(filename.startsWith("site-config-export-"));
+    assertTrue(filename.endsWith(".json"));
+    assertTrue(payload.contains("\"version\""));
+    assertTrue(payload.contains("\"siteConfig\""));
+    assertTrue(payload.contains("\"aboutPage\""));
+    assertTrue(payload.contains("\"timeline\""));
+    assertTrue(payload.contains("\"team\""));
+    assertTrue(payload.contains("\"aiSettings\""));
+    verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
+  }
+
+  @Test
+  void importConfigRestoresAllManagedSections() throws Exception {
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
+    ShopHourMapper shopHourMapper = mock(ShopHourMapper.class);
+    AboutPageMapper aboutPageMapper = mock(AboutPageMapper.class);
+    AboutTimelineEntryMapper aboutTimelineEntryMapper = mock(AboutTimelineEntryMapper.class);
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    BrandStoryMapper brandStoryMapper = mock(BrandStoryMapper.class);
+    BrandStoryImageMapper brandStoryImageMapper = mock(BrandStoryImageMapper.class);
+    TeamMemberMapper teamMemberMapper = mock(TeamMemberMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+
+    SiteConfig existingSiteConfig = siteConfigForExport();
+    ShopInfo existingShopInfo = shopInfoForExport();
+    AboutPage existingAboutPage = aboutPageForExport();
+    BrandStory existingStory = brandStoryForExport();
+    AiSettings existingAiSettings = aiSettings(true, "volcengine", "old-key", "old-image", "old-text");
+
+    when(siteConfigMapper.selectById(1L)).thenReturn(existingSiteConfig);
+    when(shopInfoMapper.selectById(1L)).thenReturn(existingShopInfo);
+    when(shopHourMapper.selectList(any())).thenReturn(defaultHours());
+    when(aboutPageMapper.selectById(1L)).thenReturn(existingAboutPage);
+    when(aboutTimelineEntryMapper.selectList(any())).thenReturn(List.of());
+    when(aiSettingsMapper.selectById(1L)).thenReturn(existingAiSettings);
+    when(brandStoryMapper.selectById(1L)).thenReturn(existingStory);
+    when(brandStoryImageMapper.selectList(any())).thenReturn(List.of());
+    when(teamMemberMapper.selectList(any())).thenReturn(List.of());
+
+    SiteService siteService = createSiteService(
+        siteConfigMapper,
+        shopInfoMapper,
+        shopHourMapper,
+        aboutPageMapper,
+        aboutTimelineEntryMapper,
+        aiSettingsMapper,
+        brandStoryMapper,
+        brandStoryImageMapper,
+        mock(OperationLogMapper.class),
+        teamMemberMapper,
+        auditLogService);
+
+    String importJson = """
+        {
+          "version": "1.0.0",
+          "siteConfig": {
+            "brandName": "花语时光 Pro",
+            "heroEyebrow": "企业交付版",
+            "heroTitle": "花语时光 Pro",
+            "heroDescription": "升级后的首页文案",
+            "heroImage": "https://example.com/hero.jpg",
+            "primaryCtaText": "浏览作品",
+            "secondaryCtaText": "联系顾问",
+            "contactIntro": "欢迎咨询商业部署",
+            "businessHoursText": "每天 09:00-22:00",
+            "footerDescription": "商业交付示例",
+            "licenseCustomerName": "商业客户",
+            "licenseCode": "FWT-BIZ-001",
+            "licenseType": "商业授权",
+            "licenseExpiresAt": "2027-05-15T00:00:00",
+            "licenseWarningDays": 45,
+            "licenseNotes": "需年度巡检"
+          },
+          "shopInfo": {
+            "name": "花语时光 Pro",
+            "phone": "13800138000",
+            "wechat": "floral-pro",
+            "address": "上海市静安区花语路 88 号",
+            "latitude": 31.2304,
+            "longitude": 121.4737,
+            "hours": {
+              "monday": {"open":"09:00","close":"22:00","off":false},
+              "tuesday": {"open":"09:00","close":"22:00","off":false},
+              "wednesday": {"open":"09:00","close":"22:00","off":false},
+              "thursday": {"open":"09:00","close":"22:00","off":false},
+              "friday": {"open":"09:00","close":"22:00","off":false},
+              "saturday": {"open":"10:00","close":"22:00","off":false},
+              "sunday": {"open":"10:00","close":"21:00","off":false}
+            }
+          },
+          "brandStory": {
+            "title": "升级后的品牌故事",
+            "subtitle": "商业版副标题",
+            "content": "商业交付后的品牌故事正文",
+            "images": ["https://example.com/story-1.jpg", "https://example.com/story-2.jpg"]
+          },
+          "aboutPage": {
+            "heroImage": "https://example.com/about-hero.jpg",
+            "heroEyebrow": "About",
+            "heroTitle": "关于花语时光 Pro",
+            "heroSubtitle": "交付升级后的关于页副标题",
+            "storyTitle": "新的故事标题",
+            "storyContent": "新的关于页正文"
+          },
+          "timeline": [
+            {"id":"timeline_2024","yearLabel":"2024","content":"完成品牌升级","sort":0},
+            {"id":"timeline_2026","yearLabel":"2026","content":"上线商业化交付版本","sort":1}
+          ],
+          "team": [
+            {"id":"team_01","name":"林汐","title":"主理花艺师","avatar":"https://example.com/team-1.jpg","bio":"负责品牌花艺方向","sort":5},
+            {"id":"team_02","name":"周宁","title":"婚礼花艺师","avatar":"https://example.com/team-2.jpg","bio":"负责婚礼项目","sort":4}
+          ],
+          "aiSettings": {
+            "enabled": true,
+            "provider": "volcengine",
+            "apiKeyMasked": "ignored",
+            "model": "doubao-seedream-5-0-260128",
+            "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+            "generatePath": "/images/generations",
+            "size": "1920x1920",
+            "textModel": "doubao-1-5-pro-32k-250115",
+            "textGeneratePath": "/chat/completions",
+            "textTemperature": 0.4,
+            "textMaxTokens": 1200,
+            "apiKey": "new-secret-key"
+          }
+        }
+        """;
+
+    MockMultipartFile file = new MockMultipartFile(
+        "file",
+        "site-config-export.json",
+        "application/json",
+        new ByteArrayInputStream(importJson.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+
+    ConfigImportResponse result = siteService.importConfig(file);
+
+    assertEquals("1.0.0", result.getVersion());
+    assertEquals(2, result.getTimelineCount());
+    assertEquals(2, result.getTeamCount());
+    assertTrue(result.isIncludedAiSettings());
+    verify(siteConfigMapper, times(1)).updateById(any(SiteConfig.class));
+    verify(shopInfoMapper, times(1)).updateById(any(ShopInfo.class));
+    verify(aboutPageMapper, times(1)).updateById(any(AboutPage.class));
+    verify(brandStoryMapper, times(1)).updateById(any(BrandStory.class));
+    verify(brandStoryImageMapper, times(1)).delete(any());
+    verify(brandStoryImageMapper, times(2)).insert(org.mockito.ArgumentMatchers.<com.floralwhisper.entity.BrandStoryImage>any());
+    verify(aboutTimelineEntryMapper, times(1)).delete(any());
+    verify(aboutTimelineEntryMapper, atLeast(2)).insert(org.mockito.ArgumentMatchers.<AboutTimelineEntry>any());
+    verify(teamMemberMapper, times(1)).delete(any());
+    verify(teamMemberMapper, atLeast(2)).insert(org.mockito.ArgumentMatchers.<TeamMember>any());
+    verify(aiSettingsMapper, times(1)).updateById(any(AiSettings.class));
+    verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
+  }
+
   private AppProperties appProperties(Path uploadsDir, Path backupsDir, String environment, String gitRevision, String deployedAt) {
     AppProperties properties = new AppProperties();
     AppProperties.Upload upload = new AppProperties.Upload();
@@ -413,6 +620,140 @@ class SiteServiceTest {
     runtime.setDeployedAt(deployedAt);
     properties.setRuntime(runtime);
     return properties;
+  }
+
+  private SiteService createSiteService(
+      SiteConfigMapper siteConfigMapper,
+      ShopInfoMapper shopInfoMapper,
+      ShopHourMapper shopHourMapper,
+      AboutPageMapper aboutPageMapper,
+      AboutTimelineEntryMapper aboutTimelineEntryMapper,
+      AiSettingsMapper aiSettingsMapper,
+      BrandStoryMapper brandStoryMapper,
+      BrandStoryImageMapper brandStoryImageMapper,
+      OperationLogMapper operationLogMapper,
+      TeamMemberMapper teamMemberMapper,
+      AuditLogService auditLogService) {
+    return new SiteService(
+        siteConfigMapper,
+        shopInfoMapper,
+        shopHourMapper,
+        aboutPageMapper,
+        aboutTimelineEntryMapper,
+        aiSettingsMapper,
+        brandStoryMapper,
+        brandStoryImageMapper,
+        mock(CategoryMapper.class),
+        operationLogMapper,
+        teamMemberMapper,
+        appProperties(tempDir.resolve("uploads"), tempDir.resolve("backups"), "local", "dev", ""),
+        mock(DataSource.class),
+        null,
+        auditLogService,
+        Instant.parse("2026-05-15T00:45:00Z"),
+        ZoneId.of("Asia/Shanghai"),
+        Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+  }
+
+  private SiteConfig siteConfigForExport() {
+    SiteConfig config = new SiteConfig();
+    config.setId(1L);
+    config.setBrandName("花语时光");
+    config.setHeroEyebrow("自然温暖");
+    config.setHeroTitle("花语时光");
+    config.setHeroDescription("品牌首页文案");
+    config.setHeroImage("https://example.com/hero.jpg");
+    config.setPrimaryCtaText("浏览作品");
+    config.setSecondaryCtaText("联系门店");
+    config.setContactIntro("欢迎预约");
+    config.setBusinessHoursText("每天 09:00-22:00");
+    config.setFooterDescription("页脚文案");
+    config.setLicenseCustomerName("演示客户");
+    config.setLicenseCode("FWT-DEMO-001");
+    config.setLicenseType("正式版");
+    config.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
+    config.setLicenseWarningDays(30);
+    config.setLicenseNotes("演示授权");
+    return config;
+  }
+
+  private ShopInfo shopInfoForExport() {
+    ShopInfo shopInfo = new ShopInfo();
+    shopInfo.setId(1L);
+    shopInfo.setName("花语时光");
+    shopInfo.setPhone("13800138000");
+    shopInfo.setWechat("floral");
+    shopInfo.setAddress("上海市静安区花语路 88 号");
+    shopInfo.setLatitude(new java.math.BigDecimal("31.2304"));
+    shopInfo.setLongitude(new java.math.BigDecimal("121.4737"));
+    return shopInfo;
+  }
+
+  private AboutPage aboutPageForExport() {
+    AboutPage aboutPage = new AboutPage();
+    aboutPage.setId(1L);
+    aboutPage.setHeroImage("https://example.com/about-hero.jpg");
+    aboutPage.setHeroEyebrow("About");
+    aboutPage.setHeroTitle("关于花语时光");
+    aboutPage.setHeroSubtitle("副标题");
+    aboutPage.setStoryTitle("品牌故事");
+    aboutPage.setStoryContent("关于页正文");
+    return aboutPage;
+  }
+
+  private BrandStory brandStoryForExport() {
+    BrandStory story = new BrandStory();
+    story.setId(1L);
+    story.setTitle("品牌故事");
+    story.setSubtitle("故事副标题");
+    story.setContent("故事正文");
+    return story;
+  }
+
+  private com.floralwhisper.entity.BrandStoryImage brandStoryImage(String imageUrl, int sort) {
+    com.floralwhisper.entity.BrandStoryImage image = new com.floralwhisper.entity.BrandStoryImage();
+    image.setImageUrl(imageUrl);
+    image.setSort(sort);
+    return image;
+  }
+
+  private List<ShopHour> defaultHours() {
+    return List.of(
+        shopHour("monday", "09:00", "22:00", false),
+        shopHour("tuesday", "09:00", "22:00", false),
+        shopHour("wednesday", "09:00", "22:00", false),
+        shopHour("thursday", "09:00", "22:00", false),
+        shopHour("friday", "09:00", "22:00", false),
+        shopHour("saturday", "10:00", "22:00", false),
+        shopHour("sunday", "10:00", "21:00", false));
+  }
+
+  private ShopHour shopHour(String weekday, String open, String close, boolean off) {
+    ShopHour hour = new ShopHour();
+    hour.setWeekday(weekday);
+    hour.setOpenTime(open);
+    hour.setCloseTime(close);
+    hour.setOff(off);
+    return hour;
+  }
+
+  private AboutTimelineEntry timelineEntry(String id, String yearLabel, String content, int sort) {
+    AboutTimelineEntry entry = new AboutTimelineEntry();
+    entry.setId(id);
+    entry.setYearLabel(yearLabel);
+    entry.setContent(content);
+    entry.setSort(sort);
+    return entry;
+  }
+
+  private TeamMember teamMember(String id, String name, String title, String avatar, int sort) {
+    TeamMember member = new TeamMember();
+    member.setId(id);
+    member.setName(name);
+    member.setTitle(title);
+    member.setAvatar(avatar);
+    member.setSort(sort);
+    return member;
   }
 
   private AiSettings aiSettings(boolean enabled, String provider, String apiKey, String imageModel, String textModel) {

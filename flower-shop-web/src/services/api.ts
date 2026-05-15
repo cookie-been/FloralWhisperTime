@@ -290,6 +290,69 @@ export async function downloadAdminFile(downloadUrl: string, fallbackFilename: s
   setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 }
 
+export async function downloadAdminConfigExport() {
+  const token = getAdminToken();
+  if (!token) {
+    throw new Error("请先登录管理后台");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/admin/system/config-export`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "下载失败" }));
+    throw new Error(error.message ?? "下载失败");
+  }
+
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = `site-config-export-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+}
+
+export function importAdminConfig(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return withMutationGuard(`admin:config-import:${file.name}:${file.size}`, () =>
+    request<{
+      version: string;
+      importedAt: string;
+      timelineCount: number;
+      teamCount: number;
+      includedAiSettings: boolean;
+    }>("/api/admin/system/config-import", {
+      method: "POST",
+      body: formData,
+      headers: {},
+      timeoutMs: 30_000,
+      retryCount: 0,
+    }).then((result) => {
+      invalidateCache(
+        "public:site-config",
+        "admin:site-config",
+        "public:shop-info",
+        "public:brand-story",
+        "public:about-page",
+        "public:about-timeline",
+        "public:team",
+        "admin:about-page",
+        "admin:about-timeline",
+        "admin:team",
+        "admin:ai-settings",
+        "dashboard:data",
+      );
+      return result;
+    }),
+  );
+}
+
 export function getAdminContacts(
   query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread" } = {},
   options: RequestOptions = {},

@@ -13,6 +13,9 @@ import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.BusinessHoursResponse;
+import com.floralwhisper.dto.ConfigImportResponse;
+import com.floralwhisper.dto.ConfigTransferAiSettings;
+import com.floralwhisper.dto.ConfigTransferPayload;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogArchiveFileResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
@@ -60,6 +63,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -71,6 +76,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class SiteService {
@@ -95,6 +102,7 @@ public class SiteService {
   private final ZoneId zoneId;
   private final Clock clock;
   private final AuditLogService auditLogService;
+  private final ObjectMapper objectMapper;
 
   @Autowired
   public SiteService(
@@ -112,7 +120,8 @@ public class SiteService {
       AppProperties appProperties,
       DataSource dataSource,
       @Nullable BuildProperties buildProperties,
-      AuditLogService auditLogService) {
+      AuditLogService auditLogService,
+      ObjectMapper objectMapper) {
     this(
         siteConfigMapper,
         shopInfoMapper,
@@ -129,6 +138,7 @@ public class SiteService {
         dataSource,
         buildProperties,
         auditLogService,
+        objectMapper,
         Instant.now(),
         ZoneId.systemDefault(),
         Clock.systemDefaultZone());
@@ -153,6 +163,48 @@ public class SiteService {
       @Nullable Instant startedAt,
       ZoneId zoneId,
       Clock clock) {
+    this(
+        siteConfigMapper,
+        shopInfoMapper,
+        shopHourMapper,
+        aboutPageMapper,
+        aboutTimelineEntryMapper,
+        aiSettingsMapper,
+        brandStoryMapper,
+        brandStoryImageMapper,
+        categoryMapper,
+        operationLogMapper,
+        teamMemberMapper,
+        appProperties,
+        dataSource,
+        buildProperties,
+        auditLogService,
+        new ObjectMapper(),
+        startedAt,
+        zoneId,
+        clock);
+  }
+
+  SiteService(
+      SiteConfigMapper siteConfigMapper,
+      ShopInfoMapper shopInfoMapper,
+      ShopHourMapper shopHourMapper,
+      AboutPageMapper aboutPageMapper,
+      AboutTimelineEntryMapper aboutTimelineEntryMapper,
+      AiSettingsMapper aiSettingsMapper,
+      BrandStoryMapper brandStoryMapper,
+      BrandStoryImageMapper brandStoryImageMapper,
+      CategoryMapper categoryMapper,
+      OperationLogMapper operationLogMapper,
+      TeamMemberMapper teamMemberMapper,
+      AppProperties appProperties,
+      DataSource dataSource,
+      @Nullable BuildProperties buildProperties,
+      AuditLogService auditLogService,
+      ObjectMapper objectMapper,
+      @Nullable Instant startedAt,
+      ZoneId zoneId,
+      Clock clock) {
     this.siteConfigMapper = siteConfigMapper;
     this.shopInfoMapper = shopInfoMapper;
     this.shopHourMapper = shopHourMapper;
@@ -168,6 +220,7 @@ public class SiteService {
     this.dataSource = dataSource;
     this.buildProperties = buildProperties;
     this.auditLogService = auditLogService;
+    this.objectMapper = (objectMapper == null ? new ObjectMapper() : objectMapper.copy()).findAndRegisterModules();
     this.startedAt = startedAt;
     this.zoneId = zoneId;
     this.clock = clock;
@@ -361,6 +414,70 @@ public class SiteService {
     }
 
     return latestBackup.getName() + ".tar.gz";
+  }
+
+  public String writeConfigExport(OutputStream outputStream) throws IOException {
+    ConfigTransferPayload payload = buildConfigTransferPayload(true);
+    objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputStream, payload);
+
+    String filename = "site-config-export-" + DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now(clock)) + ".json";
+    auditLogService.record(AuditLogCommand.builder()
+        .module("SITE")
+        .action("EXPORT")
+        .targetType("SITE_CONFIG_PACKAGE")
+        .targetId(filename)
+        .requestSummary(Map.of("filename", filename))
+        .afterSnapshot(Map.of(
+            "version", payload.getVersion(),
+            "timelineCount", payload.getTimeline() == null ? 0 : payload.getTimeline().size(),
+            "teamCount", payload.getTeam() == null ? 0 : payload.getTeam().size(),
+            "includedAiSettings", payload.getAiSettings() != null))
+        .success(true)
+        .build());
+    return filename;
+  }
+
+  @Transactional
+  public ConfigImportResponse importConfig(MultipartFile file) throws IOException {
+    if (file == null || file.isEmpty()) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "请上传配置文件");
+    }
+
+    ConfigTransferPayload payload;
+    try {
+      payload = objectMapper.readValue(file.getInputStream(), ConfigTransferPayload.class);
+    } catch (Exception exception) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "配置文件格式无效");
+    }
+
+    if (payload == null) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "配置文件内容为空");
+    }
+
+    ConfigTransferPayload before = buildConfigTransferPayload(false);
+    applyConfigTransferPayload(payload);
+
+    ConfigImportResponse response = new ConfigImportResponse();
+    response.setVersion(notBlank(payload.getVersion()) ? payload.getVersion().trim() : "1.0.0");
+    response.setImportedAt(DATE_TIME_FORMATTER.format(LocalDateTime.now(clock)));
+    response.setTimelineCount(payload.getTimeline() == null ? 0 : payload.getTimeline().size());
+    response.setTeamCount(payload.getTeam() == null ? 0 : payload.getTeam().size());
+    response.setIncludedAiSettings(payload.getAiSettings() != null);
+
+    auditLogService.record(AuditLogCommand.builder()
+        .module("SITE")
+        .action("IMPORT")
+        .targetType("SITE_CONFIG_PACKAGE")
+        .targetId(file.getOriginalFilename() == null ? "uploaded-config.json" : file.getOriginalFilename())
+        .requestSummary(Map.of(
+            "filename", file.getOriginalFilename() == null ? "uploaded-config.json" : file.getOriginalFilename(),
+            "size", file.getSize(),
+            "version", response.getVersion()))
+        .beforeSnapshot(before)
+        .afterSnapshot(buildConfigTransferPayload(false))
+        .success(true)
+        .build());
+    return response;
   }
 
   public List<Category> getCategories() {
@@ -658,6 +775,128 @@ public class SiteService {
     return copy;
   }
 
+  private ConfigTransferPayload buildConfigTransferPayload(boolean includeSecrets) {
+    ConfigTransferPayload payload = new ConfigTransferPayload();
+    payload.setVersion("1.0.0");
+    payload.setGeneratedAt(DATE_TIME_FORMATTER.format(LocalDateTime.now(clock)));
+    payload.setSiteConfig(getAdminSiteConfig());
+    payload.setShopInfo(getShopInfo());
+    payload.setBrandStory(getBrandStory());
+    payload.setAboutPage(getAboutPage());
+    payload.setTimeline(getAboutTimeline());
+    payload.setTeam(getAdminTeamMembers().stream().map(this::cloneTeamMember).toList());
+    payload.setAiSettings(toConfigTransferAiSettings(ensureAiSettings(), includeSecrets));
+    return payload;
+  }
+
+  private void applyConfigTransferPayload(ConfigTransferPayload payload) {
+    if (payload.getSiteConfig() != null) {
+      SiteConfigResponse source = payload.getSiteConfig();
+      SiteConfig current = ensureSiteConfig();
+      current.setBrandName(text(source.getBrandName(), current.getBrandName()));
+      current.setHeroEyebrow(text(source.getHeroEyebrow(), current.getHeroEyebrow()));
+      current.setHeroTitle(text(source.getHeroTitle(), current.getHeroTitle()));
+      current.setHeroDescription(text(source.getHeroDescription(), current.getHeroDescription()));
+      current.setHeroImage(text(source.getHeroImage(), current.getHeroImage()));
+      current.setPrimaryCtaText(text(source.getPrimaryCtaText(), current.getPrimaryCtaText()));
+      current.setSecondaryCtaText(text(source.getSecondaryCtaText(), current.getSecondaryCtaText()));
+      current.setContactIntro(text(source.getContactIntro(), current.getContactIntro()));
+      current.setBusinessHoursText(text(source.getBusinessHoursText(), current.getBusinessHoursText()));
+      current.setFooterDescription(text(source.getFooterDescription(), current.getFooterDescription()));
+      current.setLicenseCustomerName(text(source.getLicenseCustomerName(), current.getLicenseCustomerName()));
+      current.setLicenseCode(text(source.getLicenseCode(), current.getLicenseCode()));
+      current.setLicenseType(text(source.getLicenseType(), current.getLicenseType()));
+      current.setLicenseExpiresAt(source.getLicenseExpiresAt() == null ? current.getLicenseExpiresAt() : source.getLicenseExpiresAt());
+      current.setLicenseWarningDays(source.getLicenseWarningDays() == null ? current.getLicenseWarningDays() : source.getLicenseWarningDays());
+      current.setLicenseNotes(text(source.getLicenseNotes(), current.getLicenseNotes()));
+      siteConfigMapper.updateById(current);
+    }
+
+    if (payload.getShopInfo() != null) {
+      ShopInfoResponse source = payload.getShopInfo();
+      ShopInfo current = ensureShopInfo();
+      current.setName(text(source.getName(), current.getName()));
+      current.setPhone(text(source.getPhone(), current.getPhone()));
+      current.setWechat(text(source.getWechat(), current.getWechat()));
+      current.setAddress(text(source.getAddress(), current.getAddress()));
+      current.setLatitude(source.getLatitude() == null ? current.getLatitude() : source.getLatitude());
+      current.setLongitude(source.getLongitude() == null ? current.getLongitude() : source.getLongitude());
+      shopInfoMapper.updateById(current);
+      replaceBusinessHours(source.getHours());
+    }
+
+    if (payload.getBrandStory() != null) {
+      BrandStoryResponse source = payload.getBrandStory();
+      BrandStory current = ensureBrandStory();
+      current.setTitle(text(source.getTitle(), current.getTitle()));
+      current.setSubtitle(text(source.getSubtitle(), current.getSubtitle()));
+      current.setContent(text(source.getContent(), current.getContent()));
+      brandStoryMapper.updateById(current);
+      replaceStoryImages(source.getImages());
+    }
+
+    if (payload.getAboutPage() != null) {
+      AboutPageResponse source = payload.getAboutPage();
+      AboutPage current = ensureAboutPage();
+      current.setHeroImage(text(source.getHeroImage(), current.getHeroImage()));
+      current.setHeroEyebrow(text(source.getHeroEyebrow(), current.getHeroEyebrow()));
+      current.setHeroTitle(text(source.getHeroTitle(), current.getHeroTitle()));
+      current.setHeroSubtitle(text(source.getHeroSubtitle(), current.getHeroSubtitle()));
+      current.setStoryTitle(text(source.getStoryTitle(), current.getStoryTitle()));
+      current.setStoryContent(text(source.getStoryContent(), current.getStoryContent()));
+      aboutPageMapper.updateById(current);
+    }
+
+    if (payload.getTimeline() != null) {
+      aboutTimelineEntryMapper.delete(null);
+      for (AboutTimelineEntryResponse item : payload.getTimeline()) {
+        if (item == null || !notBlank(item.getYearLabel()) || !notBlank(item.getContent())) {
+          continue;
+        }
+        AboutTimelineEntry entity = new AboutTimelineEntry();
+        entity.setId(notBlank(item.getId()) ? item.getId().trim() : "timeline_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
+        entity.setYearLabel(item.getYearLabel().trim());
+        entity.setContent(item.getContent().trim());
+        entity.setSort(item.getSort() == null ? 0 : item.getSort());
+        aboutTimelineEntryMapper.insert(entity);
+      }
+    }
+
+    if (payload.getTeam() != null) {
+      teamMemberMapper.delete(null);
+      for (TeamMember item : payload.getTeam()) {
+        if (item == null || !notBlank(item.getName()) || !notBlank(item.getTitle()) || !notBlank(item.getAvatar())) {
+          continue;
+        }
+        TeamMember entity = new TeamMember();
+        entity.setId(notBlank(item.getId()) ? item.getId().trim() : "team_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
+        entity.setName(item.getName().trim());
+        entity.setTitle(item.getTitle().trim());
+        entity.setAvatar(item.getAvatar().trim());
+        entity.setBio(optionalText(item.getBio()));
+        entity.setSort(item.getSort() == null ? 0 : item.getSort());
+        teamMemberMapper.insert(entity);
+      }
+    }
+
+    if (payload.getAiSettings() != null) {
+      ConfigTransferAiSettings source = payload.getAiSettings();
+      AiSettings current = ensureAiSettings();
+      current.setEnabled(source.isEnabled());
+      current.setProvider(text(source.getProvider(), current.getProvider()));
+      current.setApiKey(secretText(source.getApiKey(), current.getApiKey()));
+      current.setModel(text(source.getModel(), current.getModel()));
+      current.setBaseUrl(text(source.getBaseUrl(), current.getBaseUrl()));
+      current.setGeneratePath(text(source.getGeneratePath(), current.getGeneratePath()));
+      current.setSize(text(source.getSize(), current.getSize()));
+      current.setTextModel(text(source.getTextModel(), current.getTextModel()));
+      current.setTextGeneratePath(text(source.getTextGeneratePath(), current.getTextGeneratePath()));
+      current.setTextTemperature(source.getTextTemperature() == null ? current.getTextTemperature() : source.getTextTemperature());
+      current.setTextMaxTokens(source.getTextMaxTokens() == null ? current.getTextMaxTokens() : source.getTextMaxTokens());
+      aiSettingsMapper.updateById(current);
+    }
+  }
+
   private void replaceStoryImages(List<String> images) {
     if (images == null) return;
     brandStoryImageMapper.delete(null);
@@ -669,6 +908,32 @@ public class SiteService {
       entity.setSort(i);
       brandStoryImageMapper.insert(entity);
     }
+  }
+
+  private void replaceBusinessHours(BusinessHoursResponse hours) {
+    if (hours == null) {
+      return;
+    }
+    shopHourMapper.delete(null);
+    insertHour("monday", hours.getMonday());
+    insertHour("tuesday", hours.getTuesday());
+    insertHour("wednesday", hours.getWednesday());
+    insertHour("thursday", hours.getThursday());
+    insertHour("friday", hours.getFriday());
+    insertHour("saturday", hours.getSaturday());
+    insertHour("sunday", hours.getSunday());
+  }
+
+  private void insertHour(String weekday, TimeRangeResponse source) {
+    if (source == null) {
+      return;
+    }
+    ShopHour entity = new ShopHour();
+    entity.setWeekday(weekday);
+    entity.setOpenTime(text(source.getOpen(), "09:00"));
+    entity.setCloseTime(text(source.getClose(), "21:00"));
+    entity.setOff(Boolean.TRUE.equals(source.getOff()));
+    shopHourMapper.insert(entity);
   }
 
   private BusinessHoursResponse getBusinessHours() {
@@ -720,6 +985,22 @@ public class SiteService {
     response.setProvider(settings.getProvider());
     response.setApiKeyConfigured(notBlank(settings.getApiKey()));
     response.setApiKeyMasked(maskApiKey(settings.getApiKey()));
+    response.setModel(settings.getModel());
+    response.setBaseUrl(settings.getBaseUrl());
+    response.setGeneratePath(settings.getGeneratePath());
+    response.setSize(settings.getSize());
+    response.setTextModel(settings.getTextModel());
+    response.setTextGeneratePath(settings.getTextGeneratePath());
+    response.setTextTemperature(settings.getTextTemperature());
+    response.setTextMaxTokens(settings.getTextMaxTokens());
+    return response;
+  }
+
+  private ConfigTransferAiSettings toConfigTransferAiSettings(AiSettings settings, boolean includeSecrets) {
+    ConfigTransferAiSettings response = new ConfigTransferAiSettings();
+    response.setEnabled(Boolean.TRUE.equals(settings.getEnabled()));
+    response.setProvider(settings.getProvider());
+    response.setApiKey(includeSecrets ? settings.getApiKey() : "");
     response.setModel(settings.getModel());
     response.setBaseUrl(settings.getBaseUrl());
     response.setGeneratePath(settings.getGeneratePath());

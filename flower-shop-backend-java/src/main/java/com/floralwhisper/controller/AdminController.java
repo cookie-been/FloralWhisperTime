@@ -6,6 +6,7 @@ import com.floralwhisper.dto.AboutTimelineEntryRequest;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.AiSettingsUpdateRequest;
+import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.LoginRequest;
 import com.floralwhisper.dto.LoginResponse;
@@ -33,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -44,6 +46,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -93,6 +96,18 @@ public class AdminController {
     response.setContentType("application/gzip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
     siteService.writeLatestBackupArchive(response.getOutputStream());
+  }
+
+  @GetMapping(value = "/system/config-export", produces = "application/json")
+  public void downloadConfigExport(HttpServletResponse response) throws java.io.IOException {
+    String filename = siteService.writeConfigExport(response.getOutputStream());
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+  }
+
+  @PostMapping(value = "/system/config-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ConfigImportResponse importConfig(@RequestPart("file") MultipartFile file) throws java.io.IOException {
+    return siteService.importConfig(file);
   }
 
   @PostMapping("/system/operation-logs/archive")

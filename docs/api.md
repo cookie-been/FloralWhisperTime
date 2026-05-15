@@ -395,7 +395,60 @@ Authorization: Bearer <token>
 - `licenseStatus`：`active`、`expiring`、`expired`、`missing`
 - `licenseStatusLabel`：授权状态中文描述
 
-## 5.4 后台站点配置
+## 5.4 配置导出
+
+#### `GET /api/admin/system/config-export`
+
+说明：
+
+- 仅管理员可访问
+- 下载当前动态配置导出包，格式为 JSON 文件
+- 适用于交付迁移、测试环境回填、售后恢复前留档
+
+导出范围包括：
+
+- 站点配置
+- 门店信息与营业时间
+- 品牌故事
+- About 页首图/标题/副标题/正文
+- About 时间轴
+- 团队成员
+- AI 配置
+
+不包含：
+
+- 作品数据
+- 用户留言
+- 操作日志
+
+## 5.5 配置导入
+
+#### `POST /api/admin/system/config-import`
+
+请求方式：
+
+- `multipart/form-data`
+- 字段名：`file`
+
+返回示例：
+
+```json
+{
+  "version": "1.0.0",
+  "importedAt": "2026-05-15 16:20:30",
+  "timelineCount": 3,
+  "teamCount": 2,
+  "includedAiSettings": true
+}
+```
+
+说明：
+
+- 会覆盖当前动态配置内容
+- 不会修改作品、留言和操作日志数据
+- 正式环境建议导入前先下载最近备份，再执行导入
+
+## 5.6 后台站点配置
 
 #### `GET /api/admin/site-config`
 
