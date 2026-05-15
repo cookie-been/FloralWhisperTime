@@ -1,4 +1,6 @@
 import type {
+  AdminOpsTask,
+  AdminOpsTaskList,
   AdminLoginResult,
   AdminPasswordChangeResult,
   AdminSession,
@@ -265,6 +267,30 @@ export function changeAdminPassword(currentPassword: string, newPassword: string
 
 export function getAdminSystemStatus(options: RequestOptions = {}) {
   return request<SystemStatus>("/api/admin/system/status", options);
+}
+
+export function getAdminOpsTasks(options: RequestOptions = {}) {
+  return request<AdminOpsTaskList>("/api/admin/system/ops-tasks", options);
+}
+
+export function createAdminBackupTask() {
+  return withMutationGuard("admin:ops-task:backup", () =>
+    request<AdminOpsTask>("/api/admin/system/ops-tasks/backup", {
+      method: "POST",
+      timeoutMs: 30_000,
+      retryCount: 0,
+    }),
+  );
+}
+
+export function createAdminInspectionTask() {
+  return withMutationGuard("admin:ops-task:inspection", () =>
+    request<AdminOpsTask>("/api/admin/system/ops-tasks/inspection", {
+      method: "POST",
+      timeoutMs: 30_000,
+      retryCount: 0,
+    }),
+  );
 }
 
 export function archiveAdminOperationLogs(before: string) {

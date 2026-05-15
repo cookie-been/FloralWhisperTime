@@ -1,4 +1,6 @@
 export type {
+  AdminOpsTask,
+  AdminOpsTaskList,
   AdminLoginResult,
   AdminPasswordChangeResult,
   AdminSession,

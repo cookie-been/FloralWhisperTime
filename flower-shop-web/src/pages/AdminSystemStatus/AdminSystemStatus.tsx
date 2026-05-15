@@ -1,8 +1,8 @@
 import { Alert, Button, Empty, Input, Modal, Spin, Switch, Tag, Upload, message } from "antd";
-import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles, UploadCloud } from "lucide-react";
+import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, SearchCheck, ServerCog, Sparkles, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { archiveAdminOperationLogs, downloadAdminConfigExport, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminSystemStatus, importAdminConfig, isAbortError } from "@/services/api";
-import type { OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
+import { archiveAdminOperationLogs, createAdminBackupTask, createAdminInspectionTask, downloadAdminConfigExport, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminOpsTasks, getAdminSystemStatus, importAdminConfig, isAbortError } from "@/services/api";
+import type { AdminOpsTask, OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
 import type { RcFile } from "antd/es/upload";
 
 const AUTO_REFRESH_INTERVAL_MS = 60000;
@@ -41,9 +41,12 @@ export function AdminSystemStatus() {
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [archiveBefore, setArchiveBefore] = useState("");
   const [archiving, setArchiving] = useState(false);
+  const [runningBackup, setRunningBackup] = useState(false);
+  const [runningInspection, setRunningInspection] = useState(false);
   const [importingConfig, setImportingConfig] = useState(false);
   const [latestArchiveResult, setLatestArchiveResult] = useState<OperationLogArchiveResult | null>(null);
   const [archiveFiles, setArchiveFiles] = useState<OperationLogArchiveFile[]>([]);
+  const [opsTasks, setOpsTasks] = useState<AdminOpsTask[]>([]);
   const requestControllerRef = useRef<AbortController | null>(null);
 
   const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
@@ -56,12 +59,14 @@ export function AdminSystemStatus() {
       setLoading(true);
     }
     try {
-      const [nextStatus, nextArchiveFiles] = await Promise.all([
+      const [nextStatus, nextArchiveFiles, nextTasks] = await Promise.all([
         getAdminSystemStatus({ signal: controller.signal }),
         getAdminOperationLogArchiveFiles({ signal: controller.signal }),
+        getAdminOpsTasks({ signal: controller.signal }),
       ]);
       setStatus(nextStatus);
       setArchiveFiles(nextArchiveFiles);
+      setOpsTasks(nextTasks.list);
       setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
       setRefreshErrorCount(0);
       setLastRefreshError("");
@@ -204,6 +209,34 @@ export function AdminSystemStatus() {
     return false;
   }, [importingConfig, loadStatus]);
 
+  const handleCreateBackupTask = useCallback(async () => {
+    if (runningBackup) return;
+    setRunningBackup(true);
+    try {
+      const result = await createAdminBackupTask();
+      message.success(`备份已完成：${result.taskLabel}`);
+      await loadStatus("refresh");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "创建手动备份失败");
+    } finally {
+      setRunningBackup(false);
+    }
+  }, [runningBackup, loadStatus]);
+
+  const handleCreateInspectionTask = useCallback(async () => {
+    if (runningInspection) return;
+    setRunningInspection(true);
+    try {
+      const result = await createAdminInspectionTask();
+      message.success(`巡检已完成：${result.taskLabel}`);
+      await loadStatus("refresh");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "执行巡检失败");
+    } finally {
+      setRunningInspection(false);
+    }
+  }, [runningInspection, loadStatus]);
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -264,6 +297,35 @@ export function AdminSystemStatus() {
           >
             刷新状态
           </Button>
+        </div>
+      </section>
+
+      <section className="admin-panel admin-shell-card sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="section-eyebrow">运维操作</p>
+            <h3 className="admin-section-title mt-2 text-xl">手动备份与巡检</h3>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
+              这里承接日常后台运维动作。可直接从管理界面执行手动备份和系统巡检，执行结果会进入任务记录。部署、升级、回滚仍建议通过命令行脚本完成。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="primary"
+              icon={<HardDriveDownload size={16} />}
+              loading={runningBackup}
+              onClick={() => void handleCreateBackupTask()}
+            >
+              立即备份
+            </Button>
+            <Button
+              icon={<SearchCheck size={16} />}
+              loading={runningInspection}
+              onClick={() => void handleCreateInspectionTask()}
+            >
+              执行巡检
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -411,6 +473,42 @@ export function AdminSystemStatus() {
                 <p className="mt-2 text-muted">{status.protection?.busyRejectedCount ?? 0} 次</p>
                 <p className="mt-2 text-sm leading-6 text-muted">代表 AI、生图上传或配置导入等重接口因并发保护被拒绝过，可据此评估后续扩容需求。</p>
               </div>
+            </div>
+          </div>
+
+          <div className="admin-panel admin-shell-card sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="section-eyebrow">任务记录</p>
+                <h3 className="admin-section-title mt-2 text-xl">最近运维任务</h3>
+              </div>
+              <Tag color={opsTasks.length ? "green" : "default"}>{opsTasks.length} 条</Tag>
+            </div>
+            <div className="mt-5 space-y-3 text-sm">
+              {opsTasks.length ? (
+                opsTasks.map((item) => (
+                  <div key={item.id} className="admin-subpanel px-4 py-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-[#1b281e]">{item.taskLabel}</p>
+                          <Tag color={item.status === "success" ? "green" : item.status === "failed" ? "red" : "blue"}>
+                            {item.status === "success" ? "成功" : item.status === "failed" ? "失败" : "执行中"}
+                          </Tag>
+                        </div>
+                        <p className="mt-2 text-muted">类型：{item.taskType} · 操作人：{item.operatorName || "admin"}</p>
+                        <p className="mt-2 text-muted">开始：{formatDateTime(item.startedAt)} · 完成：{formatDateTime(item.finishedAt)}</p>
+                        {item.resultSummary ? <p className="mt-2 whitespace-pre-wrap break-all text-xs text-muted">{item.resultSummary}</p> : null}
+                        {item.errorMessage ? <p className="mt-2 text-xs text-[#b33a3a]">{item.errorMessage}</p> : null}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="admin-empty-inline">
+                  <p>当前还没有后台触发的运维任务记录。</p>
+                </div>
+              )}
             </div>
           </div>
 

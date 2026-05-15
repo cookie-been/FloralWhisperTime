@@ -58,6 +58,7 @@ import java.io.File;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.BufferedOutputStream;
 import java.time.Clock;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -73,6 +74,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import javax.sql.DataSource;
@@ -560,6 +564,71 @@ public class SiteService {
     }
 
     return latestBackup.getName() + ".tar.gz";
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> createOnDemandBackup(String operatorName) {
+    try {
+      File backupRoot = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
+      if (!backupRoot.exists()) {
+        backupRoot.mkdirs();
+      }
+
+      String backupName = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now(clock));
+      File backupDir = new File(backupRoot, backupName);
+      if (!backupDir.exists() && !backupDir.mkdirs()) {
+        throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "备份目录创建失败");
+      }
+
+      Path mysqlDumpFile = backupDir.toPath().resolve("site-config-export.json");
+      try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(mysqlDumpFile))) {
+        writeConfigExport(outputStream);
+      }
+
+      Path uploadsArchive = backupDir.toPath().resolve("uploads.tar.gz");
+      try (OutputStream fileOutput = new BufferedOutputStream(Files.newOutputStream(uploadsArchive));
+           TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(fileOutput))) {
+        tarOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+        File uploadsDir = resolveDirectory(appProperties.getUpload().getDir(), "uploads");
+        writeDirectoryToTar(uploadsDir, "uploads", tarOutputStream);
+        tarOutputStream.finish();
+      }
+
+      Path metadataFile = backupDir.toPath().resolve("metadata.txt");
+      String metadata = String.join("\n",
+          "created_at=" + DATE_TIME_FORMATTER.format(LocalDateTime.now(clock)),
+          "operator=" + nullToEmpty(operatorName),
+          "git_revision=" + resolveGitRevision(),
+          "source=admin_ui");
+      Files.writeString(metadataFile, metadata + "\n", StandardCharsets.UTF_8);
+
+      return Map.of(
+          "backupName", backupName,
+          "backupPath", backupDir.getAbsolutePath(),
+          "configExport", mysqlDumpFile.getFileName().toString(),
+          "uploadsArchive", uploadsArchive.getFileName().toString());
+    } catch (IOException error) {
+      throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "创建手动备份失败");
+    }
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> buildInspectionSummary() {
+    SystemStatusResponse status = getSystemStatus();
+    Map<String, Object> summary = new LinkedHashMap<>();
+    summary.put("service", nullToEmpty(status.getService()));
+    summary.put("version", nullToEmpty(status.getVersion()));
+    summary.put("deploymentEnvironment", nullToEmpty(status.getDeploymentEnvironment()));
+    summary.put("databaseConnected", status.isDatabaseConnected());
+    summary.put("uploadDirectoryReady", status.isUploadDirectoryReady());
+    summary.put("latestBackupPresent", status.isLatestBackupPresent());
+    summary.put("aiEnabled", status.isAiEnabled());
+    summary.put("aiKeyConfigured", status.isAiKeyConfigured());
+    summary.put("securityLevel", status.getSecurity() == null ? "" : nullToEmpty(status.getSecurity().getSecurityLevel()));
+    summary.put("securitySummary", status.getSecurity() == null ? "" : nullToEmpty(status.getSecurity().getSecuritySummary()));
+    summary.put("rateLimitedCount", status.getProtection() == null ? 0 : status.getProtection().getRateLimitedCount());
+    summary.put("busyRejectedCount", status.getProtection() == null ? 0 : status.getProtection().getBusyRejectedCount());
+    return summary;
   }
 
   public String writeConfigExport(OutputStream outputStream) throws IOException {

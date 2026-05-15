@@ -39,8 +39,8 @@ export const adminNavItems = [
   {
     key: "system",
     path: "/admin/system",
-    label: "系统状态",
-    description: "查看版本、备份与 AI 配置状态",
+    label: "运维中心",
+    description: "统一查看状态、备份、巡检与配置迁移",
     icon: HardDriveDownload,
   },
   {
@@ -86,8 +86,8 @@ export const adminPageMeta = {
   },
   "/admin/system": {
     eyebrow: "运维状态",
-    title: "系统状态",
-    description: "快速确认版本、备份、AI 配置和上传目录是否正常。",
+    title: "运维中心",
+    description: "统一查看系统状态，并执行备份、巡检和配置迁移。",
   },
   "/admin/operation-logs": {
     eyebrow: "审计恢复",

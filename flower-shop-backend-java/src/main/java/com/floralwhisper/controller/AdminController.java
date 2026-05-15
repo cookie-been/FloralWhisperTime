@@ -9,6 +9,8 @@ import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.AdminPasswordChangeRequest;
 import com.floralwhisper.dto.AdminPasswordChangeResponse;
 import com.floralwhisper.dto.AdminSessionResponse;
+import com.floralwhisper.dto.AdminOpsTaskListResponse;
+import com.floralwhisper.dto.AdminOpsTaskResponse;
 import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.LoginRequest;
@@ -29,6 +31,7 @@ import com.floralwhisper.service.OperationLogRecoveryService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
 import com.floralwhisper.service.SiteService;
+import com.floralwhisper.service.AdminOpsTaskService;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
@@ -59,6 +62,7 @@ public class AdminController {
   private final AuthService authService;
   private final ContactService contactService;
   private final SiteService siteService;
+  private final AdminOpsTaskService adminOpsTaskService;
   private final OperationLogQueryService operationLogQueryService;
   private final OperationLogRecoveryService operationLogRecoveryService;
   private final HeavyOperationGuard heavyOperationGuard;
@@ -67,12 +71,14 @@ public class AdminController {
       AuthService authService,
       ContactService contactService,
       SiteService siteService,
+      AdminOpsTaskService adminOpsTaskService,
       OperationLogQueryService operationLogQueryService,
       OperationLogRecoveryService operationLogRecoveryService,
       HeavyOperationGuard heavyOperationGuard) {
     this.authService = authService;
     this.contactService = contactService;
     this.siteService = siteService;
+    this.adminOpsTaskService = adminOpsTaskService;
     this.operationLogQueryService = operationLogQueryService;
     this.operationLogRecoveryService = operationLogRecoveryService;
     this.heavyOperationGuard = heavyOperationGuard;
@@ -97,6 +103,23 @@ public class AdminController {
   @GetMapping("/system/status")
   public SystemStatusResponse systemStatus() {
     return siteService.getSystemStatus();
+  }
+
+  @GetMapping("/system/ops-tasks")
+  public AdminOpsTaskListResponse opsTasks() {
+    return adminOpsTaskService.listRecentTasks();
+  }
+
+  @PostMapping("/system/ops-tasks/backup")
+  public AdminOpsTaskResponse createBackupTask(Principal principal) {
+    String username = principal == null ? "" : principal.getName();
+    return adminOpsTaskService.createBackupTask(username);
+  }
+
+  @PostMapping("/system/ops-tasks/inspection")
+  public AdminOpsTaskResponse createInspectionTask(Principal principal) {
+    String username = principal == null ? "" : principal.getName();
+    return adminOpsTaskService.createInspectionTask(username);
   }
 
   @GetMapping("/site-config")

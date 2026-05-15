@@ -102,7 +102,7 @@ Browser / WeChat Mini Program
 - `/admin/settings` 站点配置
 - `/admin/ai-settings` AI 生图配置
 - `/admin/contacts` 用户留言
-- `/admin/system` 系统状态
+- `/admin/system` 运维中心
 - `/admin/operation-logs` 操作日志
 
 ### 5.2 主要模块
@@ -155,7 +155,7 @@ Web 通过 `src/services/api.ts` 发起请求：
 - `AdminController`
   - 管理员登录和身份校验
   - 用户留言管理
-  - 系统状态与备份下载
+  - 运维中心、手动备份、巡检与备份下载
   - AI 配置管理
   - 操作日志查询与恢复
   - 关于我们页管理

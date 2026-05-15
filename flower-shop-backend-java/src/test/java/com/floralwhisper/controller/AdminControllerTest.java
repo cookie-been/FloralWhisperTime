@@ -27,6 +27,8 @@ import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.AdminPasswordChangeResponse;
 import com.floralwhisper.dto.AdminSessionResponse;
+import com.floralwhisper.dto.AdminOpsTaskListResponse;
+import com.floralwhisper.dto.AdminOpsTaskResponse;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogArchiveFileResponse;
@@ -39,6 +41,7 @@ import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.entity.Contact;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
+import com.floralwhisper.mapper.AdminOpsTaskMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
@@ -58,6 +61,7 @@ import com.floralwhisper.security.AdminPasswordChangeEnforcementFilter;
 import com.floralwhisper.security.JwtService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
+import com.floralwhisper.service.AdminOpsTaskService;
 import com.floralwhisper.service.OperationLogQueryService;
 import com.floralwhisper.service.OperationLogRecoveryService;
 import com.floralwhisper.service.SiteService;
@@ -111,9 +115,13 @@ class AdminControllerTest {
   @MockBean
   private AdminSecurityStateMapper adminSecurityStateMapper;
   @MockBean
+  private AdminOpsTaskMapper adminOpsTaskMapper;
+  @MockBean
   private ContactService contactService;
   @MockBean
   private SiteService siteService;
+  @MockBean
+  private AdminOpsTaskService adminOpsTaskService;
   @MockBean
   private OperationLogQueryService operationLogQueryService;
   @MockBean
@@ -340,6 +348,84 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.adminPasswordChangedAt").value("2026-05-15 12:30:00"))
         .andExpect(jsonPath("$.requirePasswordChange").value(false))
         .andExpect(jsonPath("$.deliveryInitialized").value(true));
+  }
+
+  @Test
+  void opsTasksReturnsRecentTaskListWhenTokenIsValid() throws Exception {
+    AdminOpsTaskResponse item = new AdminOpsTaskResponse();
+    item.setId(1L);
+    item.setTaskType("backup");
+    item.setTaskLabel("手动备份");
+    item.setStatus("success");
+    item.setTriggerSource("admin_ui");
+    item.setOperatorName("admin");
+    item.setRequestPayload("{\"source\":\"admin_ui\"}");
+    item.setResultSummary("{\"backupName\":\"20260516-011500\"}");
+    item.setLogExcerpt("");
+    item.setErrorMessage("");
+    item.setStartedAt("2026-05-16 01:15:00");
+    item.setFinishedAt("2026-05-16 01:15:08");
+    item.setCreatedAt("2026-05-16 01:15:00");
+    item.setUpdatedAt("2026-05-16 01:15:08");
+
+    AdminOpsTaskListResponse response = new AdminOpsTaskListResponse();
+    response.setList(List.of(item));
+    response.setTotal(1L);
+
+    when(adminOpsTaskService.listRecentTasks()).thenReturn(response);
+
+    mockMvc.perform(get("/api/admin/system/ops-tasks")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.list[0].taskType").value("backup"))
+        .andExpect(jsonPath("$.list[0].status").value("success"));
+  }
+
+  @Test
+  void createBackupTaskReturnsTaskWhenTokenIsValid() throws Exception {
+    AdminOpsTaskResponse response = new AdminOpsTaskResponse();
+    response.setId(11L);
+    response.setTaskType("backup");
+    response.setTaskLabel("手动备份");
+    response.setStatus("success");
+    response.setTriggerSource("admin_ui");
+    response.setOperatorName("admin");
+    response.setResultSummary("{\"backupName\":\"20260516-011500\"}");
+    response.setStartedAt("2026-05-16 01:15:00");
+    response.setFinishedAt("2026-05-16 01:15:08");
+
+    when(adminOpsTaskService.createBackupTask("admin")).thenReturn(response);
+
+    mockMvc.perform(post("/api/admin/system/ops-tasks/backup")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(11))
+        .andExpect(jsonPath("$.taskType").value("backup"))
+        .andExpect(jsonPath("$.status").value("success"));
+  }
+
+  @Test
+  void createInspectionTaskReturnsTaskWhenTokenIsValid() throws Exception {
+    AdminOpsTaskResponse response = new AdminOpsTaskResponse();
+    response.setId(12L);
+    response.setTaskType("inspection");
+    response.setTaskLabel("系统巡检");
+    response.setStatus("success");
+    response.setTriggerSource("admin_ui");
+    response.setOperatorName("admin");
+    response.setResultSummary("{\"databaseConnected\":true}");
+    response.setStartedAt("2026-05-16 01:16:00");
+    response.setFinishedAt("2026-05-16 01:16:02");
+
+    when(adminOpsTaskService.createInspectionTask("admin")).thenReturn(response);
+
+    mockMvc.perform(post("/api/admin/system/ops-tasks/inspection")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(12))
+        .andExpect(jsonPath("$.taskType").value("inspection"))
+        .andExpect(jsonPath("$.status").value("success"));
   }
 
   @Test

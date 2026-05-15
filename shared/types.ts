@@ -219,6 +219,28 @@ export interface SystemStatus {
   security?: SecurityOverview;
 }
 
+export interface AdminOpsTask {
+  id: number;
+  taskType: "backup" | "inspection" | string;
+  taskLabel: string;
+  status: "running" | "success" | "failed" | string;
+  triggerSource: "admin_ui" | string;
+  operatorName: string;
+  requestPayload: string;
+  resultSummary: string;
+  logExcerpt: string;
+  errorMessage: string;
+  startedAt: string;
+  finishedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOpsTaskList {
+  list: AdminOpsTask[];
+  total: number;
+}
+
 export interface AdminSession {
   username: string;
   requirePasswordChange: boolean;
