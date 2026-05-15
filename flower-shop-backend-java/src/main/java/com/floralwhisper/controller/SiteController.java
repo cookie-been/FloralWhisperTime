@@ -56,7 +56,19 @@ public class SiteController {
 
   @GetMapping("/site-config")
   public SiteConfigResponse siteConfig() {
-    return siteService.getSiteConfig();
+    SiteConfigResponse source = siteService.getSiteConfig();
+    SiteConfigResponse response = new SiteConfigResponse();
+    response.setBrandName(source.getBrandName());
+    response.setHeroEyebrow(source.getHeroEyebrow());
+    response.setHeroTitle(source.getHeroTitle());
+    response.setHeroDescription(source.getHeroDescription());
+    response.setHeroImage(source.getHeroImage());
+    response.setPrimaryCtaText(source.getPrimaryCtaText());
+    response.setSecondaryCtaText(source.getSecondaryCtaText());
+    response.setContactIntro(source.getContactIntro());
+    response.setBusinessHoursText(source.getBusinessHoursText());
+    response.setFooterDescription(source.getFooterDescription());
+    return response;
   }
 
   @PutMapping("/site-config")

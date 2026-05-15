@@ -189,6 +189,18 @@ public class SiteService {
     return response;
   }
 
+  public SiteConfigResponse getAdminSiteConfig() {
+    SiteConfigResponse response = getSiteConfig();
+    SiteConfig config = ensureSiteConfig();
+    response.setLicenseCustomerName(config.getLicenseCustomerName());
+    response.setLicenseCode(config.getLicenseCode());
+    response.setLicenseType(config.getLicenseType());
+    response.setLicenseExpiresAt(config.getLicenseExpiresAt());
+    response.setLicenseWarningDays(resolveLicenseWarningDays(config));
+    response.setLicenseNotes(config.getLicenseNotes());
+    return response;
+  }
+
   public AiSettingsResponse getAdminAiSettings() {
     return toAiSettingsResponse(ensureAiSettings());
   }
@@ -200,6 +212,8 @@ public class SiteService {
     File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
     File latestBackup = resolveLatestBackup(backupsDir);
     DatabaseStatus databaseStatus = inspectDatabaseStatus();
+    SiteConfig config = ensureSiteConfig();
+    LicenseStatus licenseStatus = resolveLicenseStatus(config);
 
     response.setService(resolveServiceName());
     response.setVersion(resolveVersion());
@@ -207,6 +221,14 @@ public class SiteService {
     response.setGitRevision(resolveGitRevision());
     response.setBuildTime(resolveBuildTime());
     response.setDeployedAt(resolveDeployedAt());
+    response.setLicenseCustomerName(nullToEmpty(config.getLicenseCustomerName()));
+    response.setLicenseCode(nullToEmpty(config.getLicenseCode()));
+    response.setLicenseType(nullToEmpty(config.getLicenseType()));
+    response.setLicenseExpiresAt(formatDateTime(config.getLicenseExpiresAt()));
+    response.setLicenseWarningDays(resolveLicenseWarningDays(config));
+    response.setLicenseNotes(nullToEmpty(config.getLicenseNotes()));
+    response.setLicenseStatus(licenseStatus.code());
+    response.setLicenseStatusLabel(licenseStatus.label());
     response.setDatabaseConnected(databaseStatus.connected());
     response.setDatabaseVersion(databaseStatus.version());
     response.setDatabaseSize(databaseStatus.size());
@@ -386,7 +408,7 @@ public class SiteService {
 
   @Transactional
   public SiteConfigUpdateResponse updateSiteConfig(SiteConfigUpdateRequest request) {
-    SiteConfigUpdateResponse before = new SiteConfigUpdateResponse(getSiteConfig(), getShopInfo(), getBrandStory());
+    SiteConfigUpdateResponse before = new SiteConfigUpdateResponse(getAdminSiteConfig(), getShopInfo(), getBrandStory());
     SiteConfig config = ensureSiteConfig();
     config.setBrandName(text(request.getBrandName(), config.getBrandName()));
     config.setHeroEyebrow(text(request.getHeroEyebrow(), config.getHeroEyebrow()));
@@ -398,6 +420,12 @@ public class SiteService {
     config.setContactIntro(text(request.getContactIntro(), config.getContactIntro()));
     config.setBusinessHoursText(text(request.getBusinessHoursText(), config.getBusinessHoursText()));
     config.setFooterDescription(text(request.getFooterDescription(), config.getFooterDescription()));
+    config.setLicenseCustomerName(text(request.getLicenseCustomerName(), config.getLicenseCustomerName()));
+    config.setLicenseCode(text(request.getLicenseCode(), config.getLicenseCode()));
+    config.setLicenseType(text(request.getLicenseType(), config.getLicenseType()));
+    config.setLicenseExpiresAt(request.getLicenseExpiresAt() != null ? request.getLicenseExpiresAt() : config.getLicenseExpiresAt());
+    config.setLicenseWarningDays(request.getLicenseWarningDays() != null ? request.getLicenseWarningDays() : resolveLicenseWarningDays(config));
+    config.setLicenseNotes(text(request.getLicenseNotes(), config.getLicenseNotes()));
     siteConfigMapper.updateById(config);
 
     ShopInfo shopInfo = ensureShopInfo();
@@ -418,7 +446,7 @@ public class SiteService {
       replaceStoryImages(request.getStoryImages());
     }
 
-    SiteConfigUpdateResponse after = new SiteConfigUpdateResponse(getSiteConfig(), getShopInfo(), getBrandStory());
+    SiteConfigUpdateResponse after = new SiteConfigUpdateResponse(getAdminSiteConfig(), getShopInfo(), getBrandStory());
     auditLogService.record(AuditLogCommand.builder()
         .module("SITE")
         .action("UPDATE")
@@ -777,8 +805,48 @@ public class SiteService {
     created.setContactIntro("欢迎预约花束、婚礼花艺、商业空间花艺和节日定制服务。");
     created.setBusinessHoursText("周一至周五 09:30-21:00，周末 10:00-21:30");
     created.setFooterDescription("纯展示型鲜花店窗口，展示婚礼、日常花礼、开业花篮、节气花束与定制花艺。");
+    created.setLicenseWarningDays(30);
     siteConfigMapper.insert(created);
     return created;
+  }
+
+  private int resolveLicenseWarningDays(SiteConfig config) {
+    if (config != null && config.getLicenseWarningDays() != null && config.getLicenseWarningDays() > 0) {
+      return config.getLicenseWarningDays();
+    }
+    return 30;
+  }
+
+  private LicenseStatus resolveLicenseStatus(SiteConfig config) {
+    if (config == null
+        || !notBlank(config.getLicenseCustomerName())
+        || !notBlank(config.getLicenseCode())
+        || config.getLicenseExpiresAt() == null) {
+      return new LicenseStatus("missing", "未配置授权信息");
+    }
+
+    LocalDateTime now = LocalDateTime.ofInstant(Instant.now(clock), zoneId == null ? ZoneId.systemDefault() : zoneId);
+    if (config.getLicenseExpiresAt().isBefore(now)) {
+      return new LicenseStatus("expired", "授权已到期");
+    }
+
+    long daysUntilExpiry = java.time.temporal.ChronoUnit.DAYS.between(now.toLocalDate(), config.getLicenseExpiresAt().toLocalDate());
+    if (daysUntilExpiry <= resolveLicenseWarningDays(config)) {
+      return new LicenseStatus("expiring", "授权将在 " + resolveLicenseWarningDays(config) + " 天内到期");
+    }
+
+    return new LicenseStatus("active", "授权有效");
+  }
+
+  private String formatDateTime(LocalDateTime value) {
+    if (value == null) {
+      return "";
+    }
+    return DATE_TIME_FORMATTER.format(value);
+  }
+
+  private String nullToEmpty(String value) {
+    return value == null ? "" : value;
   }
 
   private AiSettings ensureAiSettings() {
@@ -1224,4 +1292,5 @@ public class SiteService {
   }
 
   private record DatabaseStatus(boolean connected, String version, String size) {}
+  private record LicenseStatus(String code, String label) {}
 }

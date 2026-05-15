@@ -276,6 +276,20 @@ export function AdminSystemStatus() {
               <p className="mt-2 text-muted">部署时间：{formatDateTime(status.deployedAt)}</p>
             </div>
             <div className="admin-subpanel px-4 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-semibold text-[#1b281e]">授权状态</p>
+                <Tag color={status.licenseStatus === "active" ? "green" : status.licenseStatus === "expiring" ? "gold" : status.licenseStatus === "expired" ? "red" : "default"}>
+                  {status.licenseStatusLabel || "未配置授权信息"}
+                </Tag>
+              </div>
+              <p className="mt-2 text-muted">客户：{status.licenseCustomerName || "未填写"}</p>
+              <p className="mt-2 text-muted">编号：{status.licenseCode || "未填写"}</p>
+              <p className="mt-2 text-muted">类型：{status.licenseType || "未填写"}</p>
+              <p className="mt-2 text-muted">到期：{formatDateTime(status.licenseExpiresAt)}</p>
+              <p className="mt-2 text-muted">预警：提前 {status.licenseWarningDays || 30} 天</p>
+              {status.licenseNotes ? <p className="mt-2 text-muted">备注：{status.licenseNotes}</p> : null}
+            </div>
+            <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>
               <p className="mt-2 text-muted">{status.databaseConnected ? "已连接" : "连接失败"}</p>
               <p className="mt-2 text-muted">数据库版本：{status.databaseVersion || "未知"}</p>

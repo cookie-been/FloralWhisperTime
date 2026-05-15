@@ -225,7 +225,7 @@ public class OperationLogRecoveryService {
   }
 
   private SiteConfigUpdateResponse currentSiteConfigSnapshot() {
-    return new SiteConfigUpdateResponse(siteService.getSiteConfig(), siteService.getShopInfo(), siteService.getBrandStory());
+    return new SiteConfigUpdateResponse(siteService.getAdminSiteConfig(), siteService.getShopInfo(), siteService.getBrandStory());
   }
 
   private void restoreFlower(String id, String snapshot) {
@@ -273,6 +273,12 @@ public class OperationLogRecoveryService {
     config.setContactIntro(siteConfig.getContactIntro());
     config.setBusinessHoursText(siteConfig.getBusinessHoursText());
     config.setFooterDescription(siteConfig.getFooterDescription());
+    config.setLicenseCustomerName(siteConfig.getLicenseCustomerName());
+    config.setLicenseCode(siteConfig.getLicenseCode());
+    config.setLicenseType(siteConfig.getLicenseType());
+    config.setLicenseExpiresAt(siteConfig.getLicenseExpiresAt());
+    config.setLicenseWarningDays(siteConfig.getLicenseWarningDays());
+    config.setLicenseNotes(siteConfig.getLicenseNotes());
     if (siteConfigMapper.selectById(SINGLETON_ID) == null) {
       siteConfigMapper.insert(config);
     } else {

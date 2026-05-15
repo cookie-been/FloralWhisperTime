@@ -104,13 +104,23 @@ class SiteControllerTest {
     SiteConfigResponse response = new SiteConfigResponse();
     response.setBrandName("花语时光");
     response.setHeroTitle("花语时光");
+    response.setLicenseCustomerName("演示客户");
+    response.setLicenseCode("FWT-DEMO-001");
+    response.setLicenseType("正式版");
+    response.setLicenseNotes("演示授权");
     when(siteService.getSiteConfig()).thenReturn(response);
 
     mockMvc.perform(get("/api/site-config"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.brandName").value("花语时光"))
         .andExpect(jsonPath("$.aiSettings").doesNotExist())
-        .andExpect(jsonPath("$.stats").doesNotExist());
+        .andExpect(jsonPath("$.stats").doesNotExist())
+        .andExpect(jsonPath("$.licenseCustomerName").doesNotExist())
+        .andExpect(jsonPath("$.licenseCode").doesNotExist())
+        .andExpect(jsonPath("$.licenseType").doesNotExist())
+        .andExpect(jsonPath("$.licenseExpiresAt").doesNotExist())
+        .andExpect(jsonPath("$.licenseWarningDays").doesNotExist())
+        .andExpect(jsonPath("$.licenseNotes").doesNotExist());
   }
 
   @Test

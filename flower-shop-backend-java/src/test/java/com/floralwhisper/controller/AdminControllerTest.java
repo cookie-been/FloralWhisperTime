@@ -26,6 +26,7 @@ import com.floralwhisper.dto.OperationLogArchiveFileResponse;
 import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.PaginatedResult;
+import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.entity.Contact;
@@ -190,6 +191,14 @@ class AdminControllerTest {
     response.setGitRevision("abc123def456");
     response.setBuildTime("2026-05-15 08:00:00");
     response.setDeployedAt("2026-05-15 09:30:00");
+    response.setLicenseCustomerName("演示客户");
+    response.setLicenseCode("FWT-DEMO-001");
+    response.setLicenseType("正式版");
+    response.setLicenseExpiresAt("2026-06-01 00:00:00");
+    response.setLicenseWarningDays(30);
+    response.setLicenseNotes("演示授权");
+    response.setLicenseStatus("expiring");
+    response.setLicenseStatusLabel("授权将在 30 天内到期");
     response.setDatabaseConnected(true);
     response.setDatabaseVersion("8.0.36");
     response.setDatabaseSize("128.50 MB");
@@ -226,6 +235,14 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.gitRevision").value("abc123def456"))
         .andExpect(jsonPath("$.buildTime").value("2026-05-15 08:00:00"))
         .andExpect(jsonPath("$.deployedAt").value("2026-05-15 09:30:00"))
+        .andExpect(jsonPath("$.licenseCustomerName").value("演示客户"))
+        .andExpect(jsonPath("$.licenseCode").value("FWT-DEMO-001"))
+        .andExpect(jsonPath("$.licenseType").value("正式版"))
+        .andExpect(jsonPath("$.licenseExpiresAt").value("2026-06-01 00:00:00"))
+        .andExpect(jsonPath("$.licenseWarningDays").value(30))
+        .andExpect(jsonPath("$.licenseNotes").value("演示授权"))
+        .andExpect(jsonPath("$.licenseStatus").value("expiring"))
+        .andExpect(jsonPath("$.licenseStatusLabel").value("授权将在 30 天内到期"))
         .andExpect(jsonPath("$.databaseConnected").value(true))
         .andExpect(jsonPath("$.databaseVersion").value("8.0.36"))
         .andExpect(jsonPath("$.databaseSize").value("128.50 MB"))
@@ -241,6 +258,31 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"))
         .andExpect(jsonPath("$.latestBackupModifiedAt").value("2026-05-15 08:28:08"))
         .andExpect(jsonPath("$.latestBackupDownloadUrl").value("/api/admin/system/backups/latest/download"));
+  }
+
+  @Test
+  void adminSiteConfigReturnsLicenseFieldsWhenTokenIsValid() throws Exception {
+    SiteConfigResponse response = new SiteConfigResponse();
+    response.setBrandName("花语时光");
+    response.setHeroTitle("花语时光");
+    response.setLicenseCustomerName("演示客户");
+    response.setLicenseCode("FWT-DEMO-001");
+    response.setLicenseType("正式版");
+    response.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
+    response.setLicenseWarningDays(30);
+    response.setLicenseNotes("演示授权");
+    when(siteService.getAdminSiteConfig()).thenReturn(response);
+
+    mockMvc.perform(get("/api/admin/site-config")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.brandName").value("花语时光"))
+        .andExpect(jsonPath("$.licenseCustomerName").value("演示客户"))
+        .andExpect(jsonPath("$.licenseCode").value("FWT-DEMO-001"))
+        .andExpect(jsonPath("$.licenseType").value("正式版"))
+        .andExpect(jsonPath("$.licenseExpiresAt").value("2026-06-01T00:00:00"))
+        .andExpect(jsonPath("$.licenseWarningDays").value(30))
+        .andExpect(jsonPath("$.licenseNotes").value("演示授权"));
   }
 
   @Test

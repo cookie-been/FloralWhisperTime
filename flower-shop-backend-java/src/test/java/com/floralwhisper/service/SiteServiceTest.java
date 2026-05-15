@@ -64,6 +64,12 @@ class SiteServiceTest {
     siteConfig.setId(1L);
     siteConfig.setBrandName("花语时光");
     siteConfig.setHeroTitle("花语时光");
+    siteConfig.setLicenseCustomerName("演示客户");
+    siteConfig.setLicenseCode("FWT-DEMO-001");
+    siteConfig.setLicenseType("正式版");
+    siteConfig.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
+    siteConfig.setLicenseWarningDays(30);
+    siteConfig.setLicenseNotes("演示授权");
     when(siteConfigMapper.selectById(1L)).thenReturn(siteConfig);
 
     ShopInfo shopInfo = new ShopInfo();
@@ -123,6 +129,18 @@ class SiteServiceTest {
     OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
     when(operationLogMapper.selectCount(any())).thenReturn(128L);
     when(operationLogMapper.selectOne(any())).thenReturn(operationLogAt(LocalDateTime.of(2026, 5, 15, 8, 15)));
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    SiteConfig siteConfig = new SiteConfig();
+    siteConfig.setId(1L);
+    siteConfig.setBrandName("花语时光");
+    siteConfig.setHeroTitle("花语时光");
+    siteConfig.setLicenseCustomerName("演示客户");
+    siteConfig.setLicenseCode("FWT-DEMO-001");
+    siteConfig.setLicenseType("正式版");
+    siteConfig.setLicenseExpiresAt(LocalDateTime.of(2026, 6, 1, 0, 0));
+    siteConfig.setLicenseWarningDays(30);
+    siteConfig.setLicenseNotes("演示授权");
+    when(siteConfigMapper.selectById(1L)).thenReturn(siteConfig);
 
     DataSource dataSource = mock(DataSource.class);
     Connection connection = mock(Connection.class);
@@ -148,7 +166,7 @@ class SiteServiceTest {
 
     SiteService siteService =
         new SiteService(
-            mock(SiteConfigMapper.class),
+            siteConfigMapper,
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
@@ -175,6 +193,14 @@ class SiteServiceTest {
     assertEquals("abc123def456", response.getGitRevision());
     assertEquals("2026-05-15 08:00:00", response.getBuildTime());
     assertEquals("2026-05-15 09:30:00", response.getDeployedAt());
+    assertEquals("演示客户", response.getLicenseCustomerName());
+    assertEquals("FWT-DEMO-001", response.getLicenseCode());
+    assertEquals("正式版", response.getLicenseType());
+    assertEquals("2026-06-01 00:00:00", response.getLicenseExpiresAt());
+    assertEquals(30, response.getLicenseWarningDays());
+    assertEquals("演示授权", response.getLicenseNotes());
+    assertEquals("expiring", response.getLicenseStatus());
+    assertEquals("授权将在 30 天内到期", response.getLicenseStatusLabel());
     assertTrue(response.isDatabaseConnected());
     assertEquals("8.0.36", response.getDatabaseVersion());
     assertEquals("128.50 MB", response.getDatabaseSize());
@@ -211,13 +237,15 @@ class SiteServiceTest {
     OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
     when(operationLogMapper.selectCount(any())).thenReturn(0L);
     when(operationLogMapper.selectOne(any())).thenReturn(null);
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    when(siteConfigMapper.selectById(1L)).thenReturn(null);
 
     DataSource dataSource = mock(DataSource.class);
     when(dataSource.getConnection()).thenThrow(new SQLException("down"));
 
     SiteService siteService =
         new SiteService(
-            mock(SiteConfigMapper.class),
+            siteConfigMapper,
             mock(ShopInfoMapper.class),
             mock(ShopHourMapper.class),
             mock(AboutPageMapper.class),
@@ -243,6 +271,14 @@ class SiteServiceTest {
     assertEquals("dev", response.getGitRevision());
     assertEquals("", response.getBuildTime());
     assertEquals("", response.getDeployedAt());
+    assertEquals("", response.getLicenseCustomerName());
+    assertEquals("", response.getLicenseCode());
+    assertEquals("", response.getLicenseType());
+    assertEquals("", response.getLicenseExpiresAt());
+    assertEquals(30, response.getLicenseWarningDays());
+    assertEquals("", response.getLicenseNotes());
+    assertEquals("missing", response.getLicenseStatus());
+    assertEquals("未配置授权信息", response.getLicenseStatusLabel());
     assertEquals("", response.getDatabaseVersion());
     assertEquals("", response.getDatabaseSize());
     assertEquals("", response.getDiskTotal());

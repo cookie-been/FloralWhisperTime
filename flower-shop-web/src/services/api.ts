@@ -255,6 +255,10 @@ export function getSiteConfig() {
   return request<SiteConfig>("/api/site-config");
 }
 
+export function getAdminSiteConfig() {
+  return request<SiteConfig>("/api/admin/site-config");
+}
+
 export function getAboutPage() {
   return request<AboutPageContent>("/api/about-page");
 }

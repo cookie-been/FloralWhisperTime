@@ -14,6 +14,7 @@ import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.OperationLogRestoreRequest;
+import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.entity.Contact;
@@ -79,6 +80,11 @@ public class AdminController {
   @GetMapping("/system/status")
   public SystemStatusResponse systemStatus() {
     return siteService.getSystemStatus();
+  }
+
+  @GetMapping("/site-config")
+  public SiteConfigResponse siteConfig() {
+    return siteService.getAdminSiteConfig();
   }
 
   @GetMapping(value = "/system/backups/latest/download", produces = "application/gzip")

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Form, Grid, Input, InputNumber, Tabs, Upload, message } from "antd";
+import { Button, DatePicker, Form, Grid, Input, InputNumber, Tabs, Upload, message } from "antd";
 import type { RcFile } from "antd/es/upload";
-import { Building2, Image as ImageIcon, MapPin, Sparkles } from "lucide-react";
+import { Building2, Image as ImageIcon, KeyRound, MapPin, Sparkles } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { AdminAbout } from "@/pages/AdminAbout/AdminAbout";
-import { getBrandStory, getShopInfo, getSiteConfig, updateSiteConfig, uploadFlowerImage } from "@/services/api";
+import { getAdminSiteConfig, getBrandStory, getShopInfo, updateSiteConfig, uploadFlowerImage } from "@/services/api";
 import type { BrandStory, ShopInfo, SiteConfig } from "@/types";
+import dayjs from "dayjs";
 
-type SettingsForm = SiteConfig & {
+type SettingsForm = Omit<SiteConfig, "licenseExpiresAt"> & {
   phone: string;
   wechat: string;
   address: string;
@@ -17,6 +18,7 @@ type SettingsForm = SiteConfig & {
   storySubtitle: string;
   storyContent: string;
   storyImages: string;
+  licenseExpiresAt?: dayjs.Dayjs;
 };
 
 const joinText = (items: string[]) => items.join("，");
@@ -30,6 +32,7 @@ const sectionItems = [
   { key: "brand", label: "品牌与首页" },
   { key: "contact", label: "门店与联系" },
   { key: "story", label: "品牌故事" },
+  { key: "license", label: "授权信息" },
 ] as const;
 
 export function AdminSettings() {
@@ -51,20 +54,27 @@ export function AdminSettings() {
   const storyTitle = Form.useWatch("storyTitle", form) ?? "";
   const storyContent = Form.useWatch("storyContent", form) ?? "";
   const storyImages = Form.useWatch("storyImages", form) ?? "";
+  const licenseCustomerName = Form.useWatch("licenseCustomerName", form) ?? "";
+  const licenseCode = Form.useWatch("licenseCode", form) ?? "";
+  const licenseType = Form.useWatch("licenseType", form) ?? "";
+  const licenseWarningDays = Form.useWatch("licenseWarningDays", form) ?? 30;
+  const licenseExpiresAt = Form.useWatch("licenseExpiresAt", form);
 
   const sectionRefs = {
     brand: useRef<HTMLDivElement | null>(null),
     contact: useRef<HTMLDivElement | null>(null),
     story: useRef<HTMLDivElement | null>(null),
+    license: useRef<HTMLDivElement | null>(null),
   };
 
   const storyPreviewImages = useMemo(() => splitText(storyImages), [storyImages]);
 
   useEffect(() => {
-    Promise.all([getSiteConfig(), getShopInfo(), getBrandStory()])
+    Promise.all([getAdminSiteConfig(), getShopInfo(), getBrandStory()])
       .then(([siteConfig, shopInfo, story]) => {
         form.setFieldsValue({
           ...siteConfig,
+          licenseExpiresAt: siteConfig.licenseExpiresAt ? dayjs(siteConfig.licenseExpiresAt) : undefined,
           phone: shopInfo.phone,
           wechat: shopInfo.wechat ?? "",
           address: shopInfo.address,
@@ -87,6 +97,7 @@ export function AdminSettings() {
     try {
       await updateSiteConfig({
         ...values,
+        licenseExpiresAt: values.licenseExpiresAt ? values.licenseExpiresAt.format("YYYY-MM-DDTHH:mm:ss") : undefined,
         storyImages: splitText(values.storyImages),
       });
       message.success("站点配置已保存");
@@ -269,6 +280,50 @@ export function AdminSettings() {
             ) : (
               <div className="admin-subpanel mt-4 px-4 py-8 text-sm text-muted">暂无故事图片预览</div>
             )}
+          </div>
+        </div>
+      </section>
+
+      <section ref={sectionRefs.license} className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="admin-panel p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#1b281e]">
+            <KeyRound size={16} className="text-forest" />
+            授权信息
+          </div>
+          <div className="mt-4 grid gap-x-4 md:grid-cols-2">
+            <Form.Item name="licenseCustomerName" label="客户名称">
+              <Input />
+            </Form.Item>
+            <Form.Item name="licenseCode" label="授权编号">
+              <Input />
+            </Form.Item>
+            <Form.Item name="licenseType" label="授权类型">
+              <Input placeholder="如：正式版 / 年费版 / 试用版" />
+            </Form.Item>
+            <Form.Item name="licenseWarningDays" label="到期预警天数">
+              <InputNumber className="w-full" min={1} max={365} />
+            </Form.Item>
+            <Form.Item name="licenseExpiresAt" label="授权到期时间">
+              <DatePicker className="w-full" showTime format="YYYY-MM-DD HH:mm:ss" />
+            </Form.Item>
+          </div>
+          <Form.Item name="licenseNotes" label="授权备注">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+        </div>
+
+        <div className="admin-panel p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">授权预览</p>
+          <div className="admin-subpanel mt-4 px-4 py-4">
+            <p className="text-sm font-semibold text-[#1b281e]">{licenseCustomerName || "未填写客户名称"}</p>
+            <p className="mt-2 text-sm text-muted">编号：{licenseCode || "未填写"}</p>
+            <p className="mt-2 text-sm text-muted">类型：{licenseType || "未填写"}</p>
+            <p className="mt-2 text-sm text-muted">
+              到期时间：{licenseExpiresAt?.format("YYYY-MM-DD HH:mm:ss") || "未填写"}
+            </p>
+            <p className="mt-2 text-sm text-muted">
+              预警天数：{licenseWarningDays} 天
+            </p>
           </div>
         </div>
       </section>
