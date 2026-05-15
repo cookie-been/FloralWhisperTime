@@ -103,6 +103,7 @@ prepare_release_tree() {
   cp "$REPO_ROOT/release-package.INSTALL.md" "$RELEASE_STAGING_DIR/INSTALL.md"
   cp \
     "$REPO_ROOT/release-check.sh" \
+    "$REPO_ROOT/release-inspect.sh" \
     "$REPO_ROOT/release-install.sh" \
     "$REPO_ROOT/release-upgrade.sh" \
     "$REPO_ROOT/release-rollback.sh" \
@@ -111,6 +112,7 @@ prepare_release_tree() {
   cp \
     "$REPO_ROOT/ops/release-check.sh" \
     "$REPO_ROOT/ops/release-common.sh" \
+    "$REPO_ROOT/ops/release-inspect.sh" \
     "$REPO_ROOT/ops/release-install.sh" \
     "$REPO_ROOT/ops/release-upgrade.sh" \
     "$REPO_ROOT/ops/release-rollback.sh" \

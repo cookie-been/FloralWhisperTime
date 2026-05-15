@@ -73,6 +73,12 @@
 ./release-status.sh
 ```
 
+部署后巡检：
+
+```bash
+./release-inspect.sh
+```
+
 ## 5. 说明
 
 - 默认保留最近 `5` 个 release

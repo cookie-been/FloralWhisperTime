@@ -63,6 +63,7 @@ floralwhispertime-release-<release-id>/
   .env.production.example
   RELEASE_INFO
   release-check.sh
+  release-inspect.sh
   release-install.sh
   release-upgrade.sh
   release-rollback.sh
@@ -73,6 +74,7 @@ floralwhispertime-release-<release-id>/
   ops/
     release-check.sh
     release-common.sh
+    release-inspect.sh
     release-install.sh
     release-upgrade.sh
     release-rollback.sh
@@ -215,7 +217,25 @@ cd floralwhispertime-release-<release-id>
 - compose 容器状态
 - `/api/health` 检查结果
 
-## 9. 目录说明
+## 9. 部署后巡检
+
+部署完成后可单独执行：
+
+```bash
+./release-inspect.sh
+```
+
+会检查：
+
+- compose 容器状态
+- `/api/health`
+- 首页可访问性
+- 后台管理员登录
+- `/api/admin/system/status`
+
+适合交付现场、升级后复核和客户自助巡检。
+
+## 10. 目录说明
 
 服务器最终目录结构：
 
@@ -236,7 +256,7 @@ cd floralwhispertime-release-<release-id>
 - `current` 指向当前激活版本
 - `shared/` 保存跨版本共享的配置和文件
 
-## 10. 常见问题
+## 11. 常见问题
 
 ### 10.1 为什么发布包很大？
 

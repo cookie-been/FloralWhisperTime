@@ -94,6 +94,7 @@
 - 后续升级：`./release-upgrade.sh`
 - 回滚：`./release-rollback.sh`
 - 状态查看：`./release-status.sh`
+- 部署后巡检：`./release-inspect.sh`
 
 release 脚本默认会保留最近 `5` 个版本目录，超出的旧 release 会在安装或升级成功后自动清理。
 

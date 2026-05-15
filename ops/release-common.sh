@@ -203,6 +203,47 @@ post_release_self_check() {
   printf '%s' "$status_payload" | grep -q '"uploadDirectoryReady":true' || fail_release "System status self-check failed: uploadDirectoryReady is not true"
 }
 
+run_release_inspection() {
+  local admin_username admin_password token status_payload web_port
+
+  admin_username="$(read_release_env_value "$SHARED_ENV_FILE" "ADMIN_USERNAME")"
+  admin_password="$(read_release_env_value "$SHARED_ENV_FILE" "ADMIN_PASSWORD")"
+  web_port="$(resolve_release_web_port)"
+
+  [[ -n "$admin_username" ]] || fail_release "ADMIN_USERNAME is empty in $SHARED_ENV_FILE"
+  [[ -n "$admin_password" ]] || fail_release "ADMIN_PASSWORD is empty in $SHARED_ENV_FILE"
+
+  log_release "Inspecting compose containers..."
+  compose_release_cmd ps
+
+  log_release "Checking backend health endpoint..."
+  curl -fsS "http://127.0.0.1:${web_port}/api/health"
+
+  log_release "Checking web entry..."
+  curl -fsSI "http://127.0.0.1:${web_port}/" >/dev/null
+
+  log_release "Checking admin login..."
+  token="$(
+    curl -fsS -X POST "http://127.0.0.1:${web_port}/api/admin/login" \
+      -H 'Content-Type: application/json' \
+      -d "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}" \
+      | sed -n 's/.*"token":"\([^"]*\)".*/\1/p'
+  )"
+
+  [[ -n "$token" ]] || fail_release "Admin login inspection failed"
+
+  log_release "Checking system status endpoint..."
+  status_payload="$(
+    curl -fsS "http://127.0.0.1:${web_port}/api/admin/system/status" \
+      -H "Authorization: Bearer ${token}"
+  )"
+
+  printf '%s' "$status_payload" | grep -q '"databaseConnected":true' || fail_release "Inspection failed: databaseConnected is not true"
+  printf '%s' "$status_payload" | grep -q '"uploadDirectoryReady":true' || fail_release "Inspection failed: uploadDirectoryReady is not true"
+
+  log_release "Inspection completed successfully."
+}
+
 wait_for_release_health() {
   local web_port
 
