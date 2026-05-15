@@ -275,6 +275,21 @@ public class SiteService {
     response.setArchiveFilename(filename);
     response.setArchivePath(archiveFile.getAbsolutePath());
     response.setArchiveBefore(DATE_TIME_FORMATTER.format(before));
+    auditLogService.record(AuditLogCommand.builder()
+        .module("AUDIT")
+        .action("ARCHIVE")
+        .targetType("OPERATION_LOG_ARCHIVE")
+        .targetId(filename)
+        .requestSummary(java.util.Map.of(
+            "archiveBefore", response.getArchiveBefore(),
+            "archivedCount", response.getArchivedCount(),
+            "archivePath", response.getArchivePath()))
+        .beforeSnapshot(java.util.Map.of(
+            "operationLogCount", logs.size(),
+            "archiveBefore", response.getArchiveBefore()))
+        .afterSnapshot(response)
+        .success(true)
+        .build());
     return response;
   }
 

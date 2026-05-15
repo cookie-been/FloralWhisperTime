@@ -29,6 +29,7 @@ function formatModule(value: string) {
     ABOUT: "关于我们",
     TEAM: "团队成员",
     AI: "AI 配置",
+    AUDIT: "系统审计",
   };
   return mapping[value] ?? value;
 }
@@ -41,6 +42,7 @@ function formatAction(value: string) {
     DELETE: "删除",
     MARK_READ: "标记已读",
     RESTORE: "恢复",
+    ARCHIVE: "归档",
   };
   return mapping[value] ?? value;
 }
@@ -55,6 +57,7 @@ function formatTargetType(value: string) {
     TEAM_MEMBER: "团队成员",
     AI_SETTINGS: "AI 配置",
     AUTH: "鉴权",
+    OPERATION_LOG_ARCHIVE: "操作日志归档",
   };
   return mapping[value] ?? value;
 }

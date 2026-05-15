@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.dto.SystemStatusResponse;
@@ -211,6 +213,8 @@ class SiteServiceTest {
         operationLog(8L, "SITE", "UPDATE", "SITE_CONFIG", "1", LocalDateTime.of(2025, 10, 2, 11, 30))));
     when(operationLogMapper.delete(any())).thenReturn(2);
 
+    AuditLogService auditLogService = mock(AuditLogService.class);
+
     SiteService siteService =
         new SiteService(
             mock(SiteConfigMapper.class),
@@ -228,7 +232,7 @@ class SiteServiceTest {
             appProperties(uploadsDir, backupsDir),
             mock(DataSource.class),
             null,
-            mock(AuditLogService.class),
+            auditLogService,
             Instant.parse("2026-05-15T00:45:00Z"),
             ZoneId.of("Asia/Shanghai"),
             Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
@@ -244,6 +248,7 @@ class SiteServiceTest {
     assertTrue(content.contains("daily-001"));
     assertTrue(content.contains("SITE_CONFIG"));
     verify(operationLogMapper).delete(any());
+    verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
   }
 
   private AppProperties appProperties(Path uploadsDir, Path backupsDir) {
