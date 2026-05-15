@@ -11,6 +11,7 @@ SHARED_ENV_FILE="${SHARED_DIR}/.env"
 SHARED_UPLOADS_DIR="${SHARED_DIR}/uploads"
 SHARED_BACKUPS_DIR="${SHARED_DIR}/backups"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-300}"
+RELEASE_RETENTION_COUNT="${RELEASE_RETENTION_COUNT:-5}"
 
 log_release() {
   printf '[release] %s\n' "$*"
@@ -73,6 +74,11 @@ ensure_release_prerequisites() {
 
 ensure_release_directories() {
   mkdir -p "$APP_ROOT" "$RELEASES_DIR" "$SHARED_DIR" "$SHARED_UPLOADS_DIR" "$SHARED_BACKUPS_DIR"
+}
+
+validate_release_retention_count() {
+  [[ "$RELEASE_RETENTION_COUNT" =~ ^[0-9]+$ ]] || fail_release "RELEASE_RETENTION_COUNT must be a non-negative integer"
+  (( RELEASE_RETENTION_COUNT >= 1 )) || fail_release "RELEASE_RETENTION_COUNT must be at least 1"
 }
 
 sanitize_project_name() {
@@ -255,6 +261,35 @@ current_release_id() {
 
 switch_current_release() {
   ln -sfn "$RELEASE_ROOT" "$CURRENT_LINK"
+}
+
+cleanup_old_releases() {
+  local current_id
+  local candidates=()
+  local remove_ids=()
+  local candidate
+
+  validate_release_retention_count
+  current_id="$(current_release_id)"
+
+  while IFS= read -r candidate; do
+    [[ -n "$candidate" ]] || continue
+    if [[ "$candidate" == "$current_id" ]]; then
+      continue
+    fi
+    candidates+=("$candidate")
+  done < <(find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r)
+
+  if ((${#candidates[@]} <= RELEASE_RETENTION_COUNT - 1)); then
+    return
+  fi
+
+  remove_ids=("${candidates[@]:$((RELEASE_RETENTION_COUNT - 1))}")
+
+  for candidate in "${remove_ids[@]}"; do
+    log_release "Removing old release directory: $candidate"
+    rm -rf "$RELEASES_DIR/$candidate"
+  done
 }
 
 ensure_release_registered() {

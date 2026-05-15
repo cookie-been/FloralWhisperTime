@@ -12,6 +12,7 @@ Usage: ./ops/release-upgrade.sh [options]
 
 Options:
   --app-root PATH      Target app root, default /opt/floralwhispertime
+  --retain COUNT       Keep latest COUNT releases, default 5
   --timeout SECONDS    Health check timeout, default 300
   -h, --help           Show this help
 EOF
@@ -22,6 +23,11 @@ while [[ $# -gt 0 ]]; do
     --app-root)
       [[ $# -ge 2 ]] || { echo "--app-root requires a value" >&2; exit 1; }
       APP_ROOT="$2"
+      shift 2
+      ;;
+    --retain)
+      [[ $# -ge 2 ]] || { echo "--retain requires a value" >&2; exit 1; }
+      RELEASE_RETENTION_COUNT="$2"
       shift 2
       ;;
     --timeout)
@@ -56,8 +62,10 @@ log_release "Upgrading services to release: $RELEASE_ID"
 compose_release_cmd up -d --force-recreate backend web
 wait_for_release_health
 switch_current_release
+cleanup_old_releases
 
 log_release "Release upgraded successfully."
 log_release "Current release: $RELEASE_ID"
 log_release "Compose project: $PROJECT_NAME"
+log_release "Release retention count: $RELEASE_RETENTION_COUNT"
 log_release "Site URL: http://127.0.0.1:$(resolve_release_web_port)"

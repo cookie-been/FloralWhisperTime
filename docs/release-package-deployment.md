@@ -89,6 +89,12 @@ cd floralwhispertime-release-<release-id>
 ./ops/release-install.sh
 ```
 
+也可以显式指定保留版本数：
+
+```bash
+./ops/release-install.sh --retain 5
+```
+
 脚本默认会使用以下目录：
 
 ```text
@@ -132,6 +138,12 @@ cd floralwhispertime-release-<release-id>
 ./ops/release-upgrade.sh
 ```
 
+也可以在升级时指定保留最近几个 release：
+
+```bash
+./ops/release-upgrade.sh --retain 5
+```
+
 ## 6. 后续升级
 
 将新的 release 包上传并解压后，在新 release 目录执行：
@@ -146,6 +158,7 @@ cd floralwhispertime-release-<release-id>
 - 复用 `/opt/floralwhispertime/shared/.env`
 - 使用新 release 的 compose 文件重建服务
 - 健康检查通过后更新 `current`
+- 自动清理超出保留数量的旧 release 目录
 
 ## 7. 回滚
 
@@ -167,6 +180,12 @@ cd floralwhispertime-release-<release-id>
 - `/opt/floralwhispertime/shared/.env`
 - `/opt/floralwhispertime/shared/uploads`
 - `/opt/floralwhispertime/shared/backups`
+
+说明：
+
+- 默认保留最近 `5` 个 release（含当前版本）
+- 可通过 `--retain` 调整保留数量
+- 只清理旧 release 目录，不会删除 MySQL volume 和共享目录
 
 ## 8. 查看状态
 

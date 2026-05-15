@@ -129,6 +129,12 @@ cp .env.production.example .env
 ./ops/release-upgrade.sh
 ```
 
+默认会保留最近 `5` 个 release，可用 `--retain` 调整：
+
+```bash
+./ops/release-upgrade.sh --retain 5
+```
+
 回滚执行：
 
 ```bash

@@ -9,6 +9,8 @@
 **/*.err
 **/.DS_Store
 **/tsconfig.tsbuildinfo
+tmp
+tmp/releases
 flower-shop-backend-java/uploads
 *.zip
 *.zip:Zone.Identifier
