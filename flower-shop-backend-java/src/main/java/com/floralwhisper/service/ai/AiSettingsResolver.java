@@ -1,6 +1,7 @@
 package com.floralwhisper.service.ai;
 
 import com.floralwhisper.config.AiImageProperties;
+import com.floralwhisper.crypto.SecretCryptoService;
 import com.floralwhisper.entity.AiSettings;
 import com.floralwhisper.mapper.AiSettingsMapper;
 import org.springframework.stereotype.Service;
@@ -11,10 +12,15 @@ public class AiSettingsResolver {
 
   private final AiImageProperties properties;
   private final AiSettingsMapper aiSettingsMapper;
+  private final SecretCryptoService secretCryptoService;
 
-  public AiSettingsResolver(AiImageProperties properties, AiSettingsMapper aiSettingsMapper) {
+  public AiSettingsResolver(
+      AiImageProperties properties,
+      AiSettingsMapper aiSettingsMapper,
+      SecretCryptoService secretCryptoService) {
     this.properties = properties;
     this.aiSettingsMapper = aiSettingsMapper;
+    this.secretCryptoService = secretCryptoService;
   }
 
   public ResolvedAiImageSettings resolve() {
@@ -22,7 +28,7 @@ public class AiSettingsResolver {
     return new ResolvedAiImageSettings(
         current != null && current.getEnabled() != null ? current.getEnabled() : properties.isEnabled(),
         pick(current == null ? null : current.getProvider(), properties.getProvider()),
-        pick(current == null ? null : current.getApiKey(), properties.getApiKey()),
+        pick(resolveApiKey(current), properties.getApiKey()),
         pick(current == null ? null : current.getModel(), properties.getModel()),
         pick(current == null ? null : current.getBaseUrl(), properties.getBaseUrl()),
         pick(current == null ? null : current.getGeneratePath(), properties.getGeneratePath()),
@@ -40,7 +46,7 @@ public class AiSettingsResolver {
     return new ResolvedAiTextSettings(
         current != null && current.getEnabled() != null ? current.getEnabled() : properties.isEnabled(),
         pick(current == null ? null : current.getProvider(), properties.getProvider()),
-        pick(current == null ? null : current.getApiKey(), properties.getApiKey()),
+        pick(resolveApiKey(current), properties.getApiKey()),
         pick(current == null ? null : current.getBaseUrl(), properties.getBaseUrl()),
         pick(current == null ? null : current.getTextModel(), "doubao-1-5-pro-32k-250115"),
         pick(current == null ? null : current.getTextGeneratePath(), "/chat/completions"),
@@ -51,5 +57,12 @@ public class AiSettingsResolver {
 
   private String pick(String value, String fallback) {
     return value == null || value.isBlank() ? fallback : value.trim();
+  }
+
+  private String resolveApiKey(AiSettings current) {
+    if (current == null) {
+      return null;
+    }
+    return secretCryptoService.decrypt(current.getApiKey());
   }
 }

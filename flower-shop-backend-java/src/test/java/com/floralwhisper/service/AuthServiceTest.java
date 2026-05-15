@@ -14,6 +14,7 @@ import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.config.AppProperties;
+import com.floralwhisper.crypto.SecretCryptoService;
 import com.floralwhisper.dto.AdminPasswordChangeRequest;
 import com.floralwhisper.dto.AdminPasswordChangeResponse;
 import com.floralwhisper.dto.AdminSessionResponse;
@@ -25,6 +26,7 @@ import com.floralwhisper.security.JwtService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.junit.jupiter.api.Test;
 
 class AuthServiceTest {
@@ -48,6 +50,7 @@ class AuthServiceTest {
         jwtService,
         auditLogService,
         mapper,
+        new BCryptPasswordEncoder(),
         Clock.fixed(Instant.parse("2026-05-15T04:00:00Z"), ZoneId.of("Asia/Shanghai")),
         ZoneId.of("Asia/Shanghai"));
 
@@ -84,6 +87,7 @@ class AuthServiceTest {
         jwtService,
         auditLogService,
         mapper,
+        new BCryptPasswordEncoder(),
         Clock.fixed(Instant.parse("2026-05-15T04:30:00Z"), ZoneId.of("Asia/Shanghai")),
         ZoneId.of("Asia/Shanghai"));
 
@@ -96,6 +100,7 @@ class AuthServiceTest {
     assertEquals("admin", changeResponse.getUsername());
     assertFalse(changeResponse.isRequirePasswordChange());
     assertFalse(state.getPasswordHash().isBlank());
+    assertTrue(state.getPasswordHash().startsWith("$2"));
     assertFalse(Boolean.TRUE.equals(state.getRequirePasswordChange()));
     verify(mapper, times(1)).updateById(state);
 
@@ -132,6 +137,7 @@ class AuthServiceTest {
         jwtService,
         auditLogService,
         mapper,
+        new BCryptPasswordEncoder(),
         Clock.fixed(Instant.parse("2026-05-15T04:30:00Z"), ZoneId.of("Asia/Shanghai")),
         ZoneId.of("Asia/Shanghai"));
 
@@ -142,6 +148,45 @@ class AuthServiceTest {
     ApiException error = assertThrows(ApiException.class, () -> authService.changePassword("admin", changeRequest));
 
     assertEquals("新密码需同时包含字母、数字和特殊字符", error.getMessage());
+  }
+
+  @Test
+  void loginSupportsLegacySha256HashAndUpgradesAfterPasswordChange() {
+    AdminSecurityStateMapper mapper = mock(AdminSecurityStateMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+    AppProperties properties = properties();
+    JwtService jwtService = new JwtService(properties);
+
+    AdminSecurityState state = new AdminSecurityState();
+    state.setId(1L);
+    state.setUsername("admin");
+    state.setPasswordHash("e9cbe6af22e24e3ee04da6c9ee107add5813fafd4c7a653e362750c6a284ad53");
+    state.setRequirePasswordChange(false);
+    when(mapper.selectById(1L)).thenReturn(state);
+
+    AuthService authService = new AuthService(
+        properties,
+        jwtService,
+        auditLogService,
+        mapper,
+        new BCryptPasswordEncoder(),
+        Clock.fixed(Instant.parse("2026-05-15T04:30:00Z"), ZoneId.of("Asia/Shanghai")),
+        ZoneId.of("Asia/Shanghai"));
+
+    LoginRequest loginRequest = new LoginRequest();
+    loginRequest.setUsername("admin");
+    loginRequest.setPassword("Floral@2026");
+
+    LoginResponse response = authService.login(loginRequest);
+
+    assertEquals("admin", response.getUsername());
+
+    AdminPasswordChangeRequest changeRequest = new AdminPasswordChangeRequest();
+    changeRequest.setCurrentPassword("Floral@2026");
+    changeRequest.setNewPassword("Floral@2026#Rotate");
+    authService.changePassword("admin", changeRequest);
+
+    assertTrue(state.getPasswordHash().startsWith("$2"));
   }
 
   private AppProperties properties() {

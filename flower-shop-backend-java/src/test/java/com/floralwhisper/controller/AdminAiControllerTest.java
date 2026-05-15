@@ -21,6 +21,7 @@ import com.floralwhisper.protection.RateLimitInterceptor;
 import com.floralwhisper.protection.ServiceBusyException;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
+import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
@@ -43,6 +44,7 @@ import com.floralwhisper.service.ai.GeneratedAiImageResult;
 import com.floralwhisper.service.ai.ResolvedAiImageSettings;
 import com.floralwhisper.service.ai.VolcengineFlowerSuggestionService;
 import com.floralwhisper.service.ai.VolcengineImageGenerationService;
+import com.floralwhisper.service.AuthService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -105,6 +107,8 @@ class AdminAiControllerTest {
   @MockBean
   private AiSettingsResolver aiSettingsResolver;
   @MockBean
+  private AuthService authService;
+  @MockBean
   private HeavyOperationGuard heavyOperationGuard;
   @MockBean
   private RateLimitInterceptor rateLimitInterceptor;
@@ -115,6 +119,7 @@ class AdminAiControllerTest {
 
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
+  @MockBean private AdminSecurityStateMapper adminSecurityStateMapper;
   @MockBean private AiSettingsMapper aiSettingsMapper;
   @MockBean private BrandStoryImageMapper brandStoryImageMapper;
   @MockBean private BrandStoryMapper brandStoryMapper;
@@ -136,6 +141,7 @@ class AdminAiControllerTest {
   @BeforeEach
   void setUpInterceptors() throws Exception {
     when(rateLimitInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+    when(authService.isPasswordChangeRequired(anyString())).thenReturn(false);
   }
 
   @Test

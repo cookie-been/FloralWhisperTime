@@ -5,6 +5,7 @@ import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.config.AppProperties;
+import com.floralwhisper.crypto.SecretCryptoService;
 import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutPageUpdateRequest;
 import com.floralwhisper.dto.AboutTimelineEntryRequest;
@@ -112,6 +113,7 @@ public class SiteService {
   private final AuditLogService auditLogService;
   private final ObjectMapper objectMapper;
   private final ProtectionMetrics protectionMetrics;
+  private final SecretCryptoService secretCryptoService;
 
   @Autowired
   public SiteService(
@@ -132,7 +134,8 @@ public class SiteService {
       @Nullable BuildProperties buildProperties,
       ProtectionMetrics protectionMetrics,
       AuditLogService auditLogService,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      SecretCryptoService secretCryptoService) {
     this(
         siteConfigMapper,
         shopInfoMapper,
@@ -152,6 +155,7 @@ public class SiteService {
         protectionMetrics,
         auditLogService,
         objectMapper,
+        secretCryptoService,
         Instant.now(),
         ZoneId.systemDefault(),
         Clock.systemDefaultZone());
@@ -240,6 +244,7 @@ public class SiteService {
         protectionMetrics,
         auditLogService,
         new ObjectMapper(),
+        new SecretCryptoService(appProperties),
         startedAt,
         zoneId,
         clock);
@@ -264,6 +269,7 @@ public class SiteService {
       @Nullable ProtectionMetrics protectionMetrics,
       AuditLogService auditLogService,
       ObjectMapper objectMapper,
+      SecretCryptoService secretCryptoService,
       @Nullable Instant startedAt,
       ZoneId zoneId,
       Clock clock) {
@@ -285,6 +291,7 @@ public class SiteService {
     this.protectionMetrics = protectionMetrics == null ? new ProtectionMetrics() : protectionMetrics;
     this.auditLogService = auditLogService;
     this.objectMapper = (objectMapper == null ? new ObjectMapper() : objectMapper.copy()).findAndRegisterModules();
+    this.secretCryptoService = secretCryptoService == null ? new SecretCryptoService(appProperties) : secretCryptoService;
     this.startedAt = startedAt;
     this.zoneId = zoneId;
     this.clock = clock;
@@ -875,7 +882,7 @@ public class SiteService {
     copy.setId(source.getId());
     copy.setEnabled(source.getEnabled());
     copy.setProvider(source.getProvider());
-    copy.setApiKey(source.getApiKey());
+    copy.setApiKey(resolveAiApiKey(source));
     copy.setModel(source.getModel());
     copy.setBaseUrl(source.getBaseUrl());
     copy.setGeneratePath(source.getGeneratePath());
@@ -996,7 +1003,7 @@ public class SiteService {
       AiSettings current = ensureAiSettings();
       current.setEnabled(source.isEnabled());
       current.setProvider(text(source.getProvider(), current.getProvider()));
-      current.setApiKey(secretText(source.getApiKey(), current.getApiKey()));
+      current.setApiKey(secretConfigText(source.getApiKey(), current.getApiKey()));
       current.setModel(text(source.getModel(), current.getModel()));
       current.setBaseUrl(text(source.getBaseUrl(), current.getBaseUrl()));
       current.setGeneratePath(text(source.getGeneratePath(), current.getGeneratePath()));
@@ -1078,7 +1085,7 @@ public class SiteService {
     AiSettings current = ensureAiSettings();
     current.setEnabled(request.getEnabled() == null ? current.getEnabled() : request.getEnabled());
     current.setProvider(text(request.getProvider(), current.getProvider()));
-    current.setApiKey(secretText(request.getApiKey(), current.getApiKey()));
+    current.setApiKey(secretConfigText(request.getApiKey(), current.getApiKey()));
     current.setModel(text(request.getModel(), current.getModel()));
     current.setBaseUrl(text(request.getBaseUrl(), current.getBaseUrl()));
     current.setGeneratePath(text(request.getGeneratePath(), current.getGeneratePath()));
@@ -1091,11 +1098,12 @@ public class SiteService {
   }
 
   private AiSettingsResponse toAiSettingsResponse(AiSettings settings) {
+    String apiKey = resolveAiApiKey(settings);
     AiSettingsResponse response = new AiSettingsResponse();
     response.setEnabled(Boolean.TRUE.equals(settings.getEnabled()));
     response.setProvider(settings.getProvider());
-    response.setApiKeyConfigured(notBlank(settings.getApiKey()));
-    response.setApiKeyMasked(maskApiKey(settings.getApiKey()));
+    response.setApiKeyConfigured(notBlank(apiKey));
+    response.setApiKeyMasked(maskApiKey(apiKey));
     response.setModel(settings.getModel());
     response.setBaseUrl(settings.getBaseUrl());
     response.setGeneratePath(settings.getGeneratePath());
@@ -1108,10 +1116,11 @@ public class SiteService {
   }
 
   private ConfigTransferAiSettings toConfigTransferAiSettings(AiSettings settings, boolean includeSecrets) {
+    String apiKey = resolveAiApiKey(settings);
     ConfigTransferAiSettings response = new ConfigTransferAiSettings();
     response.setEnabled(Boolean.TRUE.equals(settings.getEnabled()));
     response.setProvider(settings.getProvider());
-    response.setApiKey(includeSecrets ? settings.getApiKey() : "");
+    response.setApiKey(includeSecrets ? apiKey : "");
     response.setModel(settings.getModel());
     response.setBaseUrl(settings.getBaseUrl());
     response.setGeneratePath(settings.getGeneratePath());
@@ -1153,6 +1162,17 @@ public class SiteService {
     }
     String trimmed = next.trim();
     return trimmed.isEmpty() ? current : trimmed;
+  }
+
+  private String secretConfigText(String next, String currentEncrypted) {
+    if (next == null) {
+      return currentEncrypted;
+    }
+    String trimmed = next.trim();
+    if (trimmed.isEmpty()) {
+      return currentEncrypted;
+    }
+    return secretCryptoService.encrypt(trimmed);
   }
 
   private String maskApiKey(String apiKey) {
@@ -1241,9 +1261,22 @@ public class SiteService {
     return value == null ? "" : value;
   }
 
+  private String resolveAiApiKey(AiSettings settings) {
+    if (settings == null || !notBlank(settings.getApiKey())) {
+      return "";
+    }
+    return nullToEmpty(secretCryptoService.decrypt(settings.getApiKey()));
+  }
+
   private AiSettings ensureAiSettings() {
     AiSettings current = aiSettingsMapper.selectById(SINGLETON_ID);
-    if (current != null) return current;
+    if (current != null) {
+      if (notBlank(current.getApiKey()) && !secretCryptoService.isEncrypted(current.getApiKey())) {
+        current.setApiKey(secretCryptoService.encrypt(current.getApiKey()));
+        aiSettingsMapper.updateById(current);
+      }
+      return current;
+    }
     AiSettings created = new AiSettings();
     created.setId(SINGLETON_ID);
     created.setEnabled(false);

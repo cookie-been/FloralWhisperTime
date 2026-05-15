@@ -23,6 +23,7 @@ mvn test
 | `ADMIN_USERNAME` | `admin` |
 | `ADMIN_PASSWORD` | `Floral@2026` |
 | `ADMIN_AUTH_SECRET` | `floral-whisper-time-java-dev-secret-change-me` |
+| `APP_DATA_ENCRYPTION_KEY` | `floral-whisper-time-dev-data-key-2026` |
 | `PUBLIC_BASE_URL` | `http://localhost:${server.port}` |
 | `UPLOAD_DIR` | `uploads` |
 | `JSON_IMPORT_ENABLED` | `false` |
@@ -44,5 +45,7 @@ mvn test
 
 - 保持响应错误格式 `{ "message": "..." }`，前端依赖该格式展示错误。
 - 管理端继续使用 `Authorization: Bearer <token>`。
+- 管理员密码新写入使用 `BCrypt`；历史旧摘要需通过改密逐步收敛。
+- AI `apiKey` 在数据库中按服务端密钥加密存储，对外接口只返回是否已配置和掩码值。
 - 图片上传接口返回 `{ "url": "..." }`，本地默认是绝对 URL；`PUBLIC_BASE_URL` 为空时可返回相对 `/uploads/...`。
 - 当前后台还包含留言管理、关于我们页配置、时间轴和团队成员管理相关接口。

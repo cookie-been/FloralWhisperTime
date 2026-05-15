@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.util.HexFormat;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,6 +31,7 @@ public class AuthService {
   private final JwtService jwtService;
   private final AuditLogService auditLogService;
   private final AdminSecurityStateMapper adminSecurityStateMapper;
+  private final BCryptPasswordEncoder passwordEncoder;
   private final Clock clock;
   private final ZoneId zoneId;
 
@@ -38,7 +40,14 @@ public class AuthService {
       JwtService jwtService,
       AuditLogService auditLogService,
       AdminSecurityStateMapper adminSecurityStateMapper) {
-    this(properties, jwtService, auditLogService, adminSecurityStateMapper, Clock.systemDefaultZone(), ZoneId.systemDefault());
+    this(
+        properties,
+        jwtService,
+        auditLogService,
+        adminSecurityStateMapper,
+        new BCryptPasswordEncoder(),
+        Clock.systemDefaultZone(),
+        ZoneId.systemDefault());
   }
 
   AuthService(
@@ -46,12 +55,14 @@ public class AuthService {
       JwtService jwtService,
       AuditLogService auditLogService,
       AdminSecurityStateMapper adminSecurityStateMapper,
+      BCryptPasswordEncoder passwordEncoder,
       Clock clock,
       ZoneId zoneId) {
     this.properties = properties;
     this.jwtService = jwtService;
     this.auditLogService = auditLogService;
     this.adminSecurityStateMapper = adminSecurityStateMapper;
+    this.passwordEncoder = passwordEncoder;
     this.clock = clock;
     this.zoneId = zoneId;
   }
@@ -175,10 +186,17 @@ public class AuthService {
     if (storedHash.isBlank()) {
       return properties.getAdmin().getPassword().equals(rawPassword);
     }
-    return storedHash.equals(hashPassword(rawPassword));
+    if (isBcryptHash(storedHash)) {
+      return passwordEncoder.matches(rawPassword, storedHash);
+    }
+    return storedHash.equals(legacySha256(rawPassword));
   }
 
   private String hashPassword(String rawPassword) {
+    return passwordEncoder.encode(rawPassword);
+  }
+
+  private String legacySha256(String rawPassword) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hashed = digest.digest(rawPassword.getBytes(StandardCharsets.UTF_8));
@@ -195,5 +213,9 @@ public class AuthService {
     if (!(hasLetter && hasDigit && hasSpecial)) {
       throw new ApiException(HttpStatus.BAD_REQUEST, "新密码需同时包含字母、数字和特殊字符");
     }
+  }
+
+  private boolean isBcryptHash(String value) {
+    return value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$");
   }
 }

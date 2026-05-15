@@ -84,6 +84,8 @@ app:
     environment: ${APP_ENVIRONMENT:local}
     git-revision: ${APP_GIT_REVISION:dev}
     deployed-at: ${APP_DEPLOYED_AT:}
+  security:
+    data-encryption-key: ${APP_DATA_ENCRYPTION_KEY:floral-whisper-time-dev-data-key-2026}
   protection:
     public-read:
       enabled: ${PROTECTION_PUBLIC_READ_ENABLED:true}

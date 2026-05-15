@@ -84,6 +84,7 @@ http://localhost:3001/swagger-ui.html
 ADMIN_USERNAME=admin \
 ADMIN_PASSWORD='your-password' \
 ADMIN_AUTH_SECRET='replace-with-a-long-random-secret' \
+APP_DATA_ENCRYPTION_KEY='replace-with-a-long-random-secret' \
 mvn spring-boot:run
 ```
 
@@ -91,10 +92,17 @@ mvn spring-boot:run
 
 - `JWT_EXPIRES_IN_SECONDS`：JWT 过期时间，默认 `43200`
 - `JWT_ISSUER`：JWT 签发者，默认 `flower-shop-backend-java`
+- `APP_DATA_ENCRYPTION_KEY`：后台敏感配置加密主密钥，用于数据库内 AI API Key 等可逆敏感字段加密
 - `CORS_ALLOWED_ORIGIN_PATTERNS`：允许来源，默认 `*`
 - `CORS_ALLOWED_METHODS`：允许方法，默认 `GET,POST,PUT,DELETE,OPTIONS`
 - `CORS_ALLOWED_HEADERS`：允许请求头，默认 `*`
 - `CORS_ALLOW_CREDENTIALS`：是否允许携带凭据，默认 `false`
+
+安全建议：
+
+- `ADMIN_AUTH_SECRET` 与 `APP_DATA_ENCRYPTION_KEY` 必须使用不同的高强度随机值
+- 生产环境不要保留默认 `ADMIN_PASSWORD`
+- 变更 `APP_DATA_ENCRYPTION_KEY` 前要先做数据迁移或重新录入相关敏感配置
 
 ## 兼容接口
 
@@ -194,6 +202,8 @@ mvn package
 - AI 配置只能通过后台管理员接口读取和修改
 - 后台读取时返回脱敏后的 `apiKeyMasked` 与 `apiKeyConfigured`
 - 系统状态接口 `GET /api/admin/system/status` 也只返回是否配置密钥，不返回明文密钥
+- 数据库中的 AI `apiKey` 现在按服务端主密钥加密存储
+- 管理员密码变更后使用 `BCrypt` 存储；历史空密码/旧摘要会在后续改密后收敛到新格式
 
 ## 系统状态说明
 

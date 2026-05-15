@@ -18,14 +18,18 @@ import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.CacheConfig;
+import com.floralwhisper.crypto.SecretCryptoService;
 import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.AboutPageResponse;
+import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
+import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
+import com.floralwhisper.service.ai.AiSettingsResolver;
 import com.floralwhisper.protection.ProtectionMetrics;
 import com.floralwhisper.protection.RouteProtectionGroup;
 import com.floralwhisper.entity.AboutPage;
@@ -79,6 +83,56 @@ class SiteServiceTest {
 
   @TempDir
   Path tempDir;
+
+  @Test
+  void updateAdminAiSettingsStoresEncryptedApiKeyAndReturnsMaskedValue() {
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+    AiSettings existing = aiSettings(true, "volcengine", "old-key", "old-image", "old-text");
+    when(aiSettingsMapper.selectById(1L)).thenReturn(existing);
+
+    SiteService siteService = createSiteService(
+        mock(SiteConfigMapper.class),
+        mock(ShopInfoMapper.class),
+        mock(ShopHourMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        aiSettingsMapper,
+        mock(BrandStoryMapper.class),
+        mock(BrandStoryImageMapper.class),
+        mock(OperationLogMapper.class),
+        mock(TeamMemberMapper.class),
+        auditLogService);
+
+    AiSettingsUpdateRequest request = new AiSettingsUpdateRequest();
+    request.setApiKey("new-secret-key");
+    request.setModel("doubao-seedream-5-0-260128");
+
+    AiSettingsResponse response = siteService.updateAdminAiSettings(request);
+
+    assertTrue(existing.getApiKey().startsWith("enc:v1:"));
+    assertFalse(existing.getApiKey().contains("new-secret-key"));
+    assertTrue(response.isApiKeyConfigured());
+    assertTrue(response.getApiKeyMasked().contains("****"));
+    verify(aiSettingsMapper, times(2)).updateById(existing);
+  }
+
+  @Test
+  void aiSettingsResolverDecryptsStoredEncryptedApiKey() {
+    AppProperties properties = appProperties(tempDir.resolve("uploads"), tempDir.resolve("backups"), "local", "dev", "");
+    properties.getSecurity().setDataEncryptionKey("12345678901234567890123456789012");
+
+    SecretCryptoService cryptoService = new SecretCryptoService(properties);
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    AiSettings settings = aiSettings(true, "volcengine", cryptoService.encrypt("resolved-secret"), "doubao-image", "doubao-text");
+    when(aiSettingsMapper.selectById(1L)).thenReturn(settings);
+
+    com.floralwhisper.config.AiImageProperties aiImageProperties = new com.floralwhisper.config.AiImageProperties();
+    AiSettingsResolver resolver = new AiSettingsResolver(aiImageProperties, aiSettingsMapper, cryptoService);
+
+    assertEquals("resolved-secret", resolver.resolve().apiKey());
+    assertEquals("resolved-secret", resolver.resolveText().apiKey());
+  }
 
   @Test
   void protectionDefaultsExposeExpectedThresholds() {
@@ -872,7 +926,7 @@ class SiteServiceTest {
     verify(aboutTimelineEntryMapper, atLeast(2)).insert(org.mockito.ArgumentMatchers.<AboutTimelineEntry>any());
     verify(teamMemberMapper, times(1)).delete(any());
     verify(teamMemberMapper, atLeast(2)).insert(org.mockito.ArgumentMatchers.<TeamMember>any());
-    verify(aiSettingsMapper, times(1)).updateById(any(AiSettings.class));
+    verify(aiSettingsMapper, times(2)).updateById(any(AiSettings.class));
     verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
   }
 
@@ -968,6 +1022,12 @@ class SiteServiceTest {
     context.registerBean(ProtectionMetrics.class, ProtectionMetrics::new);
     context.registerBean(AuditLogService.class, () -> auditLogService);
     context.registerBean(com.fasterxml.jackson.databind.ObjectMapper.class, () -> new com.fasterxml.jackson.databind.ObjectMapper());
+    context.registerBean(SecretCryptoService.class, () -> new SecretCryptoService(appProperties(
+        tempDir.resolve("uploads"),
+        tempDir.resolve("backups"),
+        "local",
+        "dev",
+        "")));
     context.registerBean(SiteService.class);
     context.refresh();
     return context;

@@ -19,6 +19,7 @@ public class AppProperties {
   private Cors cors = new Cors();
   private Import importer = new Import();
   private Runtime runtime = new Runtime();
+  private Security security = new Security();
   @Valid
   private ConcurrencyProtectionProperties protection = new ConcurrencyProtectionProperties();
 
@@ -73,5 +74,10 @@ public class AppProperties {
     private String environment = "local";
     private String gitRevision = "dev";
     private String deployedAt;
+  }
+
+  @Data
+  public static class Security {
+    private String dataEncryptionKey = "floral-whisper-time-dev-data-key-2026";
   }
 }
