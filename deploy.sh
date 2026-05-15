@@ -72,6 +72,18 @@ compose_cmd() {
   fi
 }
 
+resolve_web_port() {
+  local mapped_port
+
+  mapped_port="$(compose_cmd port web 80 2>/dev/null | sed -n 's/.*:\([0-9][0-9]*\)$/\1/p' | tail -n 1)"
+  if [[ -n "$mapped_port" ]]; then
+    printf '%s' "$mapped_port"
+    return
+  fi
+
+  printf '%s' "${WEB_PORT:-8080}"
+}
+
 random_alnum() {
   local length="$1"
   python3 - "$length" <<'PY'
@@ -434,6 +446,8 @@ if (( DETACH == 0 )); then
 fi
 
 log "Waiting for application health checks..."
+WEB_PORT="$(resolve_web_port)"
+log "Detected published web port: $WEB_PORT"
 if ! wait_for_url "http://127.0.0.1:${WEB_PORT}/api/health" "Backend health"; then
   show_failure_context
   fail "Backend health check timed out"

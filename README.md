@@ -42,7 +42,7 @@
 - 创建上传目录
 - 从源码构建前端与 Java 后端镜像
 - 启动 `mysql + backend + web`
-- 自动验证 `/api/health`、首页、管理员登录和系统状态接口
+- 自动读取 Docker 实际发布的 Web 端口，并验证 `/api/health`、首页、管理员登录和系统状态接口
 
 常用参数：
 
@@ -110,7 +110,7 @@
 - 如果本地 git 工作区不干净，脚本会停止，避免把本地修改直接冲掉
 - 确认需要跳过这层保护时，可显式传 `--allow-dirty-git`
 
-默认访问地址：`http://localhost:8080`
+默认访问地址通常为 `http://localhost:8080`。如果部署时改了 `WEB_PORT` 或出现端口调整，以脚本输出的 `Site URL` 为准。
 
 ## Docker 部署
 

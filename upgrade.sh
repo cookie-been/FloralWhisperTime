@@ -61,6 +61,18 @@ compose_cmd() {
   docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
 
+resolve_web_port() {
+  local mapped_port
+
+  mapped_port="$(compose_cmd port web 80 2>/dev/null | sed -n 's/.*:\([0-9][0-9]*\)$/\1/p' | tail -n 1)"
+  if [[ -n "$mapped_port" ]]; then
+    printf '%s' "$mapped_port"
+    return
+  fi
+
+  printf '%s' "${WEB_PORT:-8080}"
+}
+
 current_git_branch() {
   git -C "$REPO_ROOT" branch --show-current
 }
@@ -276,6 +288,9 @@ record_upgrade_log
 
 WEB_PORT="$(read_env_value "$ENV_FILE" "WEB_PORT")"
 WEB_PORT="${WEB_PORT:-8080}"
+WEB_PORT="$(resolve_web_port)"
+
+log "Detected published web port: $WEB_PORT"
 
 log "Waiting for backend health check"
 if ! wait_for_url "http://127.0.0.1:${WEB_PORT}/api/health" "Backend health"; then
