@@ -54,8 +54,37 @@
 | `AI_IMAGE_RESPONSE_FORMAT` | 返回格式 | 默认 `url` |
 | `AI_IMAGE_WATERMARK` | 是否添加水印 | 按业务要求设置 |
 
+## 并发保护与缓存
+
+| 变量 | 说明 | 建议 |
+|------|------|------|
+| `PROTECTION_PUBLIC_READ_ENABLED` | 是否启用公开读取限流 | 生产环境保持 `true` |
+| `PROTECTION_PUBLIC_READ_CAPACITY` | 公开读取周期令牌数 | 按站点访问量预估设置 |
+| `PROTECTION_PUBLIC_READ_REFILL_SECONDS` | 公开读取令牌恢复周期 | 默认 `10` 秒 |
+| `PROTECTION_PUBLIC_WRITE_ENABLED` | 是否启用公开写入限流 | 生产环境保持 `true` |
+| `PROTECTION_PUBLIC_WRITE_CAPACITY` | 公开写入周期令牌数 | 默认适合留言类接口 |
+| `PROTECTION_PUBLIC_WRITE_REFILL_SECONDS` | 公开写入令牌恢复周期 | 默认 `60` 秒 |
+| `PROTECTION_ADMIN_ENABLED` | 是否启用后台限流 | 生产环境保持 `true` |
+| `PROTECTION_ADMIN_CAPACITY` | 后台接口周期令牌数 | 比公开读取更严格 |
+| `PROTECTION_ADMIN_REFILL_SECONDS` | 后台令牌恢复周期 | 默认 `60` 秒 |
+| `PROTECTION_HEAVY_ENABLED` | 是否启用高成本接口限流 | 生产环境保持 `true` |
+| `PROTECTION_HEAVY_CAPACITY` | 高成本接口周期令牌数 | 建议按 AI/上传能力设置 |
+| `PROTECTION_HEAVY_REFILL_SECONDS` | 高成本接口令牌恢复周期 | 默认 `60` 秒 |
+| `PROTECTION_CONCURRENCY_AI_ENABLED` | 是否启用 AI 并发隔离 | 生产环境保持 `true` |
+| `PROTECTION_CONCURRENCY_AI_MAX_CONCURRENT` | AI 最大并发数 | 建议先保守设置 |
+| `PROTECTION_CONCURRENCY_UPLOAD_ENABLED` | 是否启用上传并发隔离 | 生产环境保持 `true` |
+| `PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT` | 上传最大并发数 | 按磁盘和网络能力设置 |
+| `PROTECTION_CONCURRENCY_CONFIG_IMPORT_ENABLED` | 是否启用配置导入并发隔离 | 生产环境保持 `true` |
+| `PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT` | 配置导入最大并发数 | 建议保持 `1` |
+
+补充说明：
+
+- 公开只读接口当前还使用应用内 Caffeine 本地缓存，默认过期时间为 `60` 秒。
+- 后台系统状态页已可查看当前保护阈值、限流拒绝次数和繁忙拒绝次数。
+
 ## 使用建议
 
 1. 正式环境优先基于 `.env.production.example` 生成 `.env`
 2. 每次发布时同步更新 `APP_GIT_REVISION` 与 `APP_DEPLOYED_AT`
 3. 不要把正式 `.env` 提交进仓库
+4. 首次上线后根据后台系统状态页的保护统计，逐步微调并发保护阈值
