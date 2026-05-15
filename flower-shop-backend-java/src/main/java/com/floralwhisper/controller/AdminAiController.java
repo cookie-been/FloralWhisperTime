@@ -4,6 +4,7 @@ import com.floralwhisper.common.ApiException;
 import com.floralwhisper.dto.AiFlowerSuggestionRequest;
 import com.floralwhisper.dto.AiFlowerSuggestionResponse;
 import com.floralwhisper.dto.AiImageGenerateResponse;
+import com.floralwhisper.protection.HeavyOperationGuard;
 import com.floralwhisper.service.ai.AiGeneratedImageStorageService;
 import com.floralwhisper.service.ai.AiSettingsResolver;
 import com.floralwhisper.service.ai.GeneratedAiImageResult;
@@ -28,16 +29,19 @@ public class AdminAiController {
   private final VolcengineImageGenerationService volcengineImageGenerationService;
   private final AiGeneratedImageStorageService aiGeneratedImageStorageService;
   private final VolcengineFlowerSuggestionService volcengineFlowerSuggestionService;
+  private final HeavyOperationGuard heavyOperationGuard;
 
   public AdminAiController(
       AiSettingsResolver aiSettingsResolver,
       VolcengineImageGenerationService volcengineImageGenerationService,
       AiGeneratedImageStorageService aiGeneratedImageStorageService,
-      VolcengineFlowerSuggestionService volcengineFlowerSuggestionService) {
+      VolcengineFlowerSuggestionService volcengineFlowerSuggestionService,
+      HeavyOperationGuard heavyOperationGuard) {
     this.aiSettingsResolver = aiSettingsResolver;
     this.volcengineImageGenerationService = volcengineImageGenerationService;
     this.aiGeneratedImageStorageService = aiGeneratedImageStorageService;
     this.volcengineFlowerSuggestionService = volcengineFlowerSuggestionService;
+    this.heavyOperationGuard = heavyOperationGuard;
   }
 
   @PostMapping(value = "/images/generate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -52,9 +56,11 @@ public class AdminAiController {
     List<MultipartFile> files = referenceFiles == null ? List.of() : referenceFiles.stream().filter(file -> file != null && !file.isEmpty()).toList();
     validateReferenceFiles(files);
 
-    GeneratedAiImageResult generated = volcengineImageGenerationService.generate(normalizedPrompt, files);
-    String localUrl = aiGeneratedImageStorageService.downloadToLocal(generated.imageSource());
-    return new AiImageGenerateResponse(true, localUrl, generated.source(), generated.mode());
+    try (HeavyOperationGuard.Permit ignored = heavyOperationGuard.acquireAiPermit()) {
+      GeneratedAiImageResult generated = volcengineImageGenerationService.generate(normalizedPrompt, files);
+      String localUrl = aiGeneratedImageStorageService.downloadToLocal(generated.imageSource());
+      return new AiImageGenerateResponse(true, localUrl, generated.source(), generated.mode());
+    }
   }
 
   @PostMapping(value = "/flowers/suggestions", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -63,7 +69,9 @@ public class AdminAiController {
     if (!StringUtils.hasText(normalizedPrompt)) {
       throw new ApiException(HttpStatus.BAD_REQUEST, "请输入生成提示词");
     }
-    return volcengineFlowerSuggestionService.suggest(normalizedPrompt, request.getImageUrl(), request.getMode());
+    try (HeavyOperationGuard.Permit ignored = heavyOperationGuard.acquireAiPermit()) {
+      return volcengineFlowerSuggestionService.suggest(normalizedPrompt, request.getImageUrl(), request.getMode());
+    }
   }
 
   private void validateReferenceFiles(List<MultipartFile> files) {

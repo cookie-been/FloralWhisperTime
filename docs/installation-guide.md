@@ -41,6 +41,12 @@ cp .env.production.example .env
 - `CORS_ALLOWED_ORIGIN_PATTERNS`
 - `WEB_PORT`
 - `VOLCENGINE_API_KEY`（如启用 AI）
+- `PROTECTION_PUBLIC_READ_CAPACITY`
+- `PROTECTION_ADMIN_CAPACITY`
+- `PROTECTION_HEAVY_CAPACITY`
+- `PROTECTION_CONCURRENCY_AI_MAX_CONCURRENT`
+- `PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT`
+- `PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT`
 
 详细说明见 [env-reference.md](./env-reference.md)。
 
@@ -60,6 +66,13 @@ cp .env.production.example .env
 - 写入当前部署提交号与部署时间
 - 校验健康检查与后台登录
 
+当前版本默认还会带上：
+
+- 全站基础限流
+- 管理后台更严格限流
+- AI / 上传 / 配置导入并发隔离
+- 公开只读接口本地缓存
+
 ## 5. 安装后确认
 
 至少确认：
@@ -68,6 +81,7 @@ cp .env.production.example .env
 - `/api/health` 正常
 - 后台能登录
 - `/admin/system` 可看到版本、环境、提交号、部署时间
+- `/admin/system` 可看到并发保护阈值与拒绝次数
 
 巡检清单见 [deployment-checklist.md](./deployment-checklist.md)。
 
@@ -87,6 +101,7 @@ cp .env.production.example .env
 - 升级前先执行 `./backup.sh`
 - 正式升级使用 `./upgrade.sh`
 - 升级后查看后台系统状态页
+- 如本次业务量明显提升，复核并发保护阈值是否仍合适
 
 ## 8. 回滚建议
 

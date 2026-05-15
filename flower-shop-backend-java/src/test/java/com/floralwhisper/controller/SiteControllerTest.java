@@ -15,10 +15,12 @@ import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.ProtectionWebMvcConfigurer;
 import com.floralwhisper.config.SecurityConfig;
 import com.floralwhisper.protection.ClientIdentityResolver;
+import com.floralwhisper.protection.HeavyOperationGuard;
 import com.floralwhisper.protection.ProtectionMetrics;
 import com.floralwhisper.protection.RateLimitInterceptor;
 import com.floralwhisper.protection.RateLimitService;
 import com.floralwhisper.protection.RouteProtectionClassifier;
+import com.floralwhisper.protection.ServiceBusyException;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
@@ -119,6 +121,8 @@ class SiteControllerTest {
 
   @MockBean
   private FileStorageService fileStorageService;
+  @MockBean
+  private HeavyOperationGuard heavyOperationGuard;
 
   @Test
   void siteConfigDoesNotExposeLegacyStatsField() throws Exception {
@@ -206,6 +210,19 @@ class SiteControllerTest {
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.url").value("/uploads/test.jpg"));
+  }
+
+  @Test
+  void uploadReturns503WhenGuardIsBusy() throws Exception {
+    MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "demo".getBytes());
+    when(heavyOperationGuard.acquireUploadPermit())
+        .thenThrow(new ServiceBusyException("当前上传任务较多，请稍后再试"));
+
+    mockMvc.perform(multipart("/api/uploads")
+            .file(file)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("当前上传任务较多，请稍后再试"));
   }
 
   @Test

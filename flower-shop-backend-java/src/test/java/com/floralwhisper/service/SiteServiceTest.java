@@ -2,6 +2,8 @@ package com.floralwhisper.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -15,9 +17,12 @@ import static org.mockito.Mockito.when;
 import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.config.AppProperties;
+import com.floralwhisper.config.CacheConfig;
 import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
+import com.floralwhisper.protection.ProtectionMetrics;
+import com.floralwhisper.protection.RouteProtectionGroup;
 import com.floralwhisper.entity.AboutPage;
 import com.floralwhisper.entity.AboutTimelineEntry;
 import com.floralwhisper.entity.BrandStory;
@@ -55,9 +60,12 @@ import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.interceptor.SimpleKey;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.mock.web.MockMultipartFile;
 
 class SiteServiceTest {
@@ -83,6 +91,74 @@ class SiteServiceTest {
 
     assertEquals(9, properties.getProtection().getHeavy().getCapacity());
     assertEquals(3, properties.getProtection().getConcurrency().getConfigImport().getMaxConcurrent());
+  }
+
+  @Test
+  void getSiteConfigUsesCacheForRepeatedReads() {
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    when(siteConfigMapper.selectById(1L)).thenReturn(siteConfigForExport());
+
+    try (AnnotationConfigApplicationContext context = createCachedSiteServiceContext(
+        siteConfigMapper,
+        mock(ShopInfoMapper.class),
+        mock(ShopHourMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        mock(AiSettingsMapper.class),
+        mock(BrandStoryMapper.class),
+        mock(BrandStoryImageMapper.class),
+        mock(CategoryMapper.class),
+        mock(OperationLogMapper.class),
+        mock(TeamMemberMapper.class),
+        mock(AuditLogService.class))) {
+      SiteService siteService = context.getBean(SiteService.class);
+
+      siteService.getSiteConfig();
+      siteService.getSiteConfig();
+
+      verify(siteConfigMapper, times(1)).selectById(1L);
+    }
+  }
+
+  @Test
+  void updateSiteConfigEvictsCachedSiteConfig() {
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);
+    BrandStoryMapper brandStoryMapper = mock(BrandStoryMapper.class);
+    BrandStoryImageMapper brandStoryImageMapper = mock(BrandStoryImageMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+
+    when(siteConfigMapper.selectById(1L)).thenReturn(siteConfigForExport());
+    when(shopInfoMapper.selectById(1L)).thenReturn(shopInfoForExport());
+    when(brandStoryMapper.selectById(1L)).thenReturn(brandStoryForExport());
+    when(brandStoryImageMapper.selectList(any())).thenReturn(List.of());
+
+    try (AnnotationConfigApplicationContext context = createCachedSiteServiceContext(
+        siteConfigMapper,
+        shopInfoMapper,
+        mock(ShopHourMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        mock(AiSettingsMapper.class),
+        brandStoryMapper,
+        brandStoryImageMapper,
+        mock(CategoryMapper.class),
+        mock(OperationLogMapper.class),
+        mock(TeamMemberMapper.class),
+        auditLogService)) {
+      SiteService siteService = context.getBean(SiteService.class);
+      CacheManager cacheManager = context.getBean(CacheManager.class);
+
+      siteService.getSiteConfig();
+      assertNotNull(cacheManager.getCache("siteConfig"));
+      assertNotNull(cacheManager.getCache("siteConfig").get(SimpleKey.EMPTY));
+
+      SiteConfigUpdateRequest request = new SiteConfigUpdateRequest();
+      request.setBrandName("花语时光 PRO");
+      siteService.updateSiteConfig(request);
+
+      assertNull(cacheManager.getCache("siteConfig").get(SimpleKey.EMPTY));
+    }
   }
 
   @Test
@@ -331,6 +407,61 @@ class SiteServiceTest {
     assertEquals(0L, response.getOperationLogCount());
     assertEquals(180, response.getOperationLogRetentionDays());
     assertEquals("", response.getOperationLogArchiveBefore());
+  }
+
+  @Test
+  void systemStatusIncludesProtectionSnapshot() throws Exception {
+    Path uploadsDir = Files.createDirectories(tempDir.resolve("uploads"));
+    Path backupsDir = Files.createDirectories(tempDir.resolve("backups"));
+
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(true, "volcengine", "secret-key", "doubao-image", "doubao-text"));
+    OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    when(operationLogMapper.selectCount(any())).thenReturn(0L);
+    when(operationLogMapper.selectOne(any())).thenReturn(null);
+    SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
+    when(siteConfigMapper.selectById(1L)).thenReturn(siteConfigForExport());
+
+    ProtectionMetrics protectionMetrics = new ProtectionMetrics();
+    protectionMetrics.recordRejected(RouteProtectionGroup.PUBLIC_READ);
+    protectionMetrics.recordRejected(RouteProtectionGroup.ADMIN);
+    protectionMetrics.recordBusyRejected();
+
+    SiteService siteService =
+        new SiteService(
+            siteConfigMapper,
+            mock(ShopInfoMapper.class),
+            mock(ShopHourMapper.class),
+            mock(AboutPageMapper.class),
+            mock(AboutTimelineEntryMapper.class),
+            aiSettingsMapper,
+            mock(BrandStoryMapper.class),
+            mock(BrandStoryImageMapper.class),
+            mock(CategoryMapper.class),
+            operationLogMapper,
+            mock(TeamMemberMapper.class),
+            appProperties(uploadsDir, backupsDir, "production", "abc123def456", "2026-05-15T01:30:00Z"),
+            mock(DataSource.class),
+            null,
+            protectionMetrics,
+            mock(AuditLogService.class),
+            Instant.parse("2026-05-15T00:45:00Z"),
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+
+    SystemStatusResponse response = siteService.getSystemStatus();
+
+    assertNotNull(response.getProtection());
+    assertTrue(response.getProtection().isEnabled());
+    assertEquals(60, response.getProtection().getPublicReadCapacity());
+    assertEquals(12, response.getProtection().getPublicWriteCapacity());
+    assertEquals(30, response.getProtection().getAdminCapacity());
+    assertEquals(6, response.getProtection().getHeavyCapacity());
+    assertEquals(2, response.getProtection().getAiMaxConcurrent());
+    assertEquals(4, response.getProtection().getUploadMaxConcurrent());
+    assertEquals(1, response.getProtection().getConfigImportMaxConcurrent());
+    assertEquals(2L, response.getProtection().getRateLimitedCount());
+    assertEquals(1L, response.getProtection().getBusyRejectedCount());
   }
 
   @Test
@@ -671,10 +802,52 @@ class SiteServiceTest {
         appProperties(tempDir.resolve("uploads"), tempDir.resolve("backups"), "local", "dev", ""),
         mock(DataSource.class),
         null,
+        new ProtectionMetrics(),
         auditLogService,
         Instant.parse("2026-05-15T00:45:00Z"),
         ZoneId.of("Asia/Shanghai"),
         Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+  }
+
+  private AnnotationConfigApplicationContext createCachedSiteServiceContext(
+      SiteConfigMapper siteConfigMapper,
+      ShopInfoMapper shopInfoMapper,
+      ShopHourMapper shopHourMapper,
+      AboutPageMapper aboutPageMapper,
+      AboutTimelineEntryMapper aboutTimelineEntryMapper,
+      AiSettingsMapper aiSettingsMapper,
+      BrandStoryMapper brandStoryMapper,
+      BrandStoryImageMapper brandStoryImageMapper,
+      CategoryMapper categoryMapper,
+      OperationLogMapper operationLogMapper,
+      TeamMemberMapper teamMemberMapper,
+      AuditLogService auditLogService) {
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+    context.register(CacheConfig.class);
+    context.registerBean(SiteConfigMapper.class, () -> siteConfigMapper);
+    context.registerBean(ShopInfoMapper.class, () -> shopInfoMapper);
+    context.registerBean(ShopHourMapper.class, () -> shopHourMapper);
+    context.registerBean(AboutPageMapper.class, () -> aboutPageMapper);
+    context.registerBean(AboutTimelineEntryMapper.class, () -> aboutTimelineEntryMapper);
+    context.registerBean(AiSettingsMapper.class, () -> aiSettingsMapper);
+    context.registerBean(BrandStoryMapper.class, () -> brandStoryMapper);
+    context.registerBean(BrandStoryImageMapper.class, () -> brandStoryImageMapper);
+    context.registerBean(CategoryMapper.class, () -> categoryMapper);
+    context.registerBean(OperationLogMapper.class, () -> operationLogMapper);
+    context.registerBean(TeamMemberMapper.class, () -> teamMemberMapper);
+    context.registerBean(AppProperties.class, () -> appProperties(
+        tempDir.resolve("uploads"),
+        tempDir.resolve("backups"),
+        "local",
+        "dev",
+        ""));
+    context.registerBean(DataSource.class, () -> mock(DataSource.class));
+    context.registerBean(ProtectionMetrics.class, ProtectionMetrics::new);
+    context.registerBean(AuditLogService.class, () -> auditLogService);
+    context.registerBean(com.fasterxml.jackson.databind.ObjectMapper.class, () -> new com.fasterxml.jackson.databind.ObjectMapper());
+    context.registerBean(SiteService.class);
+    context.refresh();
+    return context;
   }
 
   private SiteConfig siteConfigForExport() {

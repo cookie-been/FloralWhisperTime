@@ -1,5 +1,6 @@
 package com.floralwhisper.dto;
 
+import com.floralwhisper.protection.ProtectionSnapshot;
 import lombok.Data;
 
 @Data
@@ -42,4 +43,5 @@ public class SystemStatusResponse {
   private long operationLogCount;
   private int operationLogRetentionDays;
   private String operationLogArchiveBefore;
+  private ProtectionSnapshot protection;
 }

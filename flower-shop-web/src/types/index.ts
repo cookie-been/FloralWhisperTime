@@ -12,6 +12,7 @@ export type {
   OperationLogDetail,
   OperationLogItem,
   OperationLogQuery,
+  ProtectionSnapshot,
   Flower,
   FlowerQuery,
   PaginatedResult,

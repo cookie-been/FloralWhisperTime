@@ -349,6 +349,43 @@ export function AdminSystemStatus() {
           <div className="admin-panel admin-shell-card sm:p-6">
             <div className="flex items-center justify-between">
               <div>
+                <p className="section-eyebrow">并发防护</p>
+                <h3 className="admin-section-title mt-2 text-xl">流量保护状态</h3>
+              </div>
+              <Tag color={status.protection?.enabled ? "green" : "default"}>
+                {status.protection?.enabled ? "已启用" : "未启用"}
+              </Tag>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">基础限流阈值</p>
+                <p className="mt-2 text-muted">公开读取：{status.protection?.publicReadCapacity ?? 0} / 周期</p>
+                <p className="mt-2 text-muted">公开写入：{status.protection?.publicWriteCapacity ?? 0} / 周期</p>
+                <p className="mt-2 text-muted">后台接口：{status.protection?.adminCapacity ?? 0} / 周期</p>
+                <p className="mt-2 text-muted">高成本接口：{status.protection?.heavyCapacity ?? 0} / 周期</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">并发隔离阈值</p>
+                <p className="mt-2 text-muted">AI 任务：{status.protection?.aiMaxConcurrent ?? 0} 并发</p>
+                <p className="mt-2 text-muted">上传任务：{status.protection?.uploadMaxConcurrent ?? 0} 并发</p>
+                <p className="mt-2 text-muted">配置导入：{status.protection?.configImportMaxConcurrent ?? 0} 并发</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">已触发限流</p>
+                <p className="mt-2 text-muted">{status.protection?.rateLimitedCount ?? 0} 次</p>
+                <p className="mt-2 text-sm leading-6 text-muted">代表入口限流已经拒绝过部分请求，可用来判断是否需要调大阈值或加前置网关。</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">已触发繁忙拒绝</p>
+                <p className="mt-2 text-muted">{status.protection?.busyRejectedCount ?? 0} 次</p>
+                <p className="mt-2 text-sm leading-6 text-muted">代表 AI、生图上传或配置导入等重接口因并发保护被拒绝过，可据此评估后续扩容需求。</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-panel admin-shell-card sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="section-eyebrow">AI 状态</p>
                 <h3 className="admin-section-title mt-2 text-xl">AI 运行配置</h3>
               </div>

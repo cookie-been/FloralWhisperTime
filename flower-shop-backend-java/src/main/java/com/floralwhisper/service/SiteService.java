@@ -47,6 +47,9 @@ import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
+import com.floralwhisper.protection.ProtectionMetrics;
+import com.floralwhisper.protection.ProtectionSnapshot;
+import com.floralwhisper.protection.RouteProtectionGroup;
 import java.math.BigDecimal;
 import java.io.File;
 import java.io.BufferedInputStream;
@@ -70,6 +73,8 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import javax.sql.DataSource;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,6 +108,7 @@ public class SiteService {
   private final Clock clock;
   private final AuditLogService auditLogService;
   private final ObjectMapper objectMapper;
+  private final ProtectionMetrics protectionMetrics;
 
   @Autowired
   public SiteService(
@@ -120,6 +126,7 @@ public class SiteService {
       AppProperties appProperties,
       DataSource dataSource,
       @Nullable BuildProperties buildProperties,
+      ProtectionMetrics protectionMetrics,
       AuditLogService auditLogService,
       ObjectMapper objectMapper) {
     this(
@@ -137,6 +144,7 @@ public class SiteService {
         appProperties,
         dataSource,
         buildProperties,
+        protectionMetrics,
         auditLogService,
         objectMapper,
         Instant.now(),
@@ -178,6 +186,49 @@ public class SiteService {
         appProperties,
         dataSource,
         buildProperties,
+        new ProtectionMetrics(),
+        auditLogService,
+        startedAt,
+        zoneId,
+        clock);
+  }
+
+  SiteService(
+      SiteConfigMapper siteConfigMapper,
+      ShopInfoMapper shopInfoMapper,
+      ShopHourMapper shopHourMapper,
+      AboutPageMapper aboutPageMapper,
+      AboutTimelineEntryMapper aboutTimelineEntryMapper,
+      AiSettingsMapper aiSettingsMapper,
+      BrandStoryMapper brandStoryMapper,
+      BrandStoryImageMapper brandStoryImageMapper,
+      CategoryMapper categoryMapper,
+      OperationLogMapper operationLogMapper,
+      TeamMemberMapper teamMemberMapper,
+      AppProperties appProperties,
+      DataSource dataSource,
+      @Nullable BuildProperties buildProperties,
+      ProtectionMetrics protectionMetrics,
+      AuditLogService auditLogService,
+      @Nullable Instant startedAt,
+      ZoneId zoneId,
+      Clock clock) {
+    this(
+        siteConfigMapper,
+        shopInfoMapper,
+        shopHourMapper,
+        aboutPageMapper,
+        aboutTimelineEntryMapper,
+        aiSettingsMapper,
+        brandStoryMapper,
+        brandStoryImageMapper,
+        categoryMapper,
+        operationLogMapper,
+        teamMemberMapper,
+        appProperties,
+        dataSource,
+        buildProperties,
+        protectionMetrics,
         auditLogService,
         new ObjectMapper(),
         startedAt,
@@ -200,6 +251,7 @@ public class SiteService {
       AppProperties appProperties,
       DataSource dataSource,
       @Nullable BuildProperties buildProperties,
+      @Nullable ProtectionMetrics protectionMetrics,
       AuditLogService auditLogService,
       ObjectMapper objectMapper,
       @Nullable Instant startedAt,
@@ -219,6 +271,7 @@ public class SiteService {
     this.appProperties = appProperties;
     this.dataSource = dataSource;
     this.buildProperties = buildProperties;
+    this.protectionMetrics = protectionMetrics == null ? new ProtectionMetrics() : protectionMetrics;
     this.auditLogService = auditLogService;
     this.objectMapper = (objectMapper == null ? new ObjectMapper() : objectMapper.copy()).findAndRegisterModules();
     this.startedAt = startedAt;
@@ -226,6 +279,7 @@ public class SiteService {
     this.clock = clock;
   }
 
+  @Cacheable("siteConfig")
   public SiteConfigResponse getSiteConfig() {
     SiteConfig config = ensureSiteConfig();
     SiteConfigResponse response = new SiteConfigResponse();
@@ -306,7 +360,35 @@ public class SiteService {
     response.setOperationLogCount(resolveOperationLogCount());
     response.setOperationLogRetentionDays(resolveOperationLogRetentionDays());
     response.setOperationLogArchiveBefore(resolveOperationLogArchiveBefore());
+    response.setProtection(buildProtectionSnapshot());
     return response;
+  }
+
+  private ProtectionSnapshot buildProtectionSnapshot() {
+    ProtectionSnapshot snapshot = new ProtectionSnapshot();
+    var protection = appProperties.getProtection();
+    snapshot.setEnabled(isProtectionEnabled());
+    snapshot.setPublicReadCapacity(protection.getPublicRead().getCapacity());
+    snapshot.setPublicWriteCapacity(protection.getPublicWrite().getCapacity());
+    snapshot.setAdminCapacity(protection.getAdmin().getCapacity());
+    snapshot.setHeavyCapacity(protection.getHeavy().getCapacity());
+    snapshot.setAiMaxConcurrent(protection.getConcurrency().getAi().getMaxConcurrent());
+    snapshot.setUploadMaxConcurrent(protection.getConcurrency().getUpload().getMaxConcurrent());
+    snapshot.setConfigImportMaxConcurrent(protection.getConcurrency().getConfigImport().getMaxConcurrent());
+    snapshot.setRateLimitedCount(protectionMetrics.totalRejectedCount());
+    snapshot.setBusyRejectedCount(protectionMetrics.busyRejectedCount());
+    return snapshot;
+  }
+
+  private boolean isProtectionEnabled() {
+    var protection = appProperties.getProtection();
+    return Boolean.TRUE.equals(protection.getPublicRead().getEnabled())
+        || Boolean.TRUE.equals(protection.getPublicWrite().getEnabled())
+        || Boolean.TRUE.equals(protection.getAdmin().getEnabled())
+        || Boolean.TRUE.equals(protection.getHeavy().getEnabled())
+        || Boolean.TRUE.equals(protection.getConcurrency().getAi().getEnabled())
+        || Boolean.TRUE.equals(protection.getConcurrency().getUpload().getEnabled())
+        || Boolean.TRUE.equals(protection.getConcurrency().getConfigImport().getEnabled());
   }
 
   @Transactional
@@ -438,6 +520,9 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(
+      cacheNames = {"siteConfig", "shopInfo", "brandStory", "aboutPage", "aboutTimeline", "team"},
+      allEntries = true)
   public ConfigImportResponse importConfig(MultipartFile file) throws IOException {
     if (file == null || file.isEmpty()) {
       throw new ApiException(HttpStatus.BAD_REQUEST, "请上传配置文件");
@@ -480,10 +565,12 @@ public class SiteService {
     return response;
   }
 
+  @Cacheable("categories")
   public List<Category> getCategories() {
     return categoryMapper.selectList(new LambdaQueryWrapper<Category>().orderByDesc(Category::getSort));
   }
 
+  @Cacheable("shopInfo")
   public ShopInfoResponse getShopInfo() {
     ShopInfo shopInfo = ensureShopInfo();
     ShopInfoResponse response = new ShopInfoResponse();
@@ -497,6 +584,7 @@ public class SiteService {
     return response;
   }
 
+  @Cacheable("brandStory")
   public BrandStoryResponse getBrandStory() {
     BrandStory story = ensureBrandStory();
     BrandStoryResponse response = new BrandStoryResponse();
@@ -508,22 +596,26 @@ public class SiteService {
     return response;
   }
 
+  @Cacheable("aboutPage")
   public AboutPageResponse getAboutPage() {
     return toAboutPageResponse(ensureAboutPage());
   }
 
+  @Cacheable("aboutTimeline")
   public List<AboutTimelineEntryResponse> getAboutTimeline() {
     ensureDefaultTimelineEntries();
     return aboutTimelineEntryMapper.selectList(new LambdaQueryWrapper<AboutTimelineEntry>().orderByAsc(AboutTimelineEntry::getSort))
         .stream().map(this::toAboutTimelineEntryResponse).toList();
   }
 
+  @Cacheable("team")
   public List<TeamMember> getAdminTeamMembers() {
     ensureDefaultTeamMembers();
     return teamMemberMapper.selectList(new LambdaQueryWrapper<TeamMember>().orderByDesc(TeamMember::getSort));
   }
 
   @Transactional
+  @CacheEvict(cacheNames = {"siteConfig", "shopInfo", "brandStory"}, allEntries = true)
   public SiteConfigUpdateResponse updateSiteConfig(SiteConfigUpdateRequest request) {
     SiteConfigUpdateResponse before = new SiteConfigUpdateResponse(getAdminSiteConfig(), getShopInfo(), getBrandStory());
     SiteConfig config = ensureSiteConfig();
@@ -597,6 +689,7 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "aboutPage", allEntries = true)
   public AboutPageResponse updateAboutPage(AboutPageUpdateRequest request) {
     AboutPage current = ensureAboutPage();
     AboutPageResponse before = toAboutPageResponse(current);
@@ -622,6 +715,7 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "aboutTimeline", allEntries = true)
   public AboutTimelineEntryResponse createAboutTimelineEntry(AboutTimelineEntryRequest request) {
     AboutTimelineEntry entity = new AboutTimelineEntry();
     entity.setId(notBlank(request.getId()) ? request.getId().trim() : "timeline_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
@@ -643,6 +737,7 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "aboutTimeline", allEntries = true)
   public AboutTimelineEntryResponse updateAboutTimelineEntry(String id, AboutTimelineEntryRequest request) {
     AboutTimelineEntry current = requireTimelineEntry(id);
     AboutTimelineEntryResponse before = toAboutTimelineEntryResponse(current);
@@ -665,6 +760,7 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "aboutTimeline", allEntries = true)
   public void deleteAboutTimelineEntry(String id) {
     AboutTimelineEntry current = requireTimelineEntry(id);
     AboutTimelineEntryResponse before = toAboutTimelineEntryResponse(current);
@@ -684,6 +780,7 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "team", allEntries = true)
   public TeamMember createTeamMember(TeamMemberRequest request) {
     TeamMember entity = new TeamMember();
     entity.setId(notBlank(request.getId()) ? request.getId().trim() : "team_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12));
@@ -706,6 +803,7 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "team", allEntries = true)
   public TeamMember updateTeamMember(String id, TeamMemberRequest request) {
     TeamMember current = requireTeamMember(id);
     TeamMember before = cloneTeamMember(current);
@@ -729,6 +827,7 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "team", allEntries = true)
   public void deleteTeamMember(String id) {
     TeamMember current = requireTeamMember(id);
     TeamMember before = cloneTeamMember(current);

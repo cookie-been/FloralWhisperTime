@@ -1,5 +1,6 @@
 package com.floralwhisper.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -15,6 +16,9 @@ import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AiImageProperties;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
+import com.floralwhisper.protection.HeavyOperationGuard;
+import com.floralwhisper.protection.RateLimitInterceptor;
+import com.floralwhisper.protection.ServiceBusyException;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
@@ -45,6 +49,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import javax.crypto.SecretKey;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -100,6 +105,10 @@ class AdminAiControllerTest {
   @MockBean
   private AiSettingsResolver aiSettingsResolver;
   @MockBean
+  private HeavyOperationGuard heavyOperationGuard;
+  @MockBean
+  private RateLimitInterceptor rateLimitInterceptor;
+  @MockBean
   private AuditLogService auditLogService;
   @MockBean
   private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
@@ -123,6 +132,11 @@ class AdminAiControllerTest {
   @SuppressWarnings("unused")
   @Autowired
   private ObjectMapper objectMapper;
+
+  @BeforeEach
+  void setUpInterceptors() throws Exception {
+    when(rateLimitInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+  }
 
   @Test
   void generateRejectsMissingTokenWithFrontendCompatibleMessage() throws Exception {
@@ -210,6 +224,23 @@ class AdminAiControllerTest {
   }
 
   @Test
+  void generateReturns503WhenAiGuardIsBusy() throws Exception {
+    when(aiSettingsResolver.resolve()).thenReturn(settings());
+    when(heavyOperationGuard.acquireAiPermit())
+        .thenThrow(new ServiceBusyException("当前生成任务较多，请稍后再试"));
+
+    mockMvc.perform(multipart("/api/admin/ai/images/generate")
+            .param("prompt", "春日花束")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin"))
+            .with(request -> {
+              request.setMethod("POST");
+              return request;
+            }))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("当前生成任务较多，请稍后再试"));
+  }
+
+  @Test
   void suggestRejectsBlankPrompt() throws Exception {
     mockMvc.perform(post("/api/admin/ai/flowers/suggestions")
             .contentType(MediaType.APPLICATION_JSON)
@@ -248,6 +279,25 @@ class AdminAiControllerTest {
         .andExpect(jsonPath("$.materials[0]").value("白玫瑰"))
         .andExpect(jsonPath("$.tags[1]").value("白绿色"))
         .andExpect(jsonPath("$.meaning").value("象征纯净承诺与温柔陪伴"));
+  }
+
+  @Test
+  void suggestReturns503WhenAiGuardIsBusy() throws Exception {
+    when(heavyOperationGuard.acquireAiPermit())
+        .thenThrow(new ServiceBusyException("当前生成任务较多，请稍后再试"));
+
+    mockMvc.perform(post("/api/admin/ai/flowers/suggestions")
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("Authorization", "Bearer " + jwtService.createToken("admin"))
+            .content("""
+                {
+                  "prompt":"生成一束白绿色婚礼花束",
+                  "imageUrl":"/uploads/ai/generated.png",
+                  "mode":"text_to_image"
+                }
+                """))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("当前生成任务较多，请稍后再试"));
   }
 
   private ResolvedAiImageSettings settings() {

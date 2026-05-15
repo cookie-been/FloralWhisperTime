@@ -10,6 +10,13 @@
 - `WEB_PORT` 与服务器端口规划一致
 - `BACKUP_DIR` 与服务器持久化目录规划一致
 - 如启用 AI 生图，已填写正式 `VOLCENGINE_API_KEY`
+- 已按业务预估复核并发保护阈值
+  - `PROTECTION_PUBLIC_READ_CAPACITY`
+  - `PROTECTION_ADMIN_CAPACITY`
+  - `PROTECTION_HEAVY_CAPACITY`
+  - `PROTECTION_CONCURRENCY_AI_MAX_CONCURRENT`
+  - `PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT`
+  - `PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT`
 - 当前代码分支正确，且工作区干净
 - 已提前执行一次 `./backup.sh`
 
@@ -48,6 +55,8 @@
 - 磁盘容量：无明显不足
 - 最近备份：存在
 - AI 状态：与当前业务配置一致
+- 并发保护状态：已启用且阈值符合当前环境
+- 限流 / 繁忙拒绝次数：部署初期无异常快速增长
 
 ### 3. 业务关键流程
 
@@ -57,6 +66,7 @@
 - 如启用 AI：
   - 生图可调用
   - 作品信息建议可调用
+  - 并发保护触发时返回明确错误提示
 
 ## 四、异常时优先排查
 
@@ -80,9 +90,12 @@
 - 上传目录是否挂载成功
 - 磁盘可用容量是否过低
 - 备份目录是否存在
+- 并发保护拒绝次数是否异常增长
+- AI / 上传 / 配置导入阈值是否过低
 
 ## 五、上线后建议
 
 - 首次上线当天执行一次完整备份
 - 每次升级前执行 `./backup.sh`
 - 每次升级后打开 `/admin/system` 做人工复核
+- 业务高峰期关注保护状态面板，必要时再调高阈值或增加实例

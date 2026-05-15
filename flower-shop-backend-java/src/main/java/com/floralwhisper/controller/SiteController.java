@@ -11,6 +11,7 @@ import com.floralwhisper.dto.SiteConfigUpdateRequest;
 import com.floralwhisper.dto.SiteConfigUpdateResponse;
 import com.floralwhisper.entity.Category;
 import com.floralwhisper.entity.TeamMember;
+import com.floralwhisper.protection.HeavyOperationGuard;
 import com.floralwhisper.service.ContactService;
 import com.floralwhisper.service.SiteService;
 import com.floralwhisper.storage.FileStorageService;
@@ -34,14 +35,17 @@ public class SiteController {
   private final SiteService siteService;
   private final ContactService contactService;
   private final FileStorageService fileStorageService;
+  private final HeavyOperationGuard heavyOperationGuard;
 
   public SiteController(
       SiteService siteService,
       ContactService contactService,
-      FileStorageService fileStorageService) {
+      FileStorageService fileStorageService,
+      HeavyOperationGuard heavyOperationGuard) {
     this.siteService = siteService;
     this.contactService = contactService;
     this.fileStorageService = fileStorageService;
+    this.heavyOperationGuard = heavyOperationGuard;
   }
 
   @GetMapping("/health")
@@ -110,6 +114,8 @@ public class SiteController {
   @PostMapping("/uploads")
   @ResponseStatus(HttpStatus.CREATED)
   public Map<String, String> upload(@RequestParam("file") MultipartFile file) {
-    return fileStorageService.store(file);
+    try (HeavyOperationGuard.Permit ignored = heavyOperationGuard.acquireUploadPermit()) {
+      return fileStorageService.store(file);
+    }
   }
 }

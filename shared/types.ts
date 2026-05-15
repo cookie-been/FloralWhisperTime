@@ -100,6 +100,19 @@ export interface AiSettings {
   textMaxTokens?: number;
 }
 
+export interface ProtectionSnapshot {
+  enabled: boolean;
+  publicReadCapacity: number;
+  publicWriteCapacity: number;
+  adminCapacity: number;
+  heavyCapacity: number;
+  aiMaxConcurrent: number;
+  uploadMaxConcurrent: number;
+  configImportMaxConcurrent: number;
+  rateLimitedCount: number;
+  busyRejectedCount: number;
+}
+
 export interface SiteConfig {
   brandName: string;
   heroEyebrow: string;
@@ -189,6 +202,7 @@ export interface SystemStatus {
   operationLogCount: number;
   operationLogRetentionDays: number;
   operationLogArchiveBefore: string;
+  protection?: ProtectionSnapshot;
 }
 
 export interface OperationLogArchiveResult {

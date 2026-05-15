@@ -18,6 +18,9 @@ import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.SecurityConfig;
+import com.floralwhisper.protection.HeavyOperationGuard;
+import com.floralwhisper.protection.RateLimitInterceptor;
+import com.floralwhisper.protection.ServiceBusyException;
 import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
@@ -64,6 +67,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.crypto.SecretKey;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -109,6 +113,10 @@ class AdminControllerTest {
   @MockBean
   private OperationLogRecoveryService operationLogRecoveryService;
   @MockBean
+  private HeavyOperationGuard heavyOperationGuard;
+  @MockBean
+  private RateLimitInterceptor rateLimitInterceptor;
+  @MockBean
   private AuditLogService auditLogService;
   @MockBean
   private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
@@ -127,6 +135,11 @@ class AdminControllerTest {
   @MockBean private ShopInfoMapper shopInfoMapper;
   @MockBean private SiteConfigMapper siteConfigMapper;
   @MockBean private TeamMemberMapper teamMemberMapper;
+
+  @BeforeEach
+  void setUpInterceptors() throws Exception {
+    when(rateLimitInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+  }
 
   @Test
   void loginReturnsTokenAndUsername() throws Exception {
@@ -379,6 +392,30 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.timelineCount").value(3))
         .andExpect(jsonPath("$.teamCount").value(2))
         .andExpect(jsonPath("$.includedAiSettings").value(true));
+  }
+
+  @Test
+  void configImportReturns503WhenGuardIsBusy() throws Exception {
+    when(heavyOperationGuard.acquireConfigImportPermit())
+        .thenThrow(new ServiceBusyException("当前导入任务较多，请稍后再试"));
+
+    MockMultipartFile file = new MockMultipartFile(
+        "file",
+        "site-config-export.json",
+        "application/json",
+        """
+        {"version":"1.0.0"}
+        """.getBytes(StandardCharsets.UTF_8));
+
+    mockMvc.perform(multipart("/api/admin/system/config-import")
+            .file(file)
+            .with(request -> {
+              request.setMethod("POST");
+              return request;
+            })
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.message").value("当前导入任务较多，请稍后再试"));
   }
 
   @Test

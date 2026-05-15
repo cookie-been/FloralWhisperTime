@@ -20,6 +20,7 @@ import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.TeamMemberRequest;
 import com.floralwhisper.entity.Contact;
 import com.floralwhisper.entity.TeamMember;
+import com.floralwhisper.protection.HeavyOperationGuard;
 import com.floralwhisper.service.OperationLogQueryService;
 import com.floralwhisper.service.OperationLogRecoveryService;
 import com.floralwhisper.service.AuthService;
@@ -56,18 +57,21 @@ public class AdminController {
   private final SiteService siteService;
   private final OperationLogQueryService operationLogQueryService;
   private final OperationLogRecoveryService operationLogRecoveryService;
+  private final HeavyOperationGuard heavyOperationGuard;
 
   public AdminController(
       AuthService authService,
       ContactService contactService,
       SiteService siteService,
       OperationLogQueryService operationLogQueryService,
-      OperationLogRecoveryService operationLogRecoveryService) {
+      OperationLogRecoveryService operationLogRecoveryService,
+      HeavyOperationGuard heavyOperationGuard) {
     this.authService = authService;
     this.contactService = contactService;
     this.siteService = siteService;
     this.operationLogQueryService = operationLogQueryService;
     this.operationLogRecoveryService = operationLogRecoveryService;
+    this.heavyOperationGuard = heavyOperationGuard;
   }
 
   @PostMapping("/login")
@@ -107,7 +111,9 @@ public class AdminController {
 
   @PostMapping(value = "/system/config-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ConfigImportResponse importConfig(@RequestPart("file") MultipartFile file) throws java.io.IOException {
-    return siteService.importConfig(file);
+    try (HeavyOperationGuard.Permit ignored = heavyOperationGuard.acquireConfigImportPermit()) {
+      return siteService.importConfig(file);
+    }
   }
 
   @PostMapping("/system/operation-logs/archive")
