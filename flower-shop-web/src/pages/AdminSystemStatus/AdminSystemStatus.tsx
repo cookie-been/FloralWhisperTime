@@ -1,7 +1,7 @@
 import { Alert, Button, Empty, Input, Modal, Spin, Switch, Tag, message } from "antd";
 import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, ServerCog, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { archiveAdminOperationLogs, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminSystemStatus } from "@/services/api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { archiveAdminOperationLogs, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminSystemStatus, isAbortError } from "@/services/api";
 import type { OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
 
 const AUTO_REFRESH_INTERVAL_MS = 60000;
@@ -42,15 +42,22 @@ export function AdminSystemStatus() {
   const [archiving, setArchiving] = useState(false);
   const [latestArchiveResult, setLatestArchiveResult] = useState<OperationLogArchiveResult | null>(null);
   const [archiveFiles, setArchiveFiles] = useState<OperationLogArchiveFile[]>([]);
+  const requestControllerRef = useRef<AbortController | null>(null);
 
   const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     if (mode === "refresh") {
       setRefreshing(true);
     } else {
       setLoading(true);
     }
     try {
-      const [nextStatus, nextArchiveFiles] = await Promise.all([getAdminSystemStatus(), getAdminOperationLogArchiveFiles()]);
+      const [nextStatus, nextArchiveFiles] = await Promise.all([
+        getAdminSystemStatus({ signal: controller.signal }),
+        getAdminOperationLogArchiveFiles({ signal: controller.signal }),
+      ]);
       setStatus(nextStatus);
       setArchiveFiles(nextArchiveFiles);
       setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
@@ -58,6 +65,7 @@ export function AdminSystemStatus() {
       setLastRefreshError("");
       setAutoRefreshPaused(false);
     } catch (error) {
+      if (isAbortError(error)) return;
       const errorMessage = error instanceof Error ? error.message : "系统状态加载失败";
       setLastRefreshError(errorMessage);
       setRefreshErrorCount((previous) => {
@@ -70,16 +78,22 @@ export function AdminSystemStatus() {
       });
       message.error(errorMessage);
     } finally {
-      if (mode === "refresh") {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
+      if (requestControllerRef.current === controller) {
+        requestControllerRef.current = null;
+        if (mode === "refresh") {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
       }
     }
   }, []);
 
   useEffect(() => {
     loadStatus("init");
+    return () => {
+      requestControllerRef.current?.abort();
+    };
   }, [loadStatus]);
 
   useEffect(() => {

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Empty, Input, Pagination, Select, Segmented } from "antd";
 import { Search } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { FlowerCard } from "@/components/common/FlowerCard";
-import { getCategories, getFlowers } from "@/services/api";
+import { getCategories, getFlowers, isAbortError } from "@/services/api";
 import type { Category, Flower, FlowerQuery } from "@/types";
 
 export function Gallery() {
@@ -16,6 +16,7 @@ export function Gallery() {
   const [loadError, setLoadError] = useState(false);
   const [query, setQuery] = useState<FlowerQuery>({ categoryId: initialCategory, sortBy: "featured", page: 1, limit: 24 });
   const [keywordInput, setKeywordInput] = useState(searchParams.get("keyword") ?? "");
+  const requestControllerRef = useRef<AbortController | null>(null);
   const currentPage = query.page ?? 1;
   const pageSize = query.limit ?? 24;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -36,28 +37,32 @@ export function Gallery() {
   }, [searchParams]);
 
   useEffect(() => {
-    let active = true;
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     setLoading(true);
     setLoadError(false);
 
-    getFlowers(query)
+    getFlowers(query, { signal: controller.signal })
       .then((result) => {
-        if (!active) return;
         setFlowers(result.list);
         setTotal(result.total);
       })
-      .catch(() => {
-        if (!active) return;
+      .catch((error) => {
+        if (isAbortError(error)) return;
         setFlowers([]);
         setTotal(0);
         setLoadError(true);
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (requestControllerRef.current === controller) {
+          requestControllerRef.current = null;
+          setLoading(false);
+        }
       });
 
     return () => {
-      active = false;
+      controller.abort();
     };
   }, [query]);
 

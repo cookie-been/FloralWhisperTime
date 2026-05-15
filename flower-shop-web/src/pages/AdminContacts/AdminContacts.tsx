@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Drawer, Empty, Grid, Input, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { getAdminContacts, markAdminContactRead } from "@/services/api";
+import { getAdminContacts, isAbortError, markAdminContactRead } from "@/services/api";
 import type { ContactMessage, PaginatedResult } from "@/types";
 
 function formatDateTime(value?: string) {
@@ -45,6 +45,7 @@ export function AdminContacts() {
   const [activeContact, setActiveContact] = useState<ContactMessage | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const hasActiveFilters = Boolean(keyword.trim()) || status !== "all";
+  const requestControllerRef = useRef<AbortController | null>(null);
 
   const load = async (
     nextPage = page,
@@ -52,6 +53,9 @@ export function AdminContacts() {
     nextKeyword = keyword,
     nextStatus = status,
   ) => {
+    requestControllerRef.current?.abort();
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     setLoading(true);
     try {
       const result = await getAdminContacts({
@@ -59,19 +63,26 @@ export function AdminContacts() {
         limit: nextPageSize,
         keyword: nextKeyword.trim() || undefined,
         status: nextStatus,
-      });
+      }, { signal: controller.signal });
       setData(result);
       setPage(result.page);
       setPageSize(result.limit);
     } catch (error) {
+      if (isAbortError(error)) return;
       message.error(error instanceof Error ? error.message : "留言加载失败");
     } finally {
-      setLoading(false);
+      if (requestControllerRef.current === controller) {
+        requestControllerRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     load(1, 10, keyword, status).catch(() => undefined);
+    return () => {
+      requestControllerRef.current?.abort();
+    };
   }, []);
 
   useEffect(() => {

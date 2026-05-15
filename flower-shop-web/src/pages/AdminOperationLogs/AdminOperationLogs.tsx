@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button, Drawer, Empty, Grid, Input, Modal, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { CheckCircle2, ClipboardList, Copy, Download, RefreshCw, RotateCcw, Search, ShieldAlert } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { downloadAdminOperationLogs, getAdminOperationLogDetail, getAdminOperationLogs, restoreAdminOperationLog } from "@/services/api";
+import { downloadAdminOperationLogs, getAdminOperationLogDetail, getAdminOperationLogs, isAbortError, restoreAdminOperationLog } from "@/services/api";
 import type { OperationLogDetail, OperationLogItem, OperationLogQuery, PaginatedResult } from "@/types";
 
 function formatDateTime(value?: string) {
@@ -223,6 +223,8 @@ export function AdminOperationLogs() {
   );
   const [createdFrom, setCreatedFrom] = useState(initialCreatedFrom);
   const [createdTo, setCreatedTo] = useState(initialCreatedTo);
+  const listRequestControllerRef = useRef<AbortController | null>(null);
+  const detailRequestControllerRef = useRef<AbortController | null>(null);
 
   const load = async (
     nextPage = page,
@@ -236,6 +238,9 @@ export function AdminOperationLogs() {
     nextCreatedFrom = createdFrom,
     nextCreatedTo = createdTo,
   ) => {
+    listRequestControllerRef.current?.abort();
+    const controller = new AbortController();
+    listRequestControllerRef.current = controller;
     setLoading(true);
     try {
       const query: OperationLogQuery = {
@@ -250,19 +255,27 @@ export function AdminOperationLogs() {
         createdFrom: formatRangeBoundary(nextCreatedFrom, "start"),
         createdTo: formatRangeBoundary(nextCreatedTo, "end"),
       };
-      const result = await getAdminOperationLogs(query);
+      const result = await getAdminOperationLogs(query, { signal: controller.signal });
       setData(result);
       setPage(result.page);
       setPageSize(result.limit);
     } catch (error) {
+      if (isAbortError(error)) return;
       message.error(error instanceof Error ? error.message : "操作日志加载失败");
     } finally {
-      setLoading(false);
+      if (listRequestControllerRef.current === controller) {
+        listRequestControllerRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     void load(1, 10, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo);
+    return () => {
+      listRequestControllerRef.current?.abort();
+      detailRequestControllerRef.current?.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -415,15 +428,22 @@ export function AdminOperationLogs() {
   );
 
   const openDetail = async (id: number) => {
+    detailRequestControllerRef.current?.abort();
+    const controller = new AbortController();
+    detailRequestControllerRef.current = controller;
     setDrawerOpen(true);
     setDetailLoading(true);
     try {
-      const detail = await getAdminOperationLogDetail(id);
+      const detail = await getAdminOperationLogDetail(id, { signal: controller.signal });
       setActiveDetail(detail);
     } catch (error) {
+      if (isAbortError(error)) return;
       message.error(error instanceof Error ? error.message : "日志详情加载失败");
     } finally {
-      setDetailLoading(false);
+      if (detailRequestControllerRef.current === controller) {
+        detailRequestControllerRef.current = null;
+        setDetailLoading(false);
+      }
     }
   };
 

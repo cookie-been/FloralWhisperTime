@@ -24,11 +24,50 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_TOKEN_KEY = "flower_shop_admin_token";
 const inFlightMutations = new Map<string, Promise<unknown>>();
 const responseCache = new Map<string, { expiresAt: number; value: unknown }>();
+const DEFAULT_REQUEST_TIMEOUT_MS = 12_000;
+const DEFAULT_RETRY_COUNT = 1;
 
 type CachePolicy = {
   key: string;
   ttlMs: number;
 };
+
+type RequestOptions = RequestInit & {
+  timeoutMs?: number;
+  retryCount?: number;
+};
+
+export function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function mergeAbortSignals(...signals: Array<AbortSignal | null | undefined>) {
+  const availableSignals = signals.filter((signal): signal is AbortSignal => Boolean(signal));
+  if (availableSignals.length <= 1) {
+    return availableSignals[0];
+  }
+
+  const controller = new AbortController();
+  const abort = () => {
+    controller.abort();
+    cleanup();
+  };
+  const cleanup = () => {
+    availableSignals.forEach((signal) => signal?.removeEventListener("abort", abort));
+  };
+  availableSignals.forEach((signal) => {
+    if (signal?.aborted) {
+      abort();
+    } else {
+      signal?.addEventListener("abort", abort, { once: true });
+    }
+  });
+  return controller.signal;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
 
 export function getAdminToken() {
   return localStorage.getItem(ADMIN_TOKEN_KEY);
@@ -42,27 +81,59 @@ function setAdminToken(token: string) {
   localStorage.setItem(ADMIN_TOKEN_KEY, token);
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = getAdminToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+  const { timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, retryCount = DEFAULT_RETRY_COUNT, signal, ...fetchOptions } = options;
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "请求失败" }));
-    throw new Error(error.message ?? "请求失败");
+  const execute = async () => {
+    const timeoutController = new AbortController();
+    const mergedSignal = mergeAbortSignals(signal, timeoutController.signal);
+    const timeout = window.setTimeout(() => timeoutController.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...fetchOptions,
+        signal: mergedSignal,
+        headers: {
+          ...(fetchOptions.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...fetchOptions.headers,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "请求失败" }));
+        throw new Error(error.message ?? "请求失败");
+      }
+
+      if (response.status === 204) return undefined as T;
+      return response.json() as Promise<T>;
+    } catch (error) {
+      if (isAbortError(error)) {
+        if (signal?.aborted) {
+          throw error;
+        }
+        throw new Error("请求超时，请稍后重试");
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  };
+
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await execute();
+    } catch (error) {
+      if (isAbortError(error) || attempt >= retryCount) {
+        throw error;
+      }
+      await delay(250 * (attempt + 1));
+    }
   }
-
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
 }
 
-async function requestCached<T>(path: string, cache: CachePolicy, options: RequestInit = {}): Promise<T> {
+async function requestCached<T>(path: string, cache: CachePolicy, options: RequestOptions = {}): Promise<T> {
   const now = Date.now();
   const cached = responseCache.get(cache.key);
   if (cached && cached.expiresAt > now) {
@@ -103,8 +174,8 @@ function withQuery(path: string, query: object) {
   return queryString ? `${path}?${queryString}` : path;
 }
 
-export function getFlowers(query: FlowerQuery = {}) {
-  return request<PaginatedResult<Flower>>(withQuery("/api/flowers", query));
+export function getFlowers(query: FlowerQuery = {}, options: RequestOptions = {}) {
+  return request<PaginatedResult<Flower>>(withQuery("/api/flowers", query), options);
 }
 
 export async function listAllFlowers(baseQuery: Omit<FlowerQuery, "page" | "limit"> = {}) {
@@ -148,8 +219,8 @@ export function getCurrentAdmin() {
   return request<{ username: string }>("/api/admin/me");
 }
 
-export function getAdminSystemStatus() {
-  return request<SystemStatus>("/api/admin/system/status");
+export function getAdminSystemStatus(options: RequestOptions = {}) {
+  return request<SystemStatus>("/api/admin/system/status", options);
 }
 
 export function archiveAdminOperationLogs(before: string) {
@@ -160,8 +231,8 @@ export function archiveAdminOperationLogs(before: string) {
   );
 }
 
-export function getAdminOperationLogArchiveFiles() {
-  return request<OperationLogArchiveFile[]>("/api/admin/system/operation-logs/archive-files");
+export function getAdminOperationLogArchiveFiles(options: RequestOptions = {}) {
+  return request<OperationLogArchiveFile[]>("/api/admin/system/operation-logs/archive-files", options);
 }
 
 export async function downloadLatestAdminBackup(downloadUrl: string) {
@@ -219,8 +290,11 @@ export async function downloadAdminFile(downloadUrl: string, fallbackFilename: s
   setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 }
 
-export function getAdminContacts(query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread" } = {}) {
-  return request<PaginatedResult<ContactMessage>>(withQuery("/api/admin/contacts", query));
+export function getAdminContacts(
+  query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread" } = {},
+  options: RequestOptions = {},
+) {
+  return request<PaginatedResult<ContactMessage>>(withQuery("/api/admin/contacts", query), options);
 }
 
 export function markAdminContactRead(id: string) {
@@ -231,8 +305,8 @@ export function markAdminContactRead(id: string) {
   );
 }
 
-export function getAdminOperationLogs(query: OperationLogQuery = {}) {
-  return request<PaginatedResult<OperationLogItem>>(withQuery("/api/admin/operation-logs", query));
+export function getAdminOperationLogs(query: OperationLogQuery = {}, options: RequestOptions = {}) {
+  return request<PaginatedResult<OperationLogItem>>(withQuery("/api/admin/operation-logs", query), options);
 }
 
 export async function downloadAdminOperationLogs(query: OperationLogQuery = {}) {
@@ -263,8 +337,8 @@ export async function downloadAdminOperationLogs(query: OperationLogQuery = {}) 
   setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 }
 
-export function getAdminOperationLogDetail(id: number) {
-  return request<OperationLogDetail>(`/api/admin/operation-logs/${id}`);
+export function getAdminOperationLogDetail(id: number, options: RequestOptions = {}) {
+  return request<OperationLogDetail>(`/api/admin/operation-logs/${id}`, options);
 }
 
 export function restoreAdminOperationLog(id: number, reason?: string) {
