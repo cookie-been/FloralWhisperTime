@@ -99,21 +99,30 @@ flower-shop-mini
 
 ## 后台功能
 
-当前 Web 管理后台包含四个一级入口：
+当前 Web 管理后台包含七个一级入口：
 
 - `/admin`：运营总览
 - `/admin/flowers`：作品管理
-- `/admin/settings`：内容配置
+- `/admin/settings`：站点配置
+- `/admin/ai-settings`：AI 生图配置
 - `/admin/contacts`：用户留言
+- `/admin/system`：系统状态
+- `/admin/operation-logs`：操作日志
 
-其中“内容配置”统一维护：
+其中“站点配置”统一维护：
 
-- 首页首屏与统计文案
+- 首页首屏内容
 - 门店信息与营业时间
 - 品牌故事
 - 关于我们页首图/标题/副标题
 - 时间轴
 - 团队成员
+
+补充说明：
+
+- 首页统计数据由系统真实数据自动计算，不再由后台人工维护
+- AI 生图相关密钥、模型和接口参数通过独立的 `/admin/ai-settings` 页面维护
+- `/admin/operation-logs` 记录后台写操作与登录行为，并支持按快照恢复
 
 ## 数据与持久化
 
