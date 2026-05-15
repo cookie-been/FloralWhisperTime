@@ -232,7 +232,11 @@ export async function loginAdmin(username: string, password: string) {
     }),
   );
   setAdminToken(result.token);
-  setAdminSession({ username: result.username, requirePasswordChange: result.requirePasswordChange });
+  setAdminSession({
+    username: result.username,
+    requirePasswordChange: result.requirePasswordChange,
+    passwordChangedAt: result.passwordChangedAt,
+  });
   return result;
 }
 
@@ -249,7 +253,11 @@ export function changeAdminPassword(currentPassword: string, newPassword: string
       method: "POST",
       body: JSON.stringify({ currentPassword, newPassword }),
     }).then((result) => {
-      setAdminSession({ username: result.username, requirePasswordChange: result.requirePasswordChange });
+      setAdminSession({
+        username: result.username,
+        requirePasswordChange: result.requirePasswordChange,
+        passwordChangedAt: result.changedAt,
+      });
       return result;
     }),
   );

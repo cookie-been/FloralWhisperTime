@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
   private static final long SINGLETON_ID = 1L;
+  private static final java.time.format.DateTimeFormatter DATE_TIME_FORMATTER = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   private final AppProperties properties;
   private final JwtService jwtService;
   private final AuditLogService auditLogService;
@@ -90,6 +91,7 @@ public class AuthService {
     AdminSessionResponse response = new AdminSessionResponse();
     response.setUsername(properties.getAdmin().getUsername());
     response.setRequirePasswordChange(Boolean.TRUE.equals(state.getRequirePasswordChange()));
+    response.setPasswordChangedAt(state.getPasswordChangedAt() == null ? "" : state.getPasswordChangedAt().format(DATE_TIME_FORMATTER));
     return response;
   }
 
@@ -111,6 +113,7 @@ public class AuthService {
     if (request.getNewPassword().equals(request.getCurrentPassword())) {
       throw new ApiException(HttpStatus.BAD_REQUEST, "新密码不能与当前密码相同");
     }
+    validatePasswordComplexity(request.getNewPassword());
 
     LocalDateTime changedAt = LocalDateTime.now(clock.withZone(zoneId));
     state.setPasswordHash(hashPassword(request.getNewPassword()));
@@ -121,7 +124,7 @@ public class AuthService {
     AdminPasswordChangeResponse response = new AdminPasswordChangeResponse();
     response.setUsername(username);
     response.setRequirePasswordChange(false);
-    response.setChangedAt(changedAt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    response.setChangedAt(changedAt.format(DATE_TIME_FORMATTER));
 
     auditLogService.record(AuditLogCommand.builder()
         .module("AUTH")
@@ -182,6 +185,15 @@ public class AuthService {
       return HexFormat.of().formatHex(hashed);
     } catch (Exception error) {
       throw new IllegalStateException("密码摘要计算失败", error);
+    }
+  }
+
+  private void validatePasswordComplexity(String rawPassword) {
+    boolean hasLetter = rawPassword.chars().anyMatch(Character::isLetter);
+    boolean hasDigit = rawPassword.chars().anyMatch(Character::isDigit);
+    boolean hasSpecial = rawPassword.chars().anyMatch(ch -> !Character.isLetterOrDigit(ch));
+    if (!(hasLetter && hasDigit && hasSpecial)) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "新密码需同时包含字母、数字和特殊字符");
     }
   }
 }

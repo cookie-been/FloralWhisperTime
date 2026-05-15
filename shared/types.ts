@@ -199,6 +199,7 @@ export interface SystemStatus {
   latestBackupModifiedAt: string;
   latestBackupDownloadUrl: string;
   latestBackupPresent: boolean;
+  adminPasswordChangedAt: string;
   operationLogCount: number;
   operationLogRetentionDays: number;
   operationLogArchiveBefore: string;
@@ -210,6 +211,7 @@ export interface SystemStatus {
 export interface AdminSession {
   username: string;
   requirePasswordChange: boolean;
+  passwordChangedAt: string;
 }
 
 export interface AdminLoginResult extends AdminSession {

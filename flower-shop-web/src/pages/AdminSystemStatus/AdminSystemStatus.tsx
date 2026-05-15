@@ -332,6 +332,9 @@ export function AdminSystemStatus() {
               <p className="mt-2 text-muted">
                 {status.requirePasswordChange ? "当前仍在使用初始管理员密码，需先完成改密。" : "管理员密码已完成初始化，可继续正式运营。"}
               </p>
+              <p className="mt-2 text-muted">
+                最近改密时间：{formatDateTime(status.adminPasswordChangedAt)}
+              </p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>

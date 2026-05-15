@@ -369,6 +369,7 @@ public class SiteService {
     response.setLatestBackupPath(latestBackup == null ? "" : latestBackup.getAbsolutePath());
     response.setLatestBackupModifiedAt(formatBackupModifiedAt(latestBackup));
     response.setLatestBackupDownloadUrl(latestBackup == null ? "" : "/api/admin/system/backups/latest/download");
+    response.setAdminPasswordChangedAt(adminSecurityState == null ? "" : formatDateTime(adminSecurityState.getPasswordChangedAt()));
     response.setOperationLogCount(resolveOperationLogCount());
     response.setOperationLogRetentionDays(resolveOperationLogRetentionDays());
     response.setOperationLogArchiveBefore(resolveOperationLogArchiveBefore());

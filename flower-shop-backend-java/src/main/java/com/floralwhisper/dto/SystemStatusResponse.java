@@ -40,6 +40,7 @@ public class SystemStatusResponse {
   private String latestBackupModifiedAt;
   private String latestBackupDownloadUrl;
   private boolean latestBackupPresent;
+  private String adminPasswordChangedAt;
   private long operationLogCount;
   private int operationLogRetentionDays;
   private String operationLogArchiveBefore;

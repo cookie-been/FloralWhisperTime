@@ -16,6 +16,7 @@ import com.floralwhisper.common.ApiException;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.dto.AdminPasswordChangeRequest;
 import com.floralwhisper.dto.AdminPasswordChangeResponse;
+import com.floralwhisper.dto.AdminSessionResponse;
 import com.floralwhisper.dto.LoginRequest;
 import com.floralwhisper.dto.LoginResponse;
 import com.floralwhisper.entity.AdminSecurityState;
@@ -59,6 +60,8 @@ class AuthServiceTest {
     assertEquals("admin", response.getUsername());
     assertTrue(response.isRequirePasswordChange());
     assertTrue(authService.isPasswordChangeRequired("admin"));
+    AdminSessionResponse session = authService.currentAdmin();
+    assertEquals("", session.getPasswordChangedAt());
     verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
   }
 
@@ -106,6 +109,39 @@ class AuthServiceTest {
     newLogin.setPassword("Floral@2026#New");
     LoginResponse loginResponse = authService.login(newLogin);
     assertFalse(loginResponse.isRequirePasswordChange());
+    AdminSessionResponse session = authService.currentAdmin();
+    assertEquals("2026-05-15 12:30:00", session.getPasswordChangedAt());
+  }
+
+  @Test
+  void changePasswordRejectsWeakPassword() {
+    AdminSecurityStateMapper mapper = mock(AdminSecurityStateMapper.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+    AppProperties properties = properties();
+    JwtService jwtService = new JwtService(properties);
+
+    AdminSecurityState state = new AdminSecurityState();
+    state.setId(1L);
+    state.setUsername("admin");
+    state.setPasswordHash("");
+    state.setRequirePasswordChange(true);
+    when(mapper.selectById(1L)).thenReturn(state);
+
+    AuthService authService = new AuthService(
+        properties,
+        jwtService,
+        auditLogService,
+        mapper,
+        Clock.fixed(Instant.parse("2026-05-15T04:30:00Z"), ZoneId.of("Asia/Shanghai")),
+        ZoneId.of("Asia/Shanghai"));
+
+    AdminPasswordChangeRequest changeRequest = new AdminPasswordChangeRequest();
+    changeRequest.setCurrentPassword("Floral@2026");
+    changeRequest.setNewPassword("weakpass");
+
+    ApiException error = assertThrows(ApiException.class, () -> authService.changePassword("admin", changeRequest));
+
+    assertEquals("新密码需同时包含字母、数字和特殊字符", error.getMessage());
   }
 
   private AppProperties properties() {

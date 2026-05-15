@@ -6,4 +6,5 @@ import lombok.Data;
 public class AdminSessionResponse {
   private String username;
   private boolean requirePasswordChange;
+  private String passwordChangedAt;
 }

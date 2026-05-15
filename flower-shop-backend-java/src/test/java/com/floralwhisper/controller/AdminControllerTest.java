@@ -193,13 +193,15 @@ class AdminControllerTest {
     AdminSessionResponse response = new AdminSessionResponse();
     response.setUsername("admin");
     response.setRequirePasswordChange(false);
+    response.setPasswordChangedAt("2026-05-15 12:30:00");
     when(authService.currentAdmin()).thenReturn(response);
 
     mockMvc.perform(get("/api/admin/me")
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.username").value("admin"))
-        .andExpect(jsonPath("$.requirePasswordChange").value(false));
+        .andExpect(jsonPath("$.requirePasswordChange").value(false))
+        .andExpect(jsonPath("$.passwordChangedAt").value("2026-05-15 12:30:00"));
   }
 
   @Test
@@ -217,6 +219,7 @@ class AdminControllerTest {
     AdminSessionResponse response = new AdminSessionResponse();
     response.setUsername("admin");
     response.setRequirePasswordChange(true);
+    response.setPasswordChangedAt("");
     when(authService.currentAdmin()).thenReturn(response);
     when(authService.isPasswordChangeRequired("admin")).thenReturn(true);
 
@@ -224,7 +227,8 @@ class AdminControllerTest {
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.username").value("admin"))
-        .andExpect(jsonPath("$.requirePasswordChange").value(true));
+        .andExpect(jsonPath("$.requirePasswordChange").value(true))
+        .andExpect(jsonPath("$.passwordChangedAt").value(""));
   }
 
   @Test
@@ -292,6 +296,7 @@ class AdminControllerTest {
     response.setLatestBackupPath("/app/backups/20260515-002808");
     response.setLatestBackupModifiedAt("2026-05-15 08:28:08");
     response.setLatestBackupDownloadUrl("/api/admin/system/backups/latest/download");
+    response.setAdminPasswordChangedAt("2026-05-15 12:30:00");
     response.setOperationLogCount(128L);
     response.setOperationLogRetentionDays(180);
     response.setOperationLogArchiveBefore("2025-11-16 08:15:00");
@@ -332,6 +337,7 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.latestBackupName").value("20260515-002808"))
         .andExpect(jsonPath("$.latestBackupModifiedAt").value("2026-05-15 08:28:08"))
         .andExpect(jsonPath("$.latestBackupDownloadUrl").value("/api/admin/system/backups/latest/download"))
+        .andExpect(jsonPath("$.adminPasswordChangedAt").value("2026-05-15 12:30:00"))
         .andExpect(jsonPath("$.requirePasswordChange").value(false))
         .andExpect(jsonPath("$.deliveryInitialized").value(true));
   }

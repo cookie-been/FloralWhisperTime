@@ -100,7 +100,11 @@ export function AdminShell() {
     setChangingPassword(true);
     try {
       const result = await changeAdminPassword(values.currentPassword, values.newPassword);
-      setSession({ username: result.username, requirePasswordChange: result.requirePasswordChange });
+      setSession({
+        username: result.username,
+        requirePasswordChange: result.requirePasswordChange,
+        passwordChangedAt: result.changedAt,
+      });
       passwordForm.resetFields();
       message.success("管理员密码已更新");
     } catch (error) {
@@ -270,6 +274,11 @@ export function AdminShell() {
         <p className="mb-4 text-sm leading-6 text-muted">
           当前环境仍在使用初始管理员密码。为保证交付安全，修改完成前将限制后台其他操作。
         </p>
+        {session?.passwordChangedAt ? (
+          <p className="mb-4 text-sm leading-6 text-muted">
+            最近一次改密：{session.passwordChangedAt}
+          </p>
+        ) : null}
         <Form form={passwordForm} layout="vertical">
           <Form.Item name="currentPassword" label="当前密码" rules={[{ required: true, message: "请输入当前密码" }]}>
             <Input.Password size="large" />

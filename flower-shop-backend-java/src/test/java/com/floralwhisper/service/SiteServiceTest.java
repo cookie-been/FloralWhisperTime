@@ -351,6 +351,7 @@ class SiteServiceTest {
     adminSecurityState.setId(1L);
     adminSecurityState.setUsername("admin");
     adminSecurityState.setRequirePasswordChange(false);
+    adminSecurityState.setPasswordChangedAt(LocalDateTime.of(2026, 5, 15, 12, 30, 0));
     when(adminSecurityStateMapper.selectById(1L)).thenReturn(adminSecurityState);
 
     DataSource dataSource = mock(DataSource.class);
@@ -433,6 +434,7 @@ class SiteServiceTest {
     assertEquals(backupsDir.resolve("20260515-010101").toFile().getAbsolutePath(), response.getLatestBackupPath());
     assertEquals("2026-05-15 09:01:01", response.getLatestBackupModifiedAt());
     assertEquals("/api/admin/system/backups/latest/download", response.getLatestBackupDownloadUrl());
+    assertEquals("2026-05-15 12:30:00", response.getAdminPasswordChangedAt());
     assertEquals("15分钟", response.getUptimeLabel());
     assertEquals(128L, response.getOperationLogCount());
     assertEquals(180, response.getOperationLogRetentionDays());
