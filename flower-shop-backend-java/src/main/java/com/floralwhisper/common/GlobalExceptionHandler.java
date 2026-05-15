@@ -1,5 +1,6 @@
 package com.floralwhisper.common;
 
+import com.floralwhisper.protection.RateLimitExceededException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
   @ExceptionHandler(ApiException.class)
   public ResponseEntity<Map<String, String>> handleApiException(ApiException error) {
+    return ResponseEntity.status(error.getStatus()).body(Map.of("message", error.getMessage()));
+  }
+
+  @ExceptionHandler(RateLimitExceededException.class)
+  public ResponseEntity<Map<String, String>> handleRateLimitExceeded(RateLimitExceededException error) {
     return ResponseEntity.status(error.getStatus()).body(Map.of("message", error.getMessage()));
   }
 

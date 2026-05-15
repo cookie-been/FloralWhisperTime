@@ -12,7 +12,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
+import com.floralwhisper.config.ProtectionWebMvcConfigurer;
 import com.floralwhisper.config.SecurityConfig;
+import com.floralwhisper.protection.ClientIdentityResolver;
+import com.floralwhisper.protection.ProtectionMetrics;
+import com.floralwhisper.protection.RateLimitInterceptor;
+import com.floralwhisper.protection.RateLimitService;
+import com.floralwhisper.protection.RouteProtectionClassifier;
 import com.floralwhisper.dto.BrandStoryResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
@@ -52,13 +58,28 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(SiteController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class, GlobalExceptionHandler.class, SiteControllerTest.TestConfig.class})
+@Import({
+    SecurityConfig.class,
+    JwtAuthenticationFilter.class,
+    JwtService.class,
+    GlobalExceptionHandler.class,
+    ProtectionWebMvcConfigurer.class,
+    RouteProtectionClassifier.class,
+    ClientIdentityResolver.class,
+    ProtectionMetrics.class,
+    RateLimitService.class,
+    RateLimitInterceptor.class,
+    SiteControllerTest.TestConfig.class
+})
 @TestPropertySource(properties = {
     "app.admin.username=admin",
     "app.admin.password=Floral@2026",
     "app.jwt.secret=12345678901234567890123456789012",
     "app.jwt.expires-in-seconds=43200",
-    "app.jwt.issuer=flower-shop-backend-java"
+    "app.jwt.issuer=flower-shop-backend-java",
+    "app.protection.public-read.capacity=2",
+    "app.protection.public-read.refill-seconds=60",
+    "app.protection.public-read.enabled=true"
 })
 class SiteControllerTest {
   @Autowired
@@ -110,7 +131,7 @@ class SiteControllerTest {
     response.setLicenseNotes("演示授权");
     when(siteService.getSiteConfig()).thenReturn(response);
 
-    mockMvc.perform(get("/api/site-config"))
+    mockMvc.perform(get("/api/site-config").header("X-Forwarded-For", "198.51.100.10"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.brandName").value("花语时光"))
         .andExpect(jsonPath("$.aiSettings").doesNotExist())
@@ -121,6 +142,22 @@ class SiteControllerTest {
         .andExpect(jsonPath("$.licenseExpiresAt").doesNotExist())
         .andExpect(jsonPath("$.licenseWarningDays").doesNotExist())
         .andExpect(jsonPath("$.licenseNotes").doesNotExist());
+  }
+
+  @Test
+  void publicReadRequestsReturn429WhenRateLimitExceeded() throws Exception {
+    SiteConfigResponse response = new SiteConfigResponse();
+    response.setBrandName("花语时光");
+    when(siteService.getSiteConfig()).thenReturn(response);
+
+    for (int i = 0; i < 2; i++) {
+      mockMvc.perform(get("/api/site-config").header("X-Forwarded-For", "198.51.100.20"))
+          .andExpect(status().isOk());
+    }
+
+    mockMvc.perform(get("/api/site-config").header("X-Forwarded-For", "198.51.100.20"))
+        .andExpect(status().isTooManyRequests())
+        .andExpect(jsonPath("$.message").value("当前请求较多，请稍后重试"));
   }
 
   @Test
