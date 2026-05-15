@@ -1,4 +1,6 @@
 export type {
+  AdminBackupFile,
+  AdminBackupFileList,
   AdminOpsTask,
   AdminOpsTaskList,
   AdminLoginResult,

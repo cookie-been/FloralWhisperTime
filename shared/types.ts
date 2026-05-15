@@ -228,6 +228,7 @@ export interface AdminOpsTask {
   operatorName: string;
   requestPayload: string;
   resultSummary: string;
+  resultData: Record<string, unknown>;
   logExcerpt: string;
   errorMessage: string;
   startedAt: string;
@@ -238,6 +239,20 @@ export interface AdminOpsTask {
 
 export interface AdminOpsTaskList {
   list: AdminOpsTask[];
+  total: number;
+}
+
+export interface AdminBackupFile {
+  backupName: string;
+  path: string;
+  modifiedAt: string;
+  size: string;
+  downloadUrl: string;
+  latest: boolean;
+}
+
+export interface AdminBackupFileList {
+  list: AdminBackupFile[];
   total: number;
 }
 

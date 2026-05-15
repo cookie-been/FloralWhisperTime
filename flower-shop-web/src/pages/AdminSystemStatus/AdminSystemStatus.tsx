@@ -1,8 +1,10 @@
-import { Alert, Button, Empty, Input, Modal, Spin, Switch, Tag, Upload, message } from "antd";
+import { Alert, Button, Empty, Input, Modal, Segmented, Spin, Switch, Tag, Upload, message } from "antd";
 import { AlertTriangle, Archive, Download, HardDriveDownload, KeyRound, RefreshCw, SearchCheck, ServerCog, Sparkles, UploadCloud } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { archiveAdminOperationLogs, createAdminBackupTask, createAdminInspectionTask, downloadAdminConfigExport, downloadAdminFile, downloadLatestAdminBackup, getAdminOperationLogArchiveFiles, getAdminOpsTasks, getAdminSystemStatus, importAdminConfig, isAbortError } from "@/services/api";
-import type { AdminOpsTask, OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
+import { useNavigate } from "react-router-dom";
+import { archiveAdminOperationLogs, createAdminBackupTask, createAdminInspectionTask, downloadAdminConfigExport, downloadAdminFile, downloadLatestAdminBackup, getAdminBackups, getAdminOperationLogArchiveFiles, getAdminOpsTasks, getAdminSystemStatus, importAdminConfig, isAbortError } from "@/services/api";
+import { useAdminShell } from "@/components/admin/AdminShell";
+import type { AdminBackupFile, AdminOpsTask, OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
 import type { RcFile } from "antd/es/upload";
 
 const AUTO_REFRESH_INTERVAL_MS = 60000;
@@ -29,7 +31,143 @@ function formatServiceName(value?: string) {
   return value ? (mapping[value] ?? value) : "未知服务";
 }
 
+function formatTaskTypeLabel(value?: string) {
+  if (value === "backup") return "手动备份";
+  if (value === "inspection") return "系统巡检";
+  return value || "未知任务";
+}
+
+function getTaskStatusMeta(status?: string) {
+  if (status === "success") return { color: "green" as const, label: "成功" };
+  if (status === "failed") return { color: "red" as const, label: "失败" };
+  return { color: "blue" as const, label: "执行中" };
+}
+
+function readString(value: unknown, fallback = "暂无") {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function readBooleanLabel(value: unknown, positive = "正常", negative = "异常") {
+  return value === true ? positive : value === false ? negative : "未知";
+}
+
+function getTaskResultEntries(task: AdminOpsTask) {
+  const result = task.resultData ?? {};
+  if (task.taskType === "backup") {
+    return [
+      { label: "备份标识", value: readString(result.backupName) },
+      { label: "备份目录", value: readString(result.backupPath) },
+      { label: "配置快照", value: readString(result.configExport) },
+      { label: "上传归档", value: readString(result.uploadsArchive) },
+    ];
+  }
+  if (task.taskType === "inspection") {
+    return [
+      { label: "数据库", value: readBooleanLabel(result.databaseConnected) },
+      { label: "上传目录", value: readBooleanLabel(result.uploadDirectoryReady) },
+      { label: "最近备份", value: readBooleanLabel(result.latestBackupPresent, "已发现", "缺失") },
+      { label: "AI 启用", value: readBooleanLabel(result.aiEnabled, "已启用", "未启用") },
+      { label: "AI 密钥", value: readBooleanLabel(result.aiKeyConfigured, "已配置", "未配置") },
+      { label: "安全等级", value: readString(result.securityLevel) },
+      { label: "安全摘要", value: readString(result.securitySummary) },
+      { label: "限流次数", value: String(result.rateLimitedCount ?? 0) },
+      { label: "繁忙拒绝", value: String(result.busyRejectedCount ?? 0) },
+    ];
+  }
+  return Object.entries(result).map(([key, value]) => ({
+    label: key,
+    value: typeof value === "string" ? value : JSON.stringify(value),
+  }));
+}
+
+type RiskActionKey = "failed-logs" | "upload" | "backup" | "ai-settings" | "security" | "change-password";
+
+type RiskItem = {
+  level: "error" | "warning";
+  priority: number;
+  title: string;
+  detail: string;
+  suggestion?: string;
+  actionKey?: RiskActionKey;
+  actionLabel?: string;
+};
+
+function buildSystemRisks(status: SystemStatus) {
+  const items: RiskItem[] = [];
+
+  if (!status.databaseConnected) {
+    items.push({
+      level: "error",
+      priority: 100,
+      title: "数据库连接异常",
+      detail: "后台核心数据当前无法稳定读写，需优先检查数据库容器、连接串与账号权限。",
+      suggestion: "先确认 MySQL 容器是否健康，再核对 DB 连接配置、账号权限与最近失败日志。",
+      actionKey: "failed-logs",
+      actionLabel: "查看失败日志",
+    });
+  }
+  if (!status.uploadDirectoryReady) {
+    items.push({
+      level: "error",
+      priority: 90,
+      title: "上传目录不可用",
+      detail: "作品图片、AI 出图和素材上传可能失败，需检查挂载目录、权限和磁盘状态。",
+      suggestion: "检查 uploads 挂载目录是否存在、是否可写，以及当前磁盘可用空间是否足够。",
+      actionKey: "upload",
+      actionLabel: "定位上传目录",
+    });
+  }
+  if (!status.latestBackupPresent) {
+    items.push({
+      level: "warning",
+      priority: 70,
+      title: "尚无可用备份",
+      detail: "正式环境建议至少保留一份最近备份，再执行配置导入、升级或数据清理。",
+      suggestion: "建议先执行一次手动备份，确认备份目录生成成功并可下载后再继续其他高风险操作。",
+      actionKey: "backup",
+      actionLabel: "前往备份区",
+    });
+  }
+  if (status.aiEnabled && !status.aiKeyConfigured) {
+    items.push({
+      level: "warning",
+      priority: 60,
+      title: "AI 已启用但未配置密钥",
+      detail: "AI 生图与相关生成能力当前不可用，需补齐可用的 API Key 与模型。",
+      suggestion: "进入 AI 配置页补齐可用密钥、模型与接口地址，并完成一次生图验证。",
+      actionKey: "ai-settings",
+      actionLabel: "前往 AI 配置",
+    });
+  }
+  if (status.requirePasswordChange) {
+    items.push({
+      level: "warning",
+      priority: 80,
+      title: "管理员仍在使用初始密码",
+      detail: "当前实例尚未完成交付初始化，需先修改默认管理员密码后再投入正式使用。",
+      suggestion: "建议立即改为仅内部掌握的强密码，并完成一次重新登录验证。",
+      actionKey: "change-password",
+      actionLabel: "立即修改密码",
+    });
+  }
+  if (status.security?.securityLevel === "risk") {
+    items.push({
+      level: "error",
+      priority: 95,
+      title: "存在默认安全配置",
+      detail: status.security?.securitySummary || "JWT 密钥、加密密钥或密码初始化状态仍有高风险项。",
+      suggestion: "优先替换默认 JWT 密钥和数据加密密钥，再复核管理员密码初始化状态。",
+      actionKey: "security",
+      actionLabel: "定位安全状态",
+    });
+  }
+
+  return items.sort((a, b) => b.priority - a.priority);
+}
+
 export function AdminSystemStatus() {
+  const navigate = useNavigate();
+  const adminShell = useAdminShell();
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,8 +184,15 @@ export function AdminSystemStatus() {
   const [importingConfig, setImportingConfig] = useState(false);
   const [latestArchiveResult, setLatestArchiveResult] = useState<OperationLogArchiveResult | null>(null);
   const [archiveFiles, setArchiveFiles] = useState<OperationLogArchiveFile[]>([]);
+  const [backupFiles, setBackupFiles] = useState<AdminBackupFile[]>([]);
   const [opsTasks, setOpsTasks] = useState<AdminOpsTask[]>([]);
+  const [taskTypeFilter, setTaskTypeFilter] = useState<"all" | "backup" | "inspection">("all");
+  const [taskStatusFilter, setTaskStatusFilter] = useState<"all" | "success" | "failed">("all");
+  const [selectedTask, setSelectedTask] = useState<AdminOpsTask | null>(null);
   const requestControllerRef = useRef<AbortController | null>(null);
+  const uploadSectionRef = useRef<HTMLDivElement | null>(null);
+  const securitySectionRef = useRef<HTMLDivElement | null>(null);
+  const backupSectionRef = useRef<HTMLDivElement | null>(null);
 
   const loadStatus = useCallback(async (mode: "init" | "refresh" = "init") => {
     requestControllerRef.current?.abort();
@@ -59,14 +204,16 @@ export function AdminSystemStatus() {
       setLoading(true);
     }
     try {
-      const [nextStatus, nextArchiveFiles, nextTasks] = await Promise.all([
+      const [nextStatus, nextArchiveFiles, nextTasks, nextBackups] = await Promise.all([
         getAdminSystemStatus({ signal: controller.signal }),
         getAdminOperationLogArchiveFiles({ signal: controller.signal }),
         getAdminOpsTasks({ signal: controller.signal }),
+        getAdminBackups({ signal: controller.signal }),
       ]);
       setStatus(nextStatus);
       setArchiveFiles(nextArchiveFiles);
       setOpsTasks(nextTasks.list);
+      setBackupFiles(nextBackups.list);
       setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
       setRefreshErrorCount(0);
       setLastRefreshError("");
@@ -169,6 +316,47 @@ export function AdminSystemStatus() {
     ];
   }, [status]);
 
+  const latestInspectionTask = useMemo(
+    () => opsTasks.find((item) => item.taskType === "inspection") ?? null,
+    [opsTasks],
+  );
+
+  const latestBackupTask = useMemo(
+    () => opsTasks.find((item) => item.taskType === "backup") ?? null,
+    [opsTasks],
+  );
+
+  const filteredOpsTasks = useMemo(() => {
+    return opsTasks.filter((item) => {
+      const typeMatched = taskTypeFilter === "all" || item.taskType === taskTypeFilter;
+      const statusMatched = taskStatusFilter === "all" || item.status === taskStatusFilter;
+      return typeMatched && statusMatched;
+    });
+  }, [opsTasks, taskStatusFilter, taskTypeFilter]);
+
+  const taskStats = useMemo(() => {
+    const failed = opsTasks.filter((item) => item.status === "failed").length;
+    const inspection = opsTasks.filter((item) => item.taskType === "inspection").length;
+    const backup = opsTasks.filter((item) => item.taskType === "backup").length;
+    return { failed, inspection, backup };
+  }, [opsTasks]);
+
+  const riskItems = useMemo(() => (status ? buildSystemRisks(status) : []), [status]);
+
+  const inspectionOverview = useMemo(() => {
+    if (!latestInspectionTask) return [];
+    return getTaskResultEntries(latestInspectionTask).slice(0, 6);
+  }, [latestInspectionTask]);
+
+  const backupOverview = useMemo(() => {
+    const latestBackupFile = backupFiles[0];
+    return [
+      { label: "备份总数", value: `${backupFiles.length} 份`, note: "当前可直接下载的备份目录数量" },
+      { label: "最新备份", value: latestBackupFile?.backupName || "暂无", note: latestBackupFile?.modifiedAt || "尚未产生可用备份" },
+      { label: "最新体积", value: latestBackupFile?.size || "未知", note: latestBackupTask?.finishedAt ? `最近手动备份完成于 ${formatDateTime(latestBackupTask.finishedAt)}` : "尚未记录后台触发的备份任务" },
+    ];
+  }, [backupFiles, latestBackupTask]);
+
   const openArchiveModal = useCallback(() => {
     const suggested = status?.operationLogArchiveBefore ? status.operationLogArchiveBefore.slice(0, 10) : "";
     setArchiveBefore(suggested);
@@ -236,6 +424,34 @@ export function AdminSystemStatus() {
       setRunningInspection(false);
     }
   }, [runningInspection, loadStatus]);
+
+  const handleRiskAction = useCallback((actionKey?: RiskActionKey) => {
+    if (!actionKey) return;
+
+    if (actionKey === "failed-logs") {
+      navigate("/admin/operation-logs?success=false");
+      return;
+    }
+    if (actionKey === "ai-settings") {
+      navigate("/admin/ai-settings");
+      return;
+    }
+    if (actionKey === "upload") {
+      uploadSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (actionKey === "backup") {
+      backupSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (actionKey === "security") {
+      securitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (actionKey === "change-password") {
+      adminShell?.openPasswordModal();
+    }
+  }, [adminShell, navigate]);
 
   if (loading) {
     return (
@@ -349,6 +565,84 @@ export function AdminSystemStatus() {
         })}
       </section>
 
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="admin-panel admin-shell-card sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="section-eyebrow">风险清单</p>
+              <h3 className="admin-section-title mt-2 text-xl">当前优先处理项</h3>
+            </div>
+            <Tag color={riskItems.length ? "red" : "green"}>{riskItems.length ? `${riskItems.length} 项` : "正常"}</Tag>
+          </div>
+          <div className="mt-5 space-y-3">
+            {riskItems.length ? (
+              riskItems.map((item) => (
+                <Alert
+                  key={item.title}
+                  showIcon
+                  type={item.level}
+                  message={`${item.title} · P${item.priority}`}
+                  description={
+                    <div className="space-y-2">
+                      <p>{item.detail}</p>
+                      {item.suggestion ? <p className="text-xs text-muted">建议处理：{item.suggestion}</p> : null}
+                    </div>
+                  }
+                  action={
+                    item.actionKey && item.actionLabel ? (
+                      <Button size="small" onClick={() => handleRiskAction(item.actionKey)}>
+                        {item.actionLabel}
+                      </Button>
+                    ) : undefined
+                  }
+                />
+              ))
+            ) : (
+              <Alert
+                showIcon
+                type="success"
+                message="当前没有高优先级风险项"
+                description="数据库、上传目录、备份、AI 密钥与基础安全状态当前均处于可交付范围内。"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="admin-panel admin-shell-card sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="section-eyebrow">巡检摘要</p>
+              <h3 className="admin-section-title mt-2 text-xl">最近一次巡检结论</h3>
+            </div>
+            <Tag color={latestInspectionTask ? getTaskStatusMeta(latestInspectionTask.status).color : "default"}>
+              {latestInspectionTask ? getTaskStatusMeta(latestInspectionTask.status).label : "暂无"}
+            </Tag>
+          </div>
+          {latestInspectionTask ? (
+            <div className="mt-5 space-y-4 text-sm">
+              <p className="text-muted">
+                巡检时间：{formatDateTime(latestInspectionTask.finishedAt || latestInspectionTask.startedAt)}，操作人：{latestInspectionTask.operatorName || "admin"}
+              </p>
+              <div className="grid gap-3 md:grid-cols-2">
+                {inspectionOverview.map((entry) => (
+                  <div key={`inspection-overview-${entry.label}`} className="admin-subpanel px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-muted">{entry.label}</p>
+                    <p className="mt-2 break-all text-sm font-semibold text-[#1b281e]">{entry.value}</p>
+                  </div>
+                ))}
+              </div>
+              <Button size="small" onClick={() => setSelectedTask(latestInspectionTask)}>
+                查看完整巡检结果
+              </Button>
+            </div>
+          ) : (
+            <div className="admin-empty-inline mt-5">
+              <p>当前还没有系统巡检记录，建议先执行一次巡检建立基线。</p>
+            </div>
+          )}
+        </div>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <div className="admin-panel admin-shell-card sm:p-6">
           <div className="flex items-center justify-between">
@@ -400,7 +694,7 @@ export function AdminSystemStatus() {
                 最近改密时间：{formatDateTime(status.adminPasswordChangedAt)}
               </p>
             </div>
-            <div className="admin-subpanel px-4 py-4">
+            <div className="admin-subpanel px-4 py-4" ref={securitySectionRef}>
               <div className="flex items-center justify-between gap-4">
                 <p className="font-semibold text-[#1b281e]">安全状态</p>
                 <Tag color={status.security?.securityLevel === "good" ? "green" : status.security?.securityLevel === "warning" ? "gold" : "red"}>
@@ -419,7 +713,7 @@ export function AdminSystemStatus() {
               <p className="mt-2 text-muted">数据库版本：{status.databaseVersion || "未读取到版本信息"}</p>
               <p className="mt-2 text-muted">数据库容量：{status.databaseSize || "未读取到容量信息"}</p>
             </div>
-            <div className="admin-subpanel px-4 py-4">
+            <div className="admin-subpanel px-4 py-4" ref={uploadSectionRef}>
               <p className="font-semibold text-[#1b281e]">上传目录</p>
               <p className="mt-2 break-all text-muted">{status.uploadDirectoryPath}</p>
               <p className="mt-2 text-muted">{status.uploadDirectoryReady ? "目录存在且可写" : "目录不可写或不存在"}</p>
@@ -482,31 +776,83 @@ export function AdminSystemStatus() {
                 <p className="section-eyebrow">任务记录</p>
                 <h3 className="admin-section-title mt-2 text-xl">最近运维任务</h3>
               </div>
-              <Tag color={opsTasks.length ? "green" : "default"}>{opsTasks.length} 条</Tag>
+              <Tag color={filteredOpsTasks.length ? "green" : "default"}>{filteredOpsTasks.length} 条</Tag>
             </div>
-            <div className="mt-5 space-y-3 text-sm">
-              {opsTasks.length ? (
-                opsTasks.map((item) => (
+            <div className="mt-5 space-y-4 text-sm">
+              <div className="grid gap-3 lg:grid-cols-3">
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-muted">失败任务</p>
+                  <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{taskStats.failed}</p>
+                  <p className="mt-2 text-xs leading-6 text-muted">优先排查失败备份、失败巡检和连续异常记录。</p>
+                </div>
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-muted">巡检任务</p>
+                  <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{taskStats.inspection}</p>
+                  <p className="mt-2 text-xs leading-6 text-muted">用于观察后台是否形成固定巡检节奏。</p>
+                </div>
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-muted">备份任务</p>
+                  <p className="mt-2 text-2xl font-semibold text-[#1b281e]">{taskStats.backup}</p>
+                  <p className="mt-2 text-xs leading-6 text-muted">用于判断人工备份执行频率是否满足交付要求。</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-wrap gap-3">
+                  <Segmented
+                    value={taskTypeFilter}
+                    onChange={(value) => setTaskTypeFilter(value as "all" | "backup" | "inspection")}
+                    options={[
+                      { label: "全部任务", value: "all" },
+                      { label: "手动备份", value: "backup" },
+                      { label: "系统巡检", value: "inspection" },
+                    ]}
+                  />
+                  <Segmented
+                    value={taskStatusFilter}
+                    onChange={(value) => setTaskStatusFilter(value as "all" | "success" | "failed")}
+                    options={[
+                      { label: "全部状态", value: "all" },
+                      { label: "成功", value: "success" },
+                      { label: "失败", value: "failed" },
+                    ]}
+                  />
+                </div>
+                <p className="text-xs text-muted">
+                  当前显示 {filteredOpsTasks.length} / {opsTasks.length} 条
+                </p>
+              </div>
+
+              {filteredOpsTasks.length ? (
+                filteredOpsTasks.map((item) => (
                   <div key={item.id} className="admin-subpanel px-4 py-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-[#1b281e]">{item.taskLabel}</p>
-                          <Tag color={item.status === "success" ? "green" : item.status === "failed" ? "red" : "blue"}>
-                            {item.status === "success" ? "成功" : item.status === "failed" ? "失败" : "执行中"}
-                          </Tag>
+                          <p className="font-semibold text-[#1b281e]">{item.taskLabel || formatTaskTypeLabel(item.taskType)}</p>
+                          <Tag color={getTaskStatusMeta(item.status).color}>{getTaskStatusMeta(item.status).label}</Tag>
                         </div>
                         <p className="mt-2 text-muted">类型：{item.taskType} · 操作人：{item.operatorName || "admin"}</p>
                         <p className="mt-2 text-muted">开始：{formatDateTime(item.startedAt)} · 完成：{formatDateTime(item.finishedAt)}</p>
-                        {item.resultSummary ? <p className="mt-2 whitespace-pre-wrap break-all text-xs text-muted">{item.resultSummary}</p> : null}
+                        <div className="mt-3 grid gap-2 md:grid-cols-2">
+                          {getTaskResultEntries(item).slice(0, 4).map((entry) => (
+                            <div key={`${item.id}-${entry.label}`} className="rounded-lg border border-[rgba(41,57,46,0.08)] bg-white/70 px-3 py-2">
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-muted">{entry.label}</p>
+                              <p className="mt-1 break-all text-xs text-[#1b281e]">{entry.value}</p>
+                            </div>
+                          ))}
+                        </div>
                         {item.errorMessage ? <p className="mt-2 text-xs text-[#b33a3a]">{item.errorMessage}</p> : null}
                       </div>
+                      <Button size="small" onClick={() => setSelectedTask(item)}>
+                        查看详情
+                      </Button>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="admin-empty-inline">
-                  <p>当前还没有后台触发的运维任务记录。</p>
+                  <p>{opsTasks.length ? "当前筛选条件下没有匹配的运维任务。" : "当前还没有后台触发的运维任务记录。"}</p>
                 </div>
               )}
             </div>
@@ -585,14 +931,14 @@ export function AdminSystemStatus() {
             </div>
           </div>
 
-          <div className="admin-panel admin-shell-card sm:p-6">
+          <div className="admin-panel admin-shell-card sm:p-6" ref={backupSectionRef}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="section-eyebrow">备份状态</p>
-                <h3 className="admin-section-title mt-2 text-xl">最近备份</h3>
+                <h3 className="admin-section-title mt-2 text-xl">备份资产</h3>
               </div>
               <div className="flex items-center gap-3">
-                <Tag color={status.latestBackupPresent ? "green" : "gold"}>{status.latestBackupPresent ? "已发现备份" : "暂无备份"}</Tag>
+                <Tag color={backupFiles.length ? "green" : "gold"}>{backupFiles.length ? `${backupFiles.length} 份` : "暂无备份"}</Tag>
                 <Button
                   type="primary"
                   icon={<Download size={16} />}
@@ -608,18 +954,51 @@ export function AdminSystemStatus() {
               </div>
             </div>
             <div className="mt-5 space-y-4 text-sm">
+              <div className="grid gap-3 lg:grid-cols-3">
+                {backupOverview.map((item) => (
+                  <div key={item.label} className="admin-subpanel px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-muted">{item.label}</p>
+                    <p className="mt-2 break-all text-sm font-semibold text-[#1b281e]">{item.value}</p>
+                    <p className="mt-2 text-xs leading-6 text-muted">{item.note}</p>
+                  </div>
+                ))}
+              </div>
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">备份目录</p>
                 <p className="mt-2 break-all text-muted">{status.latestBackupPath || "当前未发现备份目录记录"}</p>
               </div>
-              <div className="admin-subpanel px-4 py-4">
-                <p className="font-semibold text-[#1b281e]">备份标识</p>
-                <p className="mt-2 text-muted">{status.latestBackupName || "当前未发现可用备份"}</p>
-              </div>
-              <div className="admin-subpanel px-4 py-4">
-                <p className="font-semibold text-[#1b281e]">最近更新时间</p>
-                <p className="mt-2 text-muted">{formatDateTime(status.latestBackupModifiedAt)}</p>
-              </div>
+              {backupFiles.length ? (
+                <div className="space-y-3">
+                  {backupFiles.slice(0, 6).map((item) => (
+                    <div key={item.backupName} className="admin-subpanel px-4 py-4">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-[#1b281e]">{item.backupName}</p>
+                            {item.latest ? <Tag color="green">最新</Tag> : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted">{item.modifiedAt || "暂无时间"} · {item.size || "未知大小"}</p>
+                          <p className="mt-1 break-all text-xs text-muted">{item.path}</p>
+                        </div>
+                        <Button
+                          icon={<Download size={14} />}
+                          onClick={() => {
+                            downloadAdminFile(item.downloadUrl, `${item.backupName}.tar.gz`)
+                              .then(() => message.success(`已开始下载 ${item.backupName}`))
+                              .catch((error) => message.error(error instanceof Error ? error.message : "备份下载失败"));
+                          }}
+                        >
+                          下载该备份
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="admin-empty-inline">
+                  <p>当前还没有可用的手动或历史备份目录。</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -725,6 +1104,57 @@ export function AdminSystemStatus() {
             当前建议值：{status.operationLogArchiveBefore || "暂无"}。确认后会归档该日期 00:00:00 之前的日志。
           </p>
         </div>
+      </Modal>
+
+      <Modal
+        title={selectedTask ? `${selectedTask.taskLabel || formatTaskTypeLabel(selectedTask.taskType)}详情` : "任务详情"}
+        open={Boolean(selectedTask)}
+        footer={null}
+        width={720}
+        onCancel={() => setSelectedTask(null)}
+      >
+        {selectedTask ? (
+          <div className="space-y-4 text-sm">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">任务类型</p>
+                <p className="mt-2 text-muted">{formatTaskTypeLabel(selectedTask.taskType)}</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">任务状态</p>
+                <p className="mt-2 text-muted">{getTaskStatusMeta(selectedTask.status).label}</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">开始时间</p>
+                <p className="mt-2 text-muted">{formatDateTime(selectedTask.startedAt)}</p>
+              </div>
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">完成时间</p>
+                <p className="mt-2 text-muted">{formatDateTime(selectedTask.finishedAt)}</p>
+              </div>
+            </div>
+            <div className="admin-subpanel px-4 py-4">
+              <p className="font-semibold text-[#1b281e]">结构化结果</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {getTaskResultEntries(selectedTask).map((entry) => (
+                  <div key={`${selectedTask.id}-detail-${entry.label}`} className="rounded-lg border border-[rgba(41,57,46,0.08)] bg-white px-3 py-3">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-muted">{entry.label}</p>
+                    <p className="mt-1 break-all text-xs text-[#1b281e]">{entry.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {selectedTask.errorMessage ? (
+              <Alert showIcon type="error" message="任务失败信息" description={selectedTask.errorMessage} />
+            ) : null}
+            {selectedTask.resultSummary ? (
+              <div className="admin-subpanel px-4 py-4">
+                <p className="font-semibold text-[#1b281e]">原始结果摘要</p>
+                <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] p-3 text-xs text-muted">{selectedTask.resultSummary}</pre>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </Modal>
     </div>
   );

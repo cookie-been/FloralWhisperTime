@@ -1,4 +1,5 @@
 import type {
+  AdminBackupFileList,
   AdminOpsTask,
   AdminOpsTaskList,
   AdminLoginResult,
@@ -271,6 +272,10 @@ export function getAdminSystemStatus(options: RequestOptions = {}) {
 
 export function getAdminOpsTasks(options: RequestOptions = {}) {
   return request<AdminOpsTaskList>("/api/admin/system/ops-tasks", options);
+}
+
+export function getAdminBackups(options: RequestOptions = {}) {
+  return request<AdminBackupFileList>("/api/admin/system/backups", options);
 }
 
 export function createAdminBackupTask() {

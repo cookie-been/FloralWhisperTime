@@ -23,6 +23,8 @@ import com.floralwhisper.protection.RateLimitInterceptor;
 import com.floralwhisper.protection.ServiceBusyException;
 import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
+import com.floralwhisper.dto.AdminBackupFileListResponse;
+import com.floralwhisper.dto.AdminBackupFileResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.ConfigImportResponse;
 import com.floralwhisper.dto.AdminPasswordChangeResponse;
@@ -361,6 +363,7 @@ class AdminControllerTest {
     item.setOperatorName("admin");
     item.setRequestPayload("{\"source\":\"admin_ui\"}");
     item.setResultSummary("{\"backupName\":\"20260516-011500\"}");
+    item.setResultData(Map.of("backupName", "20260516-011500"));
     item.setLogExcerpt("");
     item.setErrorMessage("");
     item.setStartedAt("2026-05-16 01:15:00");
@@ -379,7 +382,32 @@ class AdminControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.total").value(1))
         .andExpect(jsonPath("$.list[0].taskType").value("backup"))
-        .andExpect(jsonPath("$.list[0].status").value("success"));
+        .andExpect(jsonPath("$.list[0].status").value("success"))
+        .andExpect(jsonPath("$.list[0].resultData.backupName").value("20260516-011500"));
+  }
+
+  @Test
+  void backupsReturnsBackupListWhenTokenIsValid() throws Exception {
+    AdminBackupFileResponse item = new AdminBackupFileResponse();
+    item.setBackupName("20260516-011500");
+    item.setPath("/app/backups/20260516-011500");
+    item.setModifiedAt("2026-05-16 01:15:08");
+    item.setSize("2.00 MB");
+    item.setDownloadUrl("/api/admin/system/backups/20260516-011500/download");
+    item.setLatest(true);
+
+    AdminBackupFileListResponse response = new AdminBackupFileListResponse();
+    response.setList(List.of(item));
+    response.setTotal(1L);
+
+    when(siteService.listBackupFiles()).thenReturn(response);
+
+    mockMvc.perform(get("/api/admin/system/backups")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.list[0].backupName").value("20260516-011500"))
+        .andExpect(jsonPath("$.list[0].latest").value(true));
   }
 
   @Test

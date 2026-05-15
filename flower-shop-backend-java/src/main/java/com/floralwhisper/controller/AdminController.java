@@ -4,6 +4,7 @@ import com.floralwhisper.dto.AboutPageResponse;
 import com.floralwhisper.dto.AboutPageUpdateRequest;
 import com.floralwhisper.dto.AboutTimelineEntryRequest;
 import com.floralwhisper.dto.AboutTimelineEntryResponse;
+import com.floralwhisper.dto.AdminBackupFileListResponse;
 import com.floralwhisper.dto.AiSettingsResponse;
 import com.floralwhisper.dto.AiSettingsUpdateRequest;
 import com.floralwhisper.dto.AdminPasswordChangeRequest;
@@ -110,6 +111,11 @@ public class AdminController {
     return adminOpsTaskService.listRecentTasks();
   }
 
+  @GetMapping("/system/backups")
+  public AdminBackupFileListResponse backups() {
+    return siteService.listBackupFiles();
+  }
+
   @PostMapping("/system/ops-tasks/backup")
   public AdminOpsTaskResponse createBackupTask(Principal principal) {
     String username = principal == null ? "" : principal.getName();
@@ -133,6 +139,14 @@ public class AdminController {
     response.setContentType("application/gzip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
     siteService.writeLatestBackupArchive(response.getOutputStream());
+  }
+
+  @GetMapping(value = "/system/backups/{backupName}/download", produces = "application/gzip")
+  public void downloadBackup(@PathVariable String backupName, HttpServletResponse response) throws java.io.IOException {
+    String filename = backupName + ".tar.gz";
+    response.setContentType("application/gzip");
+    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+    siteService.writeBackupArchive(backupName, response.getOutputStream());
   }
 
   @GetMapping(value = "/system/config-export", produces = "application/json")

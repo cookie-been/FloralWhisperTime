@@ -19,6 +19,8 @@ import com.floralwhisper.dto.ConfigTransferAiSettings;
 import com.floralwhisper.dto.ConfigTransferPayload;
 import com.floralwhisper.dto.OperationLogArchiveResponse;
 import com.floralwhisper.dto.OperationLogArchiveFileResponse;
+import com.floralwhisper.dto.AdminBackupFileListResponse;
+import com.floralwhisper.dto.AdminBackupFileResponse;
 import com.floralwhisper.dto.ShopInfoResponse;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SiteConfigUpdateRequest;
@@ -564,6 +566,51 @@ public class SiteService {
     }
 
     return latestBackup.getName() + ".tar.gz";
+  }
+
+  public AdminBackupFileListResponse listBackupFiles() {
+    File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
+    File latestBackup = resolveLatestBackup(backupsDir);
+    if (!backupsDir.exists() || !backupsDir.isDirectory()) {
+      AdminBackupFileListResponse empty = new AdminBackupFileListResponse();
+      empty.setList(List.of());
+      empty.setTotal(0L);
+      return empty;
+    }
+
+    File[] files = backupsDir.listFiles(File::isDirectory);
+    List<AdminBackupFileResponse> list = files == null ? List.of() : java.util.Arrays.stream(files)
+        .sorted(
+            Comparator.comparingLong(File::lastModified)
+                .reversed()
+                .thenComparing(File::getName, Comparator.reverseOrder()))
+        .map(file -> toAdminBackupFileResponse(file, latestBackup != null && file.getName().equals(latestBackup.getName())))
+        .toList();
+
+    AdminBackupFileListResponse response = new AdminBackupFileListResponse();
+    response.setList(list);
+    response.setTotal(list.size());
+    return response;
+  }
+
+  public String writeBackupArchive(String backupName, OutputStream outputStream) throws IOException {
+    File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
+    File backupDir = new File(backupsDir, backupName == null ? "" : backupName);
+    if (!backupDir.exists() || !backupDir.isDirectory()) {
+      throw new ApiException(HttpStatus.NOT_FOUND, "备份不存在");
+    }
+    if (!backupDir.getCanonicalPath().startsWith(backupsDir.getCanonicalPath())) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "非法的备份路径");
+    }
+
+    try (TarArchiveOutputStream tarOutputStream =
+             new TarArchiveOutputStream(new GZIPOutputStream(outputStream))) {
+      tarOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+      writeDirectoryToTar(backupDir, backupDir.getName(), tarOutputStream);
+      tarOutputStream.finish();
+    }
+
+    return backupDir.getName() + ".tar.gz";
   }
 
   @Transactional(readOnly = true)
@@ -1701,6 +1748,17 @@ public class SiteService {
     response.setModifiedAt(formatBackupModifiedAt(file));
     response.setSize(formatBytes(file.length()));
     response.setDownloadUrl("/api/admin/system/operation-logs/archive-files/" + file.getName() + "/download");
+    return response;
+  }
+
+  private AdminBackupFileResponse toAdminBackupFileResponse(File backupDir, boolean latest) {
+    AdminBackupFileResponse response = new AdminBackupFileResponse();
+    response.setBackupName(backupDir.getName());
+    response.setPath(backupDir.getAbsolutePath());
+    response.setModifiedAt(formatBackupModifiedAt(backupDir));
+    response.setSize(formatBytes(calculateDirectorySize(backupDir)));
+    response.setDownloadUrl("/api/admin/system/backups/" + backupDir.getName() + "/download");
+    response.setLatest(latest);
     return response;
   }
 

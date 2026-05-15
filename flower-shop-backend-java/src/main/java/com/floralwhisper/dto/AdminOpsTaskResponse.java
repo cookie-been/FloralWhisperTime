@@ -1,5 +1,6 @@
 package com.floralwhisper.dto;
 
+import java.util.Map;
 import lombok.Data;
 
 @Data
@@ -12,6 +13,7 @@ public class AdminOpsTaskResponse {
   private String operatorName;
   private String requestPayload;
   private String resultSummary;
+  private Map<String, Object> resultData;
   private String logExcerpt;
   private String errorMessage;
   private String startedAt;

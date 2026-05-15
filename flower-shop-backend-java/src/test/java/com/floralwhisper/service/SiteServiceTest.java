@@ -749,6 +749,50 @@ class SiteServiceTest {
   }
 
   @Test
+  void listBackupFilesReturnsSortedDirectories() throws Exception {
+    Path uploadsDir = Files.createDirectories(tempDir.resolve("uploads"));
+    Path backupsDir = Files.createDirectories(tempDir.resolve("backups"));
+    Path older = Files.createDirectories(backupsDir.resolve("20260514-090000"));
+    Path latest = Files.createDirectories(backupsDir.resolve("20260515-090000"));
+    Files.writeString(older.resolve("metadata.txt"), "older");
+    Files.writeString(latest.resolve("metadata.txt"), "latest");
+    Files.setLastModifiedTime(older, java.nio.file.attribute.FileTime.from(Instant.parse("2026-05-14T01:00:00Z")));
+    Files.setLastModifiedTime(latest, java.nio.file.attribute.FileTime.from(Instant.parse("2026-05-15T01:00:00Z")));
+
+    AiSettingsMapper aiSettingsMapper = mock(AiSettingsMapper.class);
+    when(aiSettingsMapper.selectById(1L)).thenReturn(aiSettings(false, "volcengine", "", "doubao-image", "doubao-text"));
+
+    SiteService siteService =
+        new SiteService(
+            mock(SiteConfigMapper.class),
+            mock(ShopInfoMapper.class),
+            mock(ShopHourMapper.class),
+            mock(AboutPageMapper.class),
+            mock(AdminSecurityStateMapper.class),
+            mock(AboutTimelineEntryMapper.class),
+            aiSettingsMapper,
+            mock(BrandStoryMapper.class),
+            mock(BrandStoryImageMapper.class),
+            mock(CategoryMapper.class),
+            mock(OperationLogMapper.class),
+            mock(TeamMemberMapper.class),
+            appProperties(uploadsDir, backupsDir, "local", "dev", ""),
+            mock(DataSource.class),
+            null,
+            mock(AuditLogService.class),
+            Instant.parse("2026-05-15T00:45:00Z"),
+            ZoneId.of("Asia/Shanghai"),
+            Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
+
+    var backups = siteService.listBackupFiles();
+
+    assertEquals(2, backups.getTotal());
+    assertEquals("20260515-090000", backups.getList().get(0).getBackupName());
+    assertTrue(backups.getList().get(0).isLatest());
+    assertTrue(backups.getList().get(0).getDownloadUrl().contains("/api/admin/system/backups/20260515-090000/download"));
+  }
+
+  @Test
   void configExportWritesCompleteSnapshotJson() throws Exception {
     SiteConfigMapper siteConfigMapper = mock(SiteConfigMapper.class);
     ShopInfoMapper shopInfoMapper = mock(ShopInfoMapper.class);

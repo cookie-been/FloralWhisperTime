@@ -7,6 +7,7 @@ import com.floralwhisper.dto.AdminOpsTaskListResponse;
 import com.floralwhisper.dto.AdminOpsTaskResponse;
 import com.floralwhisper.entity.AdminOpsTask;
 import com.floralwhisper.mapper.AdminOpsTaskMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AdminOpsTaskService {
+  private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private final AdminOpsTaskMapper adminOpsTaskMapper;
@@ -143,6 +145,7 @@ public class AdminOpsTaskService {
     response.setOperatorName(blankToDefault(task.getOperatorName(), ""));
     response.setRequestPayload(blankToDefault(task.getRequestPayload(), ""));
     response.setResultSummary(blankToDefault(task.getResultSummary(), ""));
+    response.setResultData(parseResultData(task.getResultSummary()));
     response.setLogExcerpt(blankToDefault(task.getLogExcerpt(), ""));
     response.setErrorMessage(blankToDefault(task.getErrorMessage(), ""));
     response.setStartedAt(format(task.getStartedAt()));
@@ -165,6 +168,17 @@ public class AdminOpsTaskService {
 
   private String format(LocalDateTime value) {
     return value == null ? "" : DATE_TIME_FORMATTER.format(value);
+  }
+
+  private Map<String, Object> parseResultData(String value) {
+    if (value == null || value.isBlank()) {
+      return Map.of();
+    }
+    try {
+      return objectMapper.readValue(value, MAP_TYPE);
+    } catch (JsonProcessingException error) {
+      return Map.of();
+    }
   }
 
   private String blankToDefault(String value, String fallback) {
