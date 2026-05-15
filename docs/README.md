@@ -13,10 +13,13 @@
 ## 部署与运维
 
 - [安装手册](./installation-guide.md)
+- [新服务器首次上线操作手册](./first-server-go-live.md)
 - [商业交付说明](./commercial-delivery.md)
 - [部署前后巡检清单](./deployment-checklist.md)
 - [生产环境变量说明](./env-reference.md)
+- [正式环境 `.env` 模板](./production-env-template.md)
 - [Nginx HTTPS 接入示例](./nginx-https-example.md)
+- [Nginx HTTPS 正式环境示例](./nginx-https-production-example.md)
 - [备份与恢复说明](./backup-restore.md)
 - [升级说明](./upgrade-guide.md)
 - [回滚说明](./rollback-guide.md)
@@ -31,6 +34,7 @@
 4. `docs/api.md`
 5. `docs/env-reference.md`
 6. `docs/deployment-checklist.md`
-7. `docs/installation-guide.md`
+7. `docs/first-server-go-live.md`
+8. `docs/installation-guide.md`
 
 上线或运维时，再按需查阅备份、升级、回滚和 HTTPS 相关文档。

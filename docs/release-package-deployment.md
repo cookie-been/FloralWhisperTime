@@ -2,6 +2,12 @@
 
 本文档用于说明如何在“本地构建发布包，服务器仅导入业务镜像并一键启动”的模式下部署系统。
 
+如果你当前的目标是“在一台全新服务器上第一次正式上线”，建议优先配合以下文档一起看：
+
+- [first-server-go-live.md](./first-server-go-live.md)
+- [production-env-template.md](./production-env-template.md)
+- [nginx-https-production-example.md](./nginx-https-production-example.md)
+
 ## 1. 适用场景
 
 适合以下场景：
