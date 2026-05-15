@@ -147,6 +147,10 @@ export interface ContactMessage {
 export interface SystemStatus {
   service: string;
   version: string;
+  deploymentEnvironment: string;
+  gitRevision: string;
+  buildTime: string;
+  deployedAt: string;
   databaseConnected: boolean;
   databaseVersion: string;
   databaseSize: string;

@@ -11,6 +11,7 @@
 ## 部署与运维
 
 - [部署前后巡检清单](./deployment-checklist.md)
+- [生产环境变量说明](./env-reference.md)
 - [Nginx HTTPS 接入示例](./nginx-https-example.md)
 - [备份与恢复说明](./backup-restore.md)
 - [升级说明](./upgrade-guide.md)
@@ -24,6 +25,7 @@
 2. `docs/architecture.md`
 3. `docs/features.md`
 4. `docs/api.md`
-5. `docs/deployment-checklist.md`
+5. `docs/env-reference.md`
+6. `docs/deployment-checklist.md`
 
 上线或运维时，再按需查阅备份、升级、回滚和 HTTPS 相关文档。

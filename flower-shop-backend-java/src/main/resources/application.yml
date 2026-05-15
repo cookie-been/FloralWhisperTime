@@ -67,3 +67,7 @@ app:
     enabled: ${JSON_IMPORT_ENABLED:false}
     json-path: ${JSON_IMPORT_PATH:src/main/resources/seed/legacy-db.json}
     replace-existing: ${JSON_IMPORT_REPLACE_EXISTING:false}
+  runtime:
+    environment: ${APP_ENVIRONMENT:local}
+    git-revision: ${APP_GIT_REVISION:dev}
+    deployed-at: ${APP_DEPLOYED_AT:}

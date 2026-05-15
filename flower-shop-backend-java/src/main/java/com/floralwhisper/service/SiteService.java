@@ -203,6 +203,10 @@ public class SiteService {
 
     response.setService(resolveServiceName());
     response.setVersion(resolveVersion());
+    response.setDeploymentEnvironment(resolveDeploymentEnvironment());
+    response.setGitRevision(resolveGitRevision());
+    response.setBuildTime(resolveBuildTime());
+    response.setDeployedAt(resolveDeployedAt());
     response.setDatabaseConnected(databaseStatus.connected());
     response.setDatabaseVersion(databaseStatus.version());
     response.setDatabaseSize(databaseStatus.size());
@@ -940,6 +944,38 @@ public class SiteService {
     return "dev";
   }
 
+  private String resolveDeploymentEnvironment() {
+    if (appProperties.getRuntime() != null && notBlank(appProperties.getRuntime().getEnvironment())) {
+      return appProperties.getRuntime().getEnvironment().trim();
+    }
+    return "local";
+  }
+
+  private String resolveGitRevision() {
+    if (appProperties.getRuntime() != null && notBlank(appProperties.getRuntime().getGitRevision())) {
+      return appProperties.getRuntime().getGitRevision().trim();
+    }
+    return "dev";
+  }
+
+  private String resolveBuildTime() {
+    if (buildProperties != null && buildProperties.getTime() != null) {
+      return formatInstant(buildProperties.getTime());
+    }
+    return "";
+  }
+
+  private String resolveDeployedAt() {
+    if (appProperties.getRuntime() != null && notBlank(appProperties.getRuntime().getDeployedAt())) {
+      try {
+        return formatInstant(Instant.parse(appProperties.getRuntime().getDeployedAt().trim()));
+      } catch (Exception ignored) {
+        return appProperties.getRuntime().getDeployedAt().trim();
+      }
+    }
+    return "";
+  }
+
   private DatabaseStatus inspectDatabaseStatus() {
     try (Connection connection = dataSource.getConnection()) {
       if (connection == null || !connection.isValid(2)) {
@@ -1053,8 +1089,14 @@ public class SiteService {
     if (backupDirectory == null || !backupDirectory.exists()) {
       return "";
     }
-    return DATE_TIME_FORMATTER.format(
-        Instant.ofEpochMilli(backupDirectory.lastModified()).atZone(zoneId == null ? ZoneId.systemDefault() : zoneId));
+    return formatInstant(Instant.ofEpochMilli(backupDirectory.lastModified()));
+  }
+
+  private String formatInstant(Instant instant) {
+    if (instant == null) {
+      return "";
+    }
+    return DATE_TIME_FORMATTER.format(instant.atZone(zoneId == null ? ZoneId.systemDefault() : zoneId));
   }
 
   private File resolveOperationLogArchiveDirectory() {

@@ -20,6 +20,7 @@
 - `flower-shop-mini/`：微信小程序原生工程
 - `shared/`：Web 共享类型与数据结构
 - `scripts/catalog/`：作品批量生成与导入脚本
+- `ops/`：部署、升级、备份、恢复、回滚脚本主目录
 - `logo/`：品牌 Logo 原始文件
 - `docs/`：正式产品、架构、接口与运维文档
 
@@ -60,6 +61,7 @@
 - 默认会阻止使用 `.env.example` 中的默认弱密码直接部署
 - 仅开发或演示环境可使用 `--allow-insecure-env` 显式跳过这层保护
 - 生产环境建议基于 `.env.production.example` 生成正式 `.env`
+- 环境变量说明可参考 [docs/env-reference.md](/workspace/FloralWhisperTime/docs/env-reference.md)
 - 部署前后可按 [docs/deployment-checklist.md](/workspace/FloralWhisperTime/docs/deployment-checklist.md) 执行人工巡检
 - 如需接入企业域名与 HTTPS 入口，可参考 [docs/nginx-https-example.md](/workspace/FloralWhisperTime/docs/nginx-https-example.md)
 - 正式文档索引见 [docs/README.md](/workspace/FloralWhisperTime/docs/README.md)

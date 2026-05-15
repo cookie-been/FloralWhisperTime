@@ -15,6 +15,7 @@ public class AppProperties {
   private OperationLog operationLog = new OperationLog();
   private Cors cors = new Cors();
   private Import importer = new Import();
+  private Runtime runtime = new Runtime();
 
   @Data
   public static class Admin {
@@ -60,5 +61,12 @@ public class AppProperties {
     private boolean enabled;
     private String jsonPath;
     private boolean replaceExisting;
+  }
+
+  @Data
+  public static class Runtime {
+    private String environment = "local";
+    private String gitRevision = "dev";
+    private String deployedAt;
   }
 }

@@ -90,7 +90,7 @@ class SiteServiceTest {
             mock(CategoryMapper.class),
             mock(OperationLogMapper.class),
             mock(TeamMemberMapper.class),
-            appProperties(tempDir.resolve("uploads"), tempDir.resolve("backups")),
+            appProperties(tempDir.resolve("uploads"), tempDir.resolve("backups"), "local", "dev", ""),
             mock(DataSource.class),
             null,
             auditLogService,
@@ -159,7 +159,7 @@ class SiteServiceTest {
             mock(CategoryMapper.class),
             operationLogMapper,
             mock(TeamMemberMapper.class),
-            appProperties(uploadsDir, backupsDir),
+            appProperties(uploadsDir, backupsDir, "production", "abc123def456", "2026-05-15T01:30:00Z"),
             dataSource,
             buildProperties,
             mock(AuditLogService.class),
@@ -171,6 +171,10 @@ class SiteServiceTest {
 
     assertEquals("flower-shop-backend-java", response.getService());
     assertEquals("1.2.3", response.getVersion());
+    assertEquals("production", response.getDeploymentEnvironment());
+    assertEquals("abc123def456", response.getGitRevision());
+    assertEquals("2026-05-15 08:00:00", response.getBuildTime());
+    assertEquals("2026-05-15 09:30:00", response.getDeployedAt());
     assertTrue(response.isDatabaseConnected());
     assertEquals("8.0.36", response.getDatabaseVersion());
     assertEquals("128.50 MB", response.getDatabaseSize());
@@ -224,7 +228,7 @@ class SiteServiceTest {
             mock(CategoryMapper.class),
             operationLogMapper,
             mock(TeamMemberMapper.class),
-            appProperties(uploadsDir, backupsDir),
+            appProperties(uploadsDir, backupsDir, "local", "dev", ""),
             dataSource,
             null,
             mock(AuditLogService.class),
@@ -235,6 +239,10 @@ class SiteServiceTest {
     SystemStatusResponse response = siteService.getSystemStatus();
 
     assertFalse(response.isDatabaseConnected());
+    assertEquals("local", response.getDeploymentEnvironment());
+    assertEquals("dev", response.getGitRevision());
+    assertEquals("", response.getBuildTime());
+    assertEquals("", response.getDeployedAt());
     assertEquals("", response.getDatabaseVersion());
     assertEquals("", response.getDatabaseSize());
     assertEquals("", response.getDiskTotal());
@@ -286,7 +294,7 @@ class SiteServiceTest {
             mock(CategoryMapper.class),
             operationLogMapper,
             mock(TeamMemberMapper.class),
-            appProperties(uploadsDir, backupsDir),
+            appProperties(uploadsDir, backupsDir, "local", "dev", ""),
             mock(DataSource.class),
             null,
             auditLogService,
@@ -336,7 +344,7 @@ class SiteServiceTest {
             mock(CategoryMapper.class),
             mock(OperationLogMapper.class),
             mock(TeamMemberMapper.class),
-            appProperties(uploadsDir, backupsDir),
+            appProperties(uploadsDir, backupsDir, "local", "dev", ""),
             mock(DataSource.class),
             null,
             mock(AuditLogService.class),
@@ -351,7 +359,7 @@ class SiteServiceTest {
     assertTrue(files.get(0).getDownloadUrl().contains("/api/admin/system/operation-logs/archive-files/operation-logs-archive-20260515-090000.csv/download"));
   }
 
-  private AppProperties appProperties(Path uploadsDir, Path backupsDir) {
+  private AppProperties appProperties(Path uploadsDir, Path backupsDir, String environment, String gitRevision, String deployedAt) {
     AppProperties properties = new AppProperties();
     AppProperties.Upload upload = new AppProperties.Upload();
     upload.setDir(uploadsDir.toString());
@@ -363,6 +371,11 @@ class SiteServiceTest {
     operationLog.setRetentionDays(180);
     operationLog.setArchiveDir("operation-logs");
     properties.setOperationLog(operationLog);
+    AppProperties.Runtime runtime = new AppProperties.Runtime();
+    runtime.setEnvironment(environment);
+    runtime.setGitRevision(gitRevision);
+    runtime.setDeployedAt(deployedAt);
+    properties.setRuntime(runtime);
     return properties;
   }
 

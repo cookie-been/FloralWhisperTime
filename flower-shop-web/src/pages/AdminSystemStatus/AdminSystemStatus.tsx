@@ -135,6 +135,7 @@ export function AdminSystemStatus() {
     if (!status) return [];
     return [
       { label: "当前版本", value: status.version, note: "用于确认部署与升级结果", icon: ServerCog },
+      { label: "部署环境", value: status.deploymentEnvironment || "未知", note: status.gitRevision ? `提交 ${status.gitRevision}` : "未记录版本提交号", icon: ServerCog },
       { label: "运行时长", value: status.uptimeLabel || "未知", note: "用于判断服务是否发生过近期重启", icon: ServerCog },
       { label: "上传目录容量", value: status.uploadDirectorySize || "未知", note: status.uploadDirectoryReady ? `文件数 ${status.uploadFileCount}` : "上传目录异常", icon: HardDriveDownload },
       { label: "AI 配置", value: status.aiEnabled ? "已启用" : "未启用", note: status.aiKeyConfigured ? "密钥已配置" : "密钥未配置", icon: Sparkles },
@@ -266,6 +267,13 @@ export function AdminSystemStatus() {
               <p className="font-semibold text-[#1b281e]">当前服务</p>
               <p className="mt-2 text-muted">{formatServiceName(status.service)}</p>
               {status.service ? <p className="mt-2 break-all text-xs text-muted">{status.service}</p> : null}
+            </div>
+            <div className="admin-subpanel px-4 py-4">
+              <p className="font-semibold text-[#1b281e]">部署信息</p>
+              <p className="mt-2 text-muted">环境：{status.deploymentEnvironment || "未知"}</p>
+              <p className="mt-2 break-all text-muted">提交：{status.gitRevision || "未记录"}</p>
+              <p className="mt-2 text-muted">构建时间：{formatDateTime(status.buildTime)}</p>
+              <p className="mt-2 text-muted">部署时间：{formatDateTime(status.deployedAt)}</p>
             </div>
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">数据库连接</p>

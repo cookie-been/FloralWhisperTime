@@ -186,6 +186,10 @@ class AdminControllerTest {
     SystemStatusResponse response = new SystemStatusResponse();
     response.setService("flower-shop-backend-java");
     response.setVersion("1.0.0");
+    response.setDeploymentEnvironment("production");
+    response.setGitRevision("abc123def456");
+    response.setBuildTime("2026-05-15 08:00:00");
+    response.setDeployedAt("2026-05-15 09:30:00");
     response.setDatabaseConnected(true);
     response.setDatabaseVersion("8.0.36");
     response.setDatabaseSize("128.50 MB");
@@ -218,6 +222,10 @@ class AdminControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.service").value("flower-shop-backend-java"))
         .andExpect(jsonPath("$.version").value("1.0.0"))
+        .andExpect(jsonPath("$.deploymentEnvironment").value("production"))
+        .andExpect(jsonPath("$.gitRevision").value("abc123def456"))
+        .andExpect(jsonPath("$.buildTime").value("2026-05-15 08:00:00"))
+        .andExpect(jsonPath("$.deployedAt").value("2026-05-15 09:30:00"))
         .andExpect(jsonPath("$.databaseConnected").value(true))
         .andExpect(jsonPath("$.databaseVersion").value("8.0.36"))
         .andExpect(jsonPath("$.databaseSize").value("128.50 MB"))

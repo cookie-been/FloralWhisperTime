@@ -6,6 +6,10 @@ import lombok.Data;
 public class SystemStatusResponse {
   private String service;
   private String version;
+  private String deploymentEnvironment;
+  private String gitRevision;
+  private String buildTime;
+  private String deployedAt;
   private boolean databaseConnected;
   private String databaseVersion;
   private String databaseSize;
