@@ -23,6 +23,12 @@ import type {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_TOKEN_KEY = "flower_shop_admin_token";
 const inFlightMutations = new Map<string, Promise<unknown>>();
+const responseCache = new Map<string, { expiresAt: number; value: unknown }>();
+
+type CachePolicy = {
+  key: string;
+  ttlMs: number;
+};
 
 export function getAdminToken() {
   return localStorage.getItem(ADMIN_TOKEN_KEY);
@@ -54,6 +60,25 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
+}
+
+async function requestCached<T>(path: string, cache: CachePolicy, options: RequestInit = {}): Promise<T> {
+  const now = Date.now();
+  const cached = responseCache.get(cache.key);
+  if (cached && cached.expiresAt > now) {
+    return cached.value as T;
+  }
+
+  const value = await request<T>(path, options);
+  responseCache.set(cache.key, {
+    expiresAt: now + cache.ttlMs,
+    value,
+  });
+  return value;
+}
+
+function invalidateCache(...keys: string[]) {
+  keys.forEach((key) => responseCache.delete(key));
 }
 
 function withMutationGuard<T>(key: string, action: () => Promise<T>) {
@@ -252,19 +277,31 @@ export function restoreAdminOperationLog(id: number, reason?: string) {
 }
 
 export function getSiteConfig() {
-  return request<SiteConfig>("/api/site-config");
+  return requestCached<SiteConfig>("/api/site-config", {
+    key: "public:site-config",
+    ttlMs: 60_000,
+  });
 }
 
 export function getAdminSiteConfig() {
-  return request<SiteConfig>("/api/admin/site-config");
+  return requestCached<SiteConfig>("/api/admin/site-config", {
+    key: "admin:site-config",
+    ttlMs: 30_000,
+  });
 }
 
 export function getAboutPage() {
-  return request<AboutPageContent>("/api/about-page");
+  return requestCached<AboutPageContent>("/api/about-page", {
+    key: "public:about-page",
+    ttlMs: 60_000,
+  });
 }
 
 export function getAboutTimeline() {
-  return request<AboutTimelineEntry[]>("/api/about-timeline");
+  return requestCached<AboutTimelineEntry[]>("/api/about-timeline", {
+    key: "public:about-timeline",
+    ttlMs: 60_000,
+  });
 }
 
 export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
@@ -277,12 +314,24 @@ export function updateSiteConfig(payload: SiteConfig & Partial<ShopInfo> & {
     request<{ siteConfig: SiteConfig; shopInfo: ShopInfo; brandStory: BrandStory }>("/api/site-config", {
       method: "PUT",
       body: JSON.stringify(payload),
+    }).then((result) => {
+      invalidateCache(
+        "public:site-config",
+        "admin:site-config",
+        "public:shop-info",
+        "public:brand-story",
+        "dashboard:data",
+      );
+      return result;
     }),
   );
 }
 
 export function getAdminAiSettings() {
-  return request<AiSettings>("/api/admin/system/ai-settings");
+  return requestCached<AiSettings>("/api/admin/system/ai-settings", {
+    key: "admin:ai-settings",
+    ttlMs: 30_000,
+  });
 }
 
 export function updateAdminAiSettings(payload: AiSettings) {
@@ -290,6 +339,9 @@ export function updateAdminAiSettings(payload: AiSettings) {
     request<AiSettings>("/api/admin/system/ai-settings", {
       method: "PUT",
       body: JSON.stringify(payload),
+    }).then((result) => {
+      invalidateCache("admin:ai-settings");
+      return result;
     }),
   );
 }
@@ -299,6 +351,9 @@ export function createFlower(flower: Flower) {
     request<Flower>("/api/flowers", {
       method: "POST",
       body: JSON.stringify(flower),
+    }).then((result) => {
+      invalidateCache("dashboard:data");
+      return result;
     }),
   );
 }
@@ -308,13 +363,19 @@ export function updateFlower(id: string, flower: Flower) {
     request<Flower>(`/api/flowers/${id}`, {
       method: "PUT",
       body: JSON.stringify(flower),
+    }).then((result) => {
+      invalidateCache("dashboard:data");
+      return result;
     }),
   );
 }
 
 export function deleteFlower(id: string) {
   return withMutationGuard(`admin:flower:delete:${id}`, () =>
-    request<void>(`/api/flowers/${id}`, { method: "DELETE" }),
+    request<void>(`/api/flowers/${id}`, { method: "DELETE" }).then((result) => {
+      invalidateCache("dashboard:data");
+      return result;
+    }),
   );
 }
 
@@ -366,18 +427,38 @@ export function generateAdminAiFlowerSuggestion(payload: {
 }
 
 export function getCategories() {
-  return request<Category[]>("/api/categories");
+  return requestCached<Category[]>("/api/categories", {
+    key: "public:categories",
+    ttlMs: 60_000,
+  });
 }
 
 export function getShopInfo() {
-  return request<ShopInfo>("/api/shop-info");
+  return requestCached<ShopInfo>("/api/shop-info", {
+    key: "public:shop-info",
+    ttlMs: 60_000,
+  });
 }
 
 export function getBrandStory() {
-  return request<BrandStory>("/api/brand-story");
+  return requestCached<BrandStory>("/api/brand-story", {
+    key: "public:brand-story",
+    ttlMs: 60_000,
+  });
 }
 
 export async function getDashboardData() {
+  const cached = responseCache.get("dashboard:data");
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value as {
+      flowers: Flower[];
+      categories: Category[];
+      siteConfig: SiteConfig;
+      shopInfo: ShopInfo;
+      brandStory: BrandStory;
+    };
+  }
+
   const flowers = await listAllFlowers({ sortBy: "featured" });
 
   const [categories, siteConfig, shopInfo, brandStory] = await Promise.all([
@@ -387,21 +468,32 @@ export async function getDashboardData() {
     getBrandStory(),
   ]);
 
-  return {
+  const value = {
     flowers,
     categories,
     siteConfig,
     shopInfo,
     brandStory,
   };
+  responseCache.set("dashboard:data", {
+    expiresAt: Date.now() + 30_000,
+    value,
+  });
+  return value;
 }
 
 export function getTeamMembers() {
-  return request<TeamMember[]>("/api/team");
+  return requestCached<TeamMember[]>("/api/team", {
+    key: "public:team",
+    ttlMs: 60_000,
+  });
 }
 
 export function getAdminAboutPage() {
-  return request<AboutPageContent>("/api/admin/about-page");
+  return requestCached<AboutPageContent>("/api/admin/about-page", {
+    key: "admin:about-page",
+    ttlMs: 30_000,
+  });
 }
 
 export function updateAdminAboutPage(payload: AboutPageContent) {
@@ -409,12 +501,18 @@ export function updateAdminAboutPage(payload: AboutPageContent) {
     request<AboutPageContent>("/api/admin/about-page", {
       method: "PUT",
       body: JSON.stringify(payload),
+    }).then((result) => {
+      invalidateCache("admin:about-page", "public:about-page");
+      return result;
     }),
   );
 }
 
 export function getAdminAboutTimeline() {
-  return request<AboutTimelineEntry[]>("/api/admin/about-timeline");
+  return requestCached<AboutTimelineEntry[]>("/api/admin/about-timeline", {
+    key: "admin:about-timeline",
+    ttlMs: 30_000,
+  });
 }
 
 export function createAdminAboutTimeline(entry: Omit<AboutTimelineEntry, "id"> & { id?: string }) {
@@ -422,6 +520,9 @@ export function createAdminAboutTimeline(entry: Omit<AboutTimelineEntry, "id"> &
     request<AboutTimelineEntry>("/api/admin/about-timeline", {
       method: "POST",
       body: JSON.stringify(entry),
+    }).then((result) => {
+      invalidateCache("admin:about-timeline", "public:about-timeline");
+      return result;
     }),
   );
 }
@@ -431,6 +532,9 @@ export function updateAdminAboutTimeline(id: string, entry: Omit<AboutTimelineEn
     request<AboutTimelineEntry>(`/api/admin/about-timeline/${id}`, {
       method: "PUT",
       body: JSON.stringify(entry),
+    }).then((result) => {
+      invalidateCache("admin:about-timeline", "public:about-timeline");
+      return result;
     }),
   );
 }
@@ -439,12 +543,18 @@ export function deleteAdminAboutTimeline(id: string) {
   return withMutationGuard(`admin:about-timeline:delete:${id}`, () =>
     request<void>(`/api/admin/about-timeline/${id}`, {
       method: "DELETE",
+    }).then((result) => {
+      invalidateCache("admin:about-timeline", "public:about-timeline");
+      return result;
     }),
   );
 }
 
 export function getAdminTeamMembers() {
-  return request<TeamMember[]>("/api/admin/team");
+  return requestCached<TeamMember[]>("/api/admin/team", {
+    key: "admin:team",
+    ttlMs: 30_000,
+  });
 }
 
 export function createAdminTeamMember(member: TeamMember) {
@@ -452,6 +562,9 @@ export function createAdminTeamMember(member: TeamMember) {
     request<TeamMember>("/api/admin/team", {
       method: "POST",
       body: JSON.stringify(member),
+    }).then((result) => {
+      invalidateCache("admin:team", "public:team");
+      return result;
     }),
   );
 }
@@ -461,6 +574,9 @@ export function updateAdminTeamMember(id: string, member: TeamMember) {
     request<TeamMember>(`/api/admin/team/${id}`, {
       method: "PUT",
       body: JSON.stringify(member),
+    }).then((result) => {
+      invalidateCache("admin:team", "public:team");
+      return result;
     }),
   );
 }
@@ -469,6 +585,9 @@ export function deleteAdminTeamMember(id: string) {
   return withMutationGuard(`admin:team:delete:${id}`, () =>
     request<void>(`/api/admin/team/${id}`, {
       method: "DELETE",
+    }).then((result) => {
+      invalidateCache("admin:team", "public:team");
+      return result;
     }),
   );
 }

@@ -5,6 +5,20 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { clearAdminToken } from "@/services/api";
 import { adminNavItems, adminPageMeta, adminPublicLink } from "./adminMeta";
 
+const adminRoutePreloaders: Record<string, () => Promise<unknown>> = {
+  "/admin": () => import("@/pages/AdminDashboard/AdminDashboard"),
+  "/admin/flowers": () => import("@/pages/AdminFlowers/AdminFlowers"),
+  "/admin/settings": () => import("@/pages/AdminSettings/AdminSettings"),
+  "/admin/ai-settings": () => import("@/pages/AdminAiSettings/AdminAiSettings"),
+  "/admin/contacts": () => import("@/pages/AdminContacts/AdminContacts"),
+  "/admin/system": () => import("@/pages/AdminSystemStatus/AdminSystemStatus"),
+  "/admin/operation-logs": () => import("@/pages/AdminOperationLogs/AdminOperationLogs"),
+};
+
+function preloadAdminRoute(path: string) {
+  void adminRoutePreloaders[path]?.();
+}
+
 function resolveMeta(pathname: string) {
   return adminPageMeta[pathname as keyof typeof adminPageMeta] ?? adminPageMeta["/admin"];
 }
@@ -19,6 +33,8 @@ function AdminNav() {
             key={item.path}
             to={item.path}
             end={item.path === "/admin"}
+            onMouseEnter={() => preloadAdminRoute(item.path)}
+            onFocus={() => preloadAdminRoute(item.path)}
             className={({ isActive }) =>
               [
                 "admin-nav-item flex items-start gap-3 rounded-lg px-3 py-3 transition",
@@ -160,6 +176,8 @@ export function AdminShell() {
                     key={item.path}
                     to={item.path}
                     end={item.path === "/admin"}
+                    onMouseEnter={() => preloadAdminRoute(item.path)}
+                    onFocus={() => preloadAdminRoute(item.path)}
                     className={({ isActive }) =>
                       [
                         "flex items-start gap-3 rounded-lg border px-3 py-3 transition",
