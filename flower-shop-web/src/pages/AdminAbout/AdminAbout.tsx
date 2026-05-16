@@ -404,24 +404,26 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-4">
-        {metrics.map((item) => (
-          <div key={item.label} className="admin-stat-card p-5">
-            <p className="text-sm font-medium text-muted">{item.label}</p>
-            <p className="mt-3 text-3xl font-semibold text-[#1b281e]">{item.value}</p>
-            <p className="mt-2 text-sm leading-6 text-muted">{item.note}</p>
-          </div>
-        ))}
-      </section>
+      {!embedded ? (
+        <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-4">
+          {metrics.map((item) => (
+            <div key={item.label} className="admin-stat-card p-5">
+              <p className="text-sm font-medium text-muted">{item.label}</p>
+              <p className="mt-3 text-3xl font-semibold text-[#1b281e]">{item.value}</p>
+              <p className="mt-2 text-sm leading-6 text-muted">{item.note}</p>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
-      <section className={`admin-toolbar p-5 ${embedded ? "admin-sticky-toolbar" : ""}`}>
+      <section className={`admin-toolbar p-5 ${embedded ? "" : ""}`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">{embedded ? "关于我们配置" : "关于页工作区"}</p>
             <h3 className="admin-section-title mt-2 text-xl">{embedded ? "关于我们内容维护" : "关于页内容工作台"}</h3>
             <p className="admin-shell-copy mt-2 text-sm">
               {embedded
-                ? "当前在站点配置菜单内维护关于页首图、标题副标题、品牌故事、发展时间轴和团队成员，保存后前台 About 页面会同步更新。"
+                ? "在当前标签内统一维护 About 页首图、标题副标题、品牌故事、发展时间轴和团队成员。"
                 : "统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。"}
             </p>
           </div>
