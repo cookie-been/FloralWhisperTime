@@ -759,9 +759,9 @@ export function AdminOperationLogs() {
             AI 配置
           </Button>
         </div>
-        <div className="admin-filter-grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(0,1fr)_180px_160px_180px_180px_150px_150px_auto_auto]">
+        <div className="admin-filter-grid admin-operation-log-filter-grid">
           <Input
-            className="min-w-0 sm:col-span-2 xl:col-span-3 2xl:col-span-1"
+            className="min-w-0 admin-operation-log-filter-grid__search"
             allowClear
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
@@ -785,6 +785,7 @@ export function AdminOperationLogs() {
             ]}
           />
           <Input
+            className="min-w-0"
             allowClear
             value={operatorName}
             onChange={(event) => setOperatorName(event.target.value)}
@@ -814,28 +815,32 @@ export function AdminOperationLogs() {
             ]}
           />
           <Input
+            className="min-w-0"
             type="date"
             value={createdFrom}
             onChange={(event) => setCreatedFrom(event.target.value)}
             placeholder="开始日期"
           />
           <Input
+            className="min-w-0"
             type="date"
             value={createdTo}
             onChange={(event) => setCreatedTo(event.target.value)}
             placeholder="结束日期"
           />
-          <Button
-            className="w-full 2xl:w-auto"
-            type="primary"
-            icon={<RefreshCw size={16} />}
-            onClick={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
-          >
-            刷新日志
-          </Button>
-          <Button className="w-full 2xl:w-auto" icon={<Download size={16} />} onClick={() => void handleExport()}>
-            导出 CSV
-          </Button>
+          <div className="admin-operation-log-filter-grid__actions">
+            <Button
+              className="w-full sm:w-auto"
+              type="primary"
+              icon={<RefreshCw size={16} />}
+              onClick={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
+            >
+              刷新日志
+            </Button>
+            <Button className="w-full sm:w-auto" icon={<Download size={16} />} onClick={() => void handleExport()}>
+              导出 CSV
+            </Button>
+          </div>
         </div>
         <div className="admin-filter-summary">
           <div className="admin-filter-summary-copy">
