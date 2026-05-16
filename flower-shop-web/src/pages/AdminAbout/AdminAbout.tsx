@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   Drawer,
@@ -38,6 +38,7 @@ import type { AboutPageContent, AboutTimelineEntry, TeamMember } from "@/types";
 interface AdminAboutProps {
   embedded?: boolean;
   externalSaveSignal?: number;
+  onEmbeddedSaveStateChange?: (saving: boolean) => void;
 }
 
 type TeamMemberForm = TeamMember;
@@ -68,7 +69,11 @@ const emptyMember: TeamMemberForm = {
   sort: 0,
 };
 
-export function AdminAbout({ embedded = false, externalSaveSignal = 0 }: AdminAboutProps) {
+export function AdminAbout({
+  embedded = false,
+  externalSaveSignal = 0,
+  onEmbeddedSaveStateChange,
+}: AdminAboutProps) {
   const screens = Grid.useBreakpoint();
   const [aboutForm] = Form.useForm<AboutPageContent>();
   const [timelineForm] = Form.useForm<TimelineForm>();
@@ -140,23 +145,15 @@ export function AdminAbout({ embedded = false, externalSaveSignal = 0 }: AdminAb
     }
   };
 
-  useEffect(() => {
-    load().catch(() => undefined);
-    return () => {
-      requestControllerRef.current?.abort();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!embedded) return;
-    if (!externalSaveSignal || externalSaveSignal === lastHandledSaveSignalRef.current) return;
-    lastHandledSaveSignalRef.current = externalSaveSignal;
-    void saveAbout();
-  }, [embedded, externalSaveSignal]);
-
-  const saveAbout = async () => {
+  const saveAbout = useCallback(async () => {
     if (savingAbout) return;
-    const values = await aboutForm.validateFields();
+    let values: AboutPageContent;
+    try {
+      values = await aboutForm.validateFields();
+    } catch {
+      message.warning("请先完善关于我们的必填内容");
+      return;
+    }
     setSavingAbout(true);
     try {
       const result = await updateAdminAboutPage(values);
@@ -167,7 +164,26 @@ export function AdminAbout({ embedded = false, externalSaveSignal = 0 }: AdminAb
     } finally {
       setSavingAbout(false);
     }
-  };
+  }, [aboutForm, savingAbout]);
+
+  useEffect(() => {
+    load().catch(() => undefined);
+    return () => {
+      requestControllerRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!embedded) return;
+    onEmbeddedSaveStateChange?.(savingAbout);
+  }, [embedded, onEmbeddedSaveStateChange, savingAbout]);
+
+  useEffect(() => {
+    if (!embedded) return;
+    if (!externalSaveSignal || externalSaveSignal === lastHandledSaveSignalRef.current) return;
+    lastHandledSaveSignalRef.current = externalSaveSignal;
+    void saveAbout();
+  }, [embedded, externalSaveSignal, saveAbout]);
 
   const handleHeroUpload = async (file: RcFile) => {
     if (uploadingHero) return false;

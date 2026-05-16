@@ -88,6 +88,7 @@ export function AdminSettings() {
   const screens = Grid.useBreakpoint();
   const [form] = Form.useForm<SettingsForm>();
   const [loading, setLoading] = useState(false);
+  const [embeddedAboutSaving, setEmbeddedAboutSaving] = useState(false);
   const [booting, setBooting] = useState(true);
   const [uploading, setUploading] = useState<UploadState>({});
   const [aboutSaveSignal, setAboutSaveSignal] = useState(0);
@@ -181,7 +182,13 @@ export function AdminSettings() {
               将站点配置和关于我们配置统一放在一个菜单里维护，减少切换路径，所有动态内容在同一处完成管理。首页统计不在这里维护，前台会直接读取系统真实数据。
             </p>
           </div>
-          <Button type="primary" size="large" loading={loading} onClick={save} block={!screens.sm}>
+          <Button
+            type="primary"
+            size="large"
+            loading={activeTab === "about" ? embeddedAboutSaving : loading}
+            onClick={save}
+            block={!screens.sm}
+          >
             保存{TAB_LABELS[activeTab]}
           </Button>
         </div>
@@ -238,7 +245,11 @@ export function AdminSettings() {
                       </div>
                     }
                   >
-                    <AdminAboutLazy embedded externalSaveSignal={aboutSaveSignal} />
+                    <AdminAboutLazy
+                      embedded
+                      externalSaveSignal={aboutSaveSignal}
+                      onEmbeddedSaveStateChange={setEmbeddedAboutSaving}
+                    />
                   </Suspense>
                 ) : null,
             },
