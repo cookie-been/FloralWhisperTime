@@ -90,6 +90,7 @@ export function AdminSettings() {
   const [loading, setLoading] = useState(false);
   const [booting, setBooting] = useState(true);
   const [uploading, setUploading] = useState<UploadState>({});
+  const [aboutSaveSignal, setAboutSaveSignal] = useState(0);
   const activeTab = useMemo(() => resolveTab(searchParams), [searchParams]);
 
   useEffect(() => {
@@ -123,6 +124,10 @@ export function AdminSettings() {
   }, [form]);
 
   const save = async () => {
+    if (activeTab === "about") {
+      setAboutSaveSignal((current) => current + 1);
+      return;
+    }
     if (loading) return;
     const values = await form.validateFields();
     setLoading(true);
@@ -167,7 +172,7 @@ export function AdminSettings() {
 
   return (
     <div className="space-y-6">
-      <section className={`admin-toolbar p-5 ${activeTab === "about" ? "" : "admin-sticky-toolbar"}`}>
+      <section className="admin-toolbar p-5 admin-sticky-toolbar">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">统一配置台</p>
@@ -176,18 +181,14 @@ export function AdminSettings() {
               将站点配置和关于我们配置统一放在一个菜单里维护，减少切换路径，所有动态内容在同一处完成管理。首页统计不在这里维护，前台会直接读取系统真实数据。
             </p>
           </div>
-          {activeTab !== "about" ? (
-            <Button type="primary" size="large" loading={loading} onClick={save} block={!screens.sm}>
-              保存{TAB_LABELS[activeTab]}
-            </Button>
-          ) : null}
+          <Button type="primary" size="large" loading={loading} onClick={save} block={!screens.sm}>
+            保存{TAB_LABELS[activeTab]}
+          </Button>
         </div>
 
-        {activeTab !== "about" ? (
-          <p className="mt-4 text-sm text-muted">
-            当前为 {TAB_LABELS[activeTab]}，所有字段仍沿用现有接口与保存链路，切换 Tab 不会中断当前表单状态。
-          </p>
-        ) : null}
+        <p className="mt-4 text-sm text-muted">
+          当前为 {TAB_LABELS[activeTab]}，所有字段仍沿用现有接口与保存链路，切换 Tab 不会中断当前表单状态。
+        </p>
       </section>
 
       <Form form={form} layout="vertical">
@@ -233,11 +234,11 @@ export function AdminSettings() {
                   <Suspense
                     fallback={
                       <div className="flex min-h-[40vh] items-center justify-center">
-                        <Spin size="large" />
+                    <Spin size="large" />
                       </div>
                     }
                   >
-                    <AdminAboutLazy embedded />
+                    <AdminAboutLazy embedded externalSaveSignal={aboutSaveSignal} />
                   </Suspense>
                 ) : null,
             },

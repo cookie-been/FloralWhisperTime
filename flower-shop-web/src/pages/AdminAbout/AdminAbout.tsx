@@ -37,6 +37,7 @@ import type { AboutPageContent, AboutTimelineEntry, TeamMember } from "@/types";
 
 interface AdminAboutProps {
   embedded?: boolean;
+  externalSaveSignal?: number;
 }
 
 type TeamMemberForm = TeamMember;
@@ -67,7 +68,7 @@ const emptyMember: TeamMemberForm = {
   sort: 0,
 };
 
-export function AdminAbout({ embedded = false }: AdminAboutProps) {
+export function AdminAbout({ embedded = false, externalSaveSignal = 0 }: AdminAboutProps) {
   const screens = Grid.useBreakpoint();
   const [aboutForm] = Form.useForm<AboutPageContent>();
   const [timelineForm] = Form.useForm<TimelineForm>();
@@ -85,6 +86,7 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
   const [editingTimeline, setEditingTimeline] = useState<AboutTimelineEntry | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const requestControllerRef = useRef<AbortController | null>(null);
+  const lastHandledSaveSignalRef = useRef(0);
 
   const heroImage = Form.useWatch("heroImage", aboutForm) ?? "";
   const heroEyebrow = Form.useWatch("heroEyebrow", aboutForm) ?? "";
@@ -144,6 +146,13 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
       requestControllerRef.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!embedded) return;
+    if (!externalSaveSignal || externalSaveSignal === lastHandledSaveSignalRef.current) return;
+    lastHandledSaveSignalRef.current = externalSaveSignal;
+    void saveAbout();
+  }, [embedded, externalSaveSignal]);
 
   const saveAbout = async () => {
     if (savingAbout) return;
@@ -416,22 +425,22 @@ export function AdminAbout({ embedded = false }: AdminAboutProps) {
         </section>
       ) : null}
 
-      <section className={`admin-toolbar p-5 ${embedded ? "" : ""}`}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="section-eyebrow">{embedded ? "关于我们配置" : "关于页工作区"}</p>
-            <h3 className="admin-section-title mt-2 text-xl">{embedded ? "关于我们内容维护" : "关于页内容工作台"}</h3>
-            <p className="admin-shell-copy mt-2 text-sm">
-              {embedded
-                ? "在当前标签内统一维护 About 页首图、标题副标题、品牌故事、发展时间轴和团队成员。"
-                : "统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。"}
-            </p>
+      {!embedded ? (
+        <section className="admin-toolbar p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="section-eyebrow">关于页工作区</p>
+              <h3 className="admin-section-title mt-2 text-xl">关于页内容工作台</h3>
+              <p className="admin-shell-copy mt-2 text-sm">
+                统一维护页首图、标题副标题、品牌故事、发展时间轴和团队成员，前台 About 页面会实时读取这里的数据结构。
+              </p>
+            </div>
+            <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()} block={!screens.sm}>
+              保存页首与故事
+            </Button>
           </div>
-          <Button type="primary" size="large" loading={savingAbout} onClick={() => void saveAbout()} block={!screens.sm}>
-            保存页首与故事
-          </Button>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
         <div className="admin-panel admin-shell-card p-5">
