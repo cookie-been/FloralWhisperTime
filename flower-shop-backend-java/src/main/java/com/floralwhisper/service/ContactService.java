@@ -96,6 +96,38 @@ public class ContactService {
     }
   }
 
+  @Transactional
+  public void delete(String id) {
+    Contact before = null;
+    try {
+      Contact contact = contactMapper.selectById(id);
+      if (contact == null) throw new ApiException(HttpStatus.NOT_FOUND, "留言不存在");
+      before = copyContact(contact);
+      contactMapper.deleteById(id);
+      auditLogService.record(AuditLogCommand.builder()
+          .module("CONTACT")
+          .action("DELETE")
+          .targetType("CONTACT")
+          .targetId(id)
+          .beforeSnapshot(before)
+          .requestSummary(Map.of("contactId", id))
+          .success(true)
+          .build());
+    } catch (RuntimeException error) {
+      auditLogService.record(AuditLogCommand.builder()
+          .module("CONTACT")
+          .action("DELETE")
+          .targetType("CONTACT")
+          .targetId(id)
+          .beforeSnapshot(before)
+          .requestSummary(Map.of("contactId", id))
+          .success(false)
+          .errorMessage(error.getMessage())
+          .build());
+      throw error;
+    }
+  }
+
   private Contact copyContact(Contact source) {
     Contact copy = new Contact();
     copy.setId(source.getId());

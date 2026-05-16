@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Drawer, Empty, Grid, Input, Select, Space, Spin, Table, Tag, message } from "antd";
+import { Button, Drawer, Empty, Grid, Input, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { getAdminContacts, isAbortError, markAdminContactRead } from "@/services/api";
+import { deleteAdminContact, getAdminContacts, isAbortError, markAdminContactRead } from "@/services/api";
 import type { ContactMessage, PaginatedResult } from "@/types";
 
 function formatDateTime(value?: string) {
@@ -37,6 +37,7 @@ export function AdminContacts() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
   const initialStatus = searchParams.get("status");
   const [status, setStatus] = useState<"all" | "read" | "unread">(
@@ -151,6 +152,62 @@ export function AdminContacts() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (deletingId) return;
+    setDeletingId(id);
+    try {
+      await deleteAdminContact(id);
+      message.success("留言已删除");
+      setSelectedRowKeys((current) => current.filter((item) => item !== id));
+      setActiveContact((current) => (current?.id === id ? null : current));
+      if (activeContact?.id === id) {
+        setDrawerOpen(false);
+      }
+      await load(page, pageSize, keyword, status);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "删除失败");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDeleteBatch = async () => {
+    if (!selectedContacts.length || deletingId) return;
+    const deletingIds = new Set(selectedContacts.map((item) => item.id));
+    setDeletingId("__batch__");
+    try {
+      const results = await Promise.allSettled(selectedContacts.map((item) => deleteAdminContact(item.id)));
+      const succeededIds = selectedContacts
+        .filter((_, index) => results[index]?.status === "fulfilled")
+        .map((item) => item.id);
+      const failedCount = results.length - succeededIds.length;
+
+      if (succeededIds.length) {
+        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+      }
+      if (activeContact?.id && deletingIds.has(activeContact.id) && succeededIds.includes(activeContact.id)) {
+        setActiveContact(null);
+        setDrawerOpen(false);
+      }
+
+      await load(page, pageSize, keyword, status);
+
+      if (failedCount === 0) {
+        message.success(`已删除 ${succeededIds.length} 条留言`);
+        return;
+      }
+      if (succeededIds.length) {
+        message.warning(`已删除 ${succeededIds.length} 条留言，另有 ${failedCount} 条删除失败`);
+        return;
+      }
+      message.error("批量删除失败");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "批量删除失败");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const openDetail = (record: ContactMessage) => {
     setActiveContact(record);
     setDrawerOpen(true);
@@ -242,6 +299,19 @@ export function AdminContacts() {
                 标记已读
               </Button>
             )}
+            <Popconfirm title="确认删除该留言？" okText="删除" cancelText="取消" onConfirm={() => void handleDelete(record.id)}>
+              <Button
+                size="small"
+                danger
+                className="admin-action-button"
+                loading={deletingId === record.id}
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                删除
+              </Button>
+            </Popconfirm>
           </Space>
         ),
     },
@@ -346,12 +416,24 @@ export function AdminContacts() {
           <div className="admin-filter-summary">
             <div className="admin-filter-summary-copy">
               <p>已选中 {selectedContacts.length} 条</p>
-              <span>可批量标记已读，适合处理同一批已确认的访客留言。</span>
+              <span>可批量标记已读或删除，适合处理同一批已确认的访客留言。</span>
             </div>
             <Space wrap>
               <Button type="primary" onClick={() => void handleMarkReadBatch()}>
                 批量标记已读
               </Button>
+              <Popconfirm
+                title={`确认删除选中的 ${selectedContacts.length} 条留言？`}
+                description="删除后可通过操作日志恢复结构化数据。"
+                okText="确认删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => void handleDeleteBatch()}
+              >
+                <Button danger loading={deletingId === "__batch__"}>
+                  批量删除
+                </Button>
+              </Popconfirm>
               <Button onClick={() => setSelectedRowKeys([])}>取消选择</Button>
             </Space>
           </div>
@@ -413,10 +495,19 @@ export function AdminContacts() {
         onClose={closeDetail}
         width={screens.md ? 520 : "100%"}
         extra={
-          activeContact && !activeContact.readAt ? (
-            <Button type="primary" onClick={() => handleMarkRead(activeContact.id)} block={!screens.sm}>
-              标记已读
-            </Button>
+          activeContact ? (
+            <Space wrap className="w-full justify-end sm:w-auto">
+              <Popconfirm title="确认删除该留言？" okText="删除" cancelText="取消" onConfirm={() => void handleDelete(activeContact.id)}>
+                <Button danger loading={deletingId === activeContact.id} block={!screens.sm}>
+                  删除留言
+                </Button>
+              </Popconfirm>
+              {!activeContact.readAt ? (
+                <Button type="primary" onClick={() => handleMarkRead(activeContact.id)} block={!screens.sm}>
+                  标记已读
+                </Button>
+              ) : null}
+            </Space>
           ) : null
         }
       >

@@ -443,6 +443,14 @@ export function markAdminContactRead(id: string) {
   );
 }
 
+export function deleteAdminContact(id: string) {
+  return withMutationGuard(`admin:contact:delete:${id}`, () =>
+    request<void>(`/api/admin/contacts/${id}`, {
+      method: "DELETE",
+    }),
+  );
+}
+
 export function getAdminOperationLogs(query: OperationLogQuery = {}, options: RequestOptions = {}) {
   return request<PaginatedResult<OperationLogItem>>(withQuery("/api/admin/operation-logs", query), options);
 }

@@ -3,6 +3,7 @@ package com.floralwhisper.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -768,6 +769,22 @@ class AdminControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value("contact_001"))
         .andExpect(jsonPath("$.readAt").value("2026-05-14T12:10:00"));
+  }
+
+  @Test
+  void deleteContactRejectsMissingTokenWithFrontendCompatibleMessage() throws Exception {
+    mockMvc.perform(delete("/api/admin/contacts/contact_001"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.message").value("请先登录管理后台"));
+  }
+
+  @Test
+  void deleteContactReturnsNoContentWhenTokenIsValid() throws Exception {
+    mockMvc.perform(delete("/api/admin/contacts/contact_001")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isNoContent());
+
+    verify(contactService).delete("contact_001");
   }
 
   @Test

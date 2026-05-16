@@ -205,6 +205,12 @@ public class AdminController {
     return contactService.markAsRead(id);
   }
 
+  @DeleteMapping("/contacts/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteContact(@PathVariable String id) {
+    contactService.delete(id);
+  }
+
   @GetMapping("/operation-logs")
   public PaginatedResult<OperationLogResponse> operationLogs(
       @RequestParam(required = false) Integer page,

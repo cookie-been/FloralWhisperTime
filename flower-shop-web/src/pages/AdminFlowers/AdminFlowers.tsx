@@ -381,6 +381,45 @@ export function AdminFlowers() {
     }
   };
 
+  const removeBatch = async () => {
+    if (!selectedFlowers.length || saving) return;
+
+    const deletingIds = new Set(selectedFlowers.map((flower) => flower.id));
+    setSaving(true);
+    try {
+      const results = await Promise.allSettled(selectedFlowers.map((flower) => deleteFlower(flower.id)));
+      const succeededIds = selectedFlowers
+        .filter((_, index) => results[index]?.status === "fulfilled")
+        .map((flower) => flower.id);
+      const failedCount = results.length - succeededIds.length;
+
+      if (succeededIds.length) {
+        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+      }
+      if (editing?.id && deletingIds.has(editing.id) && succeededIds.includes(editing.id)) {
+        closeDrawer();
+      }
+
+      await load();
+
+      if (failedCount === 0) {
+        message.success(`已批量删除 ${succeededIds.length} 个作品`);
+        return;
+      }
+
+      if (succeededIds.length) {
+        message.warning(`已删除 ${succeededIds.length} 个作品，另有 ${failedCount} 个删除失败`);
+        return;
+      }
+
+      message.error("批量删除失败");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "批量删除失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const moveFlower = async (record: Flower, direction: "up" | "down") => {
     if (saving) return;
     const index = sortedFlowers.findIndex((item) => item.id === record.id);
@@ -603,7 +642,7 @@ export function AdminFlowers() {
           <div className="admin-filter-summary">
             <div className="admin-filter-summary-copy">
               <p>已选中 {selectedFlowers.length} 条</p>
-              <span>可直接批量调整精选状态，减少逐条进入编辑的重复操作。</span>
+              <span>可直接批量调整精选状态或删除，减少逐条进入编辑的重复操作。</span>
             </div>
             <Space wrap>
               <Button type="primary" loading={saving} onClick={() => updateFeaturedBatch(true)}>
@@ -612,6 +651,18 @@ export function AdminFlowers() {
               <Button loading={saving} onClick={() => updateFeaturedBatch(false)}>
                 批量取消精选
               </Button>
+              <Popconfirm
+                title={`确认删除选中的 ${selectedFlowers.length} 个作品？`}
+                description="删除后可通过操作日志恢复结构化数据，但图片文件仍建议以备份为准。"
+                okText="确认删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true }}
+                onConfirm={() => void removeBatch()}
+              >
+                <Button danger loading={saving}>
+                  批量删除
+                </Button>
+              </Popconfirm>
               <Button onClick={clearSelection}>取消选择</Button>
             </Space>
           </div>
