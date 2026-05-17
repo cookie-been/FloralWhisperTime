@@ -13,6 +13,7 @@ export type SystemActionCardItem = {
   resultStatus?: "success" | "warning" | "error" | "default";
   resultSummary?: string;
   resultMeta?: string;
+  auditMeta?: string;
   action: ReactNode;
 };
 
@@ -87,6 +88,7 @@ export function SystemActionGrid({ eyebrow, title, description, items }: Props) 
                   </div>
                   {item.resultSummary ? <p className="mt-2 text-xs leading-6 text-muted">{item.resultSummary}</p> : null}
                   {item.resultMeta ? <p className="mt-2 text-[11px] leading-5 text-muted">{item.resultMeta}</p> : null}
+                  {item.auditMeta ? <p className="mt-1 text-[11px] leading-5 text-muted">{item.auditMeta}</p> : null}
                 </div>
               ) : null}
             </div>

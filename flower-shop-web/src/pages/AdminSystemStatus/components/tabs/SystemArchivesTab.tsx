@@ -51,6 +51,7 @@ export function SystemArchivesTab({
               : operationLogArchiveBefore
                 ? `建议截止：${operationLogArchiveBefore}`
                 : undefined,
+            auditMeta: latestArchiveResult ? "执行来源：admin_ui · 当前会话触发" : undefined,
             action: (
               <div className="flex flex-wrap justify-end gap-2">
                 <Button type="primary" icon={<Archive size={16} />} onClick={openArchiveModal}>

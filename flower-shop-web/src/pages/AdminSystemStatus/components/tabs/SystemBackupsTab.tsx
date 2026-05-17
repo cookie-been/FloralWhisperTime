@@ -63,6 +63,9 @@ export function SystemBackupsTab({
             resultMeta: latestBackupTask
               ? `完成时间：${formatDateTime(latestBackupTask.finishedAt || latestBackupTask.startedAt)}`
               : undefined,
+            auditMeta: latestBackupTask
+              ? `执行人：${latestBackupTask.operatorName || "admin"} · 来源：${latestBackupTask.triggerSource || "admin_ui"}`
+              : undefined,
             action: (
               <Button
                 type="primary"
@@ -89,6 +92,9 @@ export function SystemBackupsTab({
             resultMeta: latestInspectionTask
               ? `完成时间：${formatDateTime(latestInspectionTask.finishedAt || latestInspectionTask.startedAt)}`
               : undefined,
+            auditMeta: latestInspectionTask
+              ? `执行人：${latestInspectionTask.operatorName || "admin"} · 来源：${latestInspectionTask.triggerSource || "admin_ui"}`
+              : undefined,
             action: (
               <Button icon={<SearchCheck size={16} />} loading={runningInspection} onClick={onCreateInspectionTask}>
                 执行巡检
@@ -108,6 +114,9 @@ export function SystemBackupsTab({
               ? `当前最近备份为 ${backupFiles[0]?.backupName || "最新备份"}，可直接下载留档。`
               : "当前未发现可下载的最近备份，建议先执行一次手动备份。",
             resultMeta: latestBackupPresent ? latestBackupPath || undefined : undefined,
+            auditMeta: latestBackupTask
+              ? `最近备份执行人：${latestBackupTask.operatorName || "admin"}`
+              : undefined,
             action: (
               <Button
                 type="primary"

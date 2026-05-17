@@ -44,6 +44,7 @@ export function SystemMigrationTab({ importingConfig, latestConfigExportAt, late
             resultStatus: latestConfigExportAt ? "success" : "default",
             resultSummary: latestConfigExportAt ? "当前会话已执行过配置导出，可直接使用下载的配置包做交付留档。" : "当前会话还没有执行配置导出。",
             resultMeta: latestConfigExportAt ? `执行时间：${latestConfigExportAt}` : undefined,
+            auditMeta: latestConfigExportAt ? "执行来源：admin_ui · 当前会话触发" : undefined,
             action: (
               <Button type="primary" icon={<Download size={16} />} onClick={onConfigExport}>
                 导出配置
@@ -60,6 +61,7 @@ export function SystemMigrationTab({ importingConfig, latestConfigExportAt, late
             resultStatus: latestConfigImportAt ? "warning" : "default",
             resultSummary: latestConfigImportAt ? "当前会话已执行过配置导入，请刷新前台首页、关于页和后台设置页确认结果。" : "当前会话还没有执行配置导入。",
             resultMeta: latestConfigImportAt ? `执行时间：${latestConfigImportAt}` : undefined,
+            auditMeta: latestConfigImportAt ? "执行来源：admin_ui · 当前会话触发" : undefined,
             action: (
               <Upload beforeUpload={handleBeforeUpload} showUploadList={false} accept=".json,application/json">
                 <Button loading={importingConfig} icon={<UploadCloud size={16} />}>
