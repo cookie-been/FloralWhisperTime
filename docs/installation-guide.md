@@ -73,7 +73,7 @@ cp .env.production.example .env
 - `PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT`
 - `PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT`
 
-详细说明见 [env-reference.md](./env-reference.md)。
+详细说明见 [env-reference.md](./reference/env-reference.md)。
 
 ## 4. 首次部署
 

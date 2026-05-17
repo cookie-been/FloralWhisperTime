@@ -124,6 +124,6 @@ admin / Floral@2026
 
 ## 8. 相关文档
 
-- [local-dev-env-example.md](./local-dev-env-example.md)
+- [local-dev-env-example.md](./reference/local-dev-env-example.md)
 - [pre-production-cutover-checklist.md](./pre-production-cutover-checklist.md)
 - [first-server-go-live.md](./first-server-go-live.md)

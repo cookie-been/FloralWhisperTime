@@ -44,7 +44,7 @@
 
 1. [交付说明首页](./delivery-cover-index.md)
 2. [客户验收清单](./customer-acceptance-checklist.md)
-3. [最终交付清单模板](./final-delivery-checklist-template.md)
+3. [最终交付清单模板](./templates/final-delivery-checklist-template.md)
 
 ### 场景 D：我要改代码或做二开
 
@@ -52,8 +52,8 @@
 
 1. [系统架构](./architecture.md)
 2. [接口文档](./api.md)
-3. [接口调用示例](./api-examples.md)
-4. [数据字典](./database-dictionary.md)
+3. [接口调用示例](./reference/api-examples.md)
+4. [数据字典](./reference/database-dictionary.md)
 
 ## 3. 你只需要记住这 3 个文档入口
 
@@ -90,4 +90,4 @@
 - 部署：看 [客户交付快速开始](./customer-delivery-quick-start.md)
 - 运营：看 [后台操作手册](./admin-operations-manual.md)
 - 排障：看 [售后排障手册](./support-troubleshooting-manual.md)
-- 交付：看 [最终交付清单模板](./final-delivery-checklist-template.md)
+- 交付：看 [最终交付清单模板](./templates/final-delivery-checklist-template.md)

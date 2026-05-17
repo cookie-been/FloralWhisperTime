@@ -77,9 +77,9 @@
 - 自动安装依赖时需要当前用户具备 `root` 或 `sudo` 权限；若不希望脚本安装系统依赖，可显式传 `--skip-runtime-install`
 - 生产环境建议基于 `.env.production.example` 生成正式 `.env`
 - 如果同一台机器需要并行跑测试、预发、正式多套环境，建议显式传 `--project-name`，避免复用默认 compose 容器名、网络名和数据卷
-- 环境变量说明可参考 [docs/env-reference.md](/workspace/FloralWhisperTime/docs/env-reference.md)
+- 环境变量说明可参考 [docs/reference/env-reference.md](/workspace/FloralWhisperTime/docs/reference/env-reference.md)
 - 部署前后可按 [docs/deployment-checklist.md](/workspace/FloralWhisperTime/docs/deployment-checklist.md) 执行人工巡检
-- 如需接入企业域名与 HTTPS 入口，可参考 [docs/nginx-https-example.md](/workspace/FloralWhisperTime/docs/nginx-https-example.md)
+- 如需接入企业域名与 HTTPS 入口，可参考 [docs/reference/nginx-https-example.md](/workspace/FloralWhisperTime/docs/reference/nginx-https-example.md)
 - 正式文档索引见 [docs/README.md](/workspace/FloralWhisperTime/docs/README.md)
 
 脚本说明：
@@ -307,7 +307,7 @@ npm run dev
 
 环境变量请统一以以下文档为准：
 
-- [生产环境变量说明](/workspace/FloralWhisperTime/docs/env-reference.md)
+- [生产环境变量说明](/workspace/FloralWhisperTime/docs/reference/env-reference.md)
 - [安装手册](/workspace/FloralWhisperTime/docs/installation-guide.md)
 
 生产环境必须至少替换默认密码、JWT 密钥、数据加密密钥，并按当前访问规模复核并发保护阈值。

@@ -74,5 +74,5 @@ cd /workspace/FloralWhisperTime && docker build -f flower-shop-web/Dockerfile.ru
 正式上线直接参考：
 
 - [first-server-go-live.md](./first-server-go-live.md)
-- [production-env-template.md](./production-env-template.md)
-- [nginx-https-production-example.md](./nginx-https-production-example.md)
+- [production-env-template.md](./templates/production-env-template.md)
+- [nginx-https-production-example.md](./reference/nginx-https-production-example.md)

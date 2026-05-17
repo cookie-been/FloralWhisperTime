@@ -405,7 +405,7 @@
 
 ## 11. 建议配合阅读
 
-- [系统架构](./architecture.md)
-- [接口文档](./api.md)
-- [升级说明](./upgrade-guide.md)
-- [售后排障手册](./support-troubleshooting-manual.md)
+- [系统架构](../architecture.md)
+- [接口文档](../api.md)
+- [升级说明](../upgrade-guide.md)
+- [售后排障手册](../support-troubleshooting-manual.md)

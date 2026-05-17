@@ -160,7 +160,7 @@ cd /tmp/floralwhispertime-release-<release-id>
 
 参考：
 
-- [nginx-https-production-example.md](./nginx-https-production-example.md)
+- [nginx-https-production-example.md](./reference/nginx-https-production-example.md)
 
 ## 10. 常用运维命令
 
@@ -191,5 +191,5 @@ cd /tmp/floralwhispertime-release-<release-id>
 ## 11. 推荐阅读
 
 - [release-package-deployment.md](./release-package-deployment.md)
-- [production-env-template.md](./production-env-template.md)
-- [nginx-https-production-example.md](./nginx-https-production-example.md)
+- [production-env-template.md](./templates/production-env-template.md)
+- [nginx-https-production-example.md](./reference/nginx-https-production-example.md)

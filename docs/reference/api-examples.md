@@ -256,6 +256,6 @@ curl -X POST "http://localhost:3001/api/admin/operation-logs/123/restore" \
 
 ## 22. 建议配合阅读
 
-- [接口文档](./api.md)
-- [权限与安全说明](./security-and-permissions.md)
-- [售后排障手册](./support-troubleshooting-manual.md)
+- [接口文档](../api.md)
+- [权限与安全说明](../security-and-permissions.md)
+- [售后排障手册](../support-troubleshooting-manual.md)

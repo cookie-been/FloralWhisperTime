@@ -124,6 +124,6 @@
 
 1. [安装手册](./installation-guide.md)
 2. [部署前后巡检清单](./deployment-checklist.md)
-3. [生产环境变量说明](./env-reference.md)
+3. [生产环境变量说明](./reference/env-reference.md)
 4. [商业交付说明](./commercial-delivery.md)
 5. [离线镜像发布包部署说明](./release-package-deployment.md)

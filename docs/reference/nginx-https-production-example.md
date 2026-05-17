@@ -135,6 +135,6 @@ curl -I https://flowers.example.com/api/health
 
 ## 8. 参考文档
 
-- [first-server-go-live.md](./first-server-go-live.md)
-- [production-env-template.md](./production-env-template.md)
-- [release-package-deployment.md](./release-package-deployment.md)
+- [first-server-go-live.md](../first-server-go-live.md)
+- [production-env-template.md](../templates/production-env-template.md)
+- [release-package-deployment.md](../release-package-deployment.md)

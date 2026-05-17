@@ -122,4 +122,4 @@ CORS_ALLOWED_ORIGIN_PATTERNS=https://flowers.example.com,https://www.flowers.exa
 
 参考：
 
-- [nginx-https-production-example.md](./nginx-https-production-example.md)
+- [nginx-https-production-example.md](../reference/nginx-https-production-example.md)

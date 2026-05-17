@@ -54,7 +54,7 @@ FloralWhisperTime-docs/
 - [安装手册](./installation-guide.md)
 - [部署前后巡检清单](./deployment-checklist.md)
 - [交付包目录说明](./delivery-package-guide.md)
-- [最终交付清单模板](./final-delivery-checklist-template.md)
+- [最终交付清单模板](./templates/final-delivery-checklist-template.md)
 - [离线镜像发布包部署说明](./release-package-deployment.md)
 
 ### `03-后台操作/`
@@ -81,14 +81,14 @@ FloralWhisperTime-docs/
 
 - [权限与安全说明](./security-and-permissions.md)
 - [接口文档](./api.md)
-- [接口调用示例](./api-examples.md)
-- [生产环境变量说明](./env-reference.md)
+- [接口调用示例](./reference/api-examples.md)
+- [生产环境变量说明](./reference/env-reference.md)
 
 ### `06-发布与验收/`
 
 建议放：
 
-- [版本发布说明模板](./release-notes-template.md)
+- [版本发布说明模板](./templates/release-notes-template.md)
 - [首个正式版本发布样例](./releases/2026-05-17-v1.0.0-release-notes.md)
 - [客户验收清单](./customer-acceptance-checklist.md)
 
@@ -98,7 +98,7 @@ FloralWhisperTime-docs/
 
 - [系统架构](./architecture.md)
 - [功能说明](./features.md)
-- [数据字典](./database-dictionary.md)
+- [数据字典](./reference/database-dictionary.md)
 - [本地开发环境说明](./local-development-guide.md)
 
 ## 4. 命名建议
@@ -139,4 +139,4 @@ FloralWhisperTime-docs-客户名-v1.0.0.zip
 
 - [交付说明首页](./delivery-cover-index.md)
 - [交付包目录说明](./delivery-package-guide.md)
-- [最终交付清单模板](./final-delivery-checklist-template.md)
+- [最终交付清单模板](./templates/final-delivery-checklist-template.md)

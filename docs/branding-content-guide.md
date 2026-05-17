@@ -279,4 +279,4 @@ AI 提示词越具体，生成结果通常越稳定。
 
 - [素材交付规范](./assets-delivery-spec.md)
 - [后台操作手册](./admin-operations-manual.md)
-- [接口调用示例](./api-examples.md)
+- [接口调用示例](./reference/api-examples.md)

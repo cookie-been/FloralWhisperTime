@@ -6,7 +6,7 @@
 
 - 这是开发用途，不是正式环境模板
 - 正式部署请使用：
-  - [production-env-template.md](./production-env-template.md)
+  - [production-env-template.md](../templates/production-env-template.md)
 
 ## 1. Java 后端本地开发
 
@@ -78,5 +78,5 @@ export VOLCENGINE_IMAGE_MODEL='doubao-seedream-5-0-260128'
 
 ## 5. 相关文档
 
-- [local-development-guide.md](./local-development-guide.md)
-- [pre-production-cutover-checklist.md](./pre-production-cutover-checklist.md)
+- [local-development-guide.md](../local-development-guide.md)
+- [pre-production-cutover-checklist.md](../pre-production-cutover-checklist.md)

@@ -5,8 +5,8 @@
 如果你当前的目标是“在一台全新服务器上第一次正式上线”，建议优先配合以下文档一起看：
 
 - [first-server-go-live.md](./first-server-go-live.md)
-- [production-env-template.md](./production-env-template.md)
-- [nginx-https-production-example.md](./nginx-https-production-example.md)
+- [production-env-template.md](./templates/production-env-template.md)
+- [nginx-https-production-example.md](./reference/nginx-https-production-example.md)
 
 ## 1. 适用场景
 

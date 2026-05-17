@@ -30,7 +30,7 @@
 1. [客户交付快速开始](./customer-delivery-quick-start.md)
 2. [安装手册](./installation-guide.md)
 3. [部署前后巡检清单](./deployment-checklist.md)
-4. [生产环境变量说明](./env-reference.md)
+4. [生产环境变量说明](./reference/env-reference.md)
 
 ## 3. 不同角色推荐阅读入口
 
@@ -65,8 +65,8 @@
 
 - [系统架构](./architecture.md)
 - [接口文档](./api.md)
-- [接口调用示例](./api-examples.md)
-- [数据字典](./database-dictionary.md)
+- [接口调用示例](./reference/api-examples.md)
+- [数据字典](./reference/database-dictionary.md)
 
 ## 4. 当前交付能力概览
 

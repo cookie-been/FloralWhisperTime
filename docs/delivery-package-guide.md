@@ -180,6 +180,6 @@ delivery/
 
 ## 10. 建议配合阅读
 
-- [最终交付清单模板](./final-delivery-checklist-template.md)
+- [最终交付清单模板](./templates/final-delivery-checklist-template.md)
 - [客户验收清单](./customer-acceptance-checklist.md)
 - [商业交付说明](./commercial-delivery.md)

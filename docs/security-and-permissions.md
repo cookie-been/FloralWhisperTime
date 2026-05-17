@@ -214,7 +214,7 @@ AI 相关配置由后台维护，核心要求：
 
 ## 16. 建议配合阅读
 
-- [生产环境变量说明](./env-reference.md)
+- [生产环境变量说明](./reference/env-reference.md)
 - [部署前后巡检清单](./deployment-checklist.md)
 - [售后排障手册](./support-troubleshooting-manual.md)
-- [数据字典](./database-dictionary.md)
+- [数据字典](./reference/database-dictionary.md)
