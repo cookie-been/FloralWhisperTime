@@ -9,10 +9,10 @@ Component({
     bannerList: [],
     fallbackImage: "https://picsum.photos/seed/mini-banner-fallback/900/600",
   },
-  observers: {
-    items(items) {
+  methods: {
+    buildBannerList(items) {
       const fallbackImage = this.data.fallbackImage;
-      const bannerList = Array.isArray(items)
+      return Array.isArray(items)
         ? items.map((item, index) => ({
             id: (item && item.id) || `banner-${index}`,
             image: (item && item.image) || fallbackImage,
@@ -20,7 +20,11 @@ Component({
             desc: (item && item.desc) || "清新文艺的鲜花展示窗口",
           }))
         : [];
-      this.setData({ bannerList });
+    },
+  },
+  observers: {
+    items(items) {
+      this.setData({ bannerList: this.buildBannerList(items) });
     },
   },
 });

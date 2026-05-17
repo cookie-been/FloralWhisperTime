@@ -11,7 +11,11 @@ Component({
   },
   methods: {
     handleChange(event) {
-      this.triggerEvent("change", { id: event.currentTarget.dataset.id });
+      const nextCategoryId = event.currentTarget.dataset.id;
+      if (!nextCategoryId) {
+        return;
+      }
+      this.triggerEvent("change", { id: nextCategoryId });
     },
   },
 });

@@ -11,7 +11,11 @@ Component({
   },
   methods: {
     handleChange(event: WechatMiniprogram.TouchEvent) {
-      this.triggerEvent("change", { id: event.currentTarget.dataset.id });
+      const nextCategoryId = event.currentTarget.dataset.id as string | undefined;
+      if (!nextCategoryId) {
+        return;
+      }
+      this.triggerEvent("change", { id: nextCategoryId });
     },
   },
 });
