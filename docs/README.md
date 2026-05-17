@@ -19,6 +19,8 @@
 2. [安装手册](./installation-guide.md)
 3. [部署前后巡检清单](./deployment-checklist.md)
 4. [生产环境变量说明](./env-reference.md)
+5. [后台操作手册](./admin-operations-manual.md)
+6. [售后排障手册](./support-troubleshooting-manual.md)
 
 ## 产品与架构
 
@@ -31,6 +33,7 @@
 
 - [客户交付快速开始](./customer-delivery-quick-start.md)
 - [安装手册](./installation-guide.md)
+- [后台操作手册](./admin-operations-manual.md)
 - [新服务器首次上线操作手册](./first-server-go-live.md)
 - [切换正式部署前检查清单](./pre-production-cutover-checklist.md)
 - [部署前后巡检清单](./deployment-checklist.md)
@@ -38,6 +41,7 @@
 
 ## 运维与恢复
 
+- [售后排障手册](./support-troubleshooting-manual.md)
 - [备份与恢复说明](./backup-restore.md)
 - [升级说明](./upgrade-guide.md)
 - [回滚说明](./rollback-guide.md)
@@ -60,9 +64,11 @@
 
 1. [客户交付快速开始](./customer-delivery-quick-start.md)
 2. [安装手册](./installation-guide.md)
-3. [部署前后巡检清单](./deployment-checklist.md)
-4. [生产环境变量说明](./env-reference.md)
-5. [商业交付说明](./commercial-delivery.md)
+3. [后台操作手册](./admin-operations-manual.md)
+4. [售后排障手册](./support-troubleshooting-manual.md)
+5. [部署前后巡检清单](./deployment-checklist.md)
+6. [生产环境变量说明](./env-reference.md)
+7. [商业交付说明](./commercial-delivery.md)
 
 ### 面向开发接手
 
