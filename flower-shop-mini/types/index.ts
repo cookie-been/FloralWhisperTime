@@ -1,5 +1,6 @@
 export type {
   AboutPageContent,
+  AboutTimelineEntry,
   BrandStory,
   BusinessHours,
   Category,

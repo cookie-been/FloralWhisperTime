@@ -1,5 +1,5 @@
 import { brandStory, categories, flowers, shopInfo, teamMembers } from "./data";
-import type { ContactForm, Flower, FlowerQuery, PaginatedResult } from "./types";
+import type { AboutTimelineEntry, ContactForm, Flower, FlowerQuery, PaginatedResult } from "./types";
 
 const wait = (ms = 160) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -70,6 +70,30 @@ export async function getBrandStory() {
 export async function getTeamMembers() {
   await wait();
   return teamMembers;
+}
+
+export async function getAboutTimeline(): Promise<AboutTimelineEntry[]> {
+  await wait();
+  return [
+    {
+      id: "timeline-1",
+      yearLabel: "2019",
+      content: "从季节花材工作室起步，开始为日常赠礼和小型活动提供定制花束。",
+      sort: 1,
+    },
+    {
+      id: "timeline-2",
+      yearLabel: "2021",
+      content: "扩展到婚礼与宴会花艺服务，形成更完整的场景化设计方法。",
+      sort: 2,
+    },
+    {
+      id: "timeline-3",
+      yearLabel: "2024",
+      content: "完善门店展示与线上作品同步，让咨询、到店与交付体验更统一。",
+      sort: 3,
+    },
+  ];
 }
 
 export async function submitContact(form: ContactForm) {

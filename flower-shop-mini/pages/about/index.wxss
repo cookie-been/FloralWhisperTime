@@ -43,6 +43,39 @@
   margin-top: 36rpx;
 }
 
+.section-eyebrow {
+  display: block;
+  color: #2e7d32;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 18rpx;
+}
+
+.timeline-card {
+  padding: 24rpx 26rpx;
+}
+
+.timeline-year {
+  display: block;
+  color: #1f2937;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.timeline-content {
+  display: block;
+  margin-top: 10rpx;
+  color: #6b7280;
+  font-size: 25rpx;
+  line-height: 1.8;
+}
+
 .team-list {
   display: flex;
   flex-direction: column;

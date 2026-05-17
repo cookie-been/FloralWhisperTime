@@ -21,6 +21,24 @@
     </view>
 
     <view class="section-header">
+      <text class="section-eyebrow">{{timelineEyebrowText}}</text>
+      <text class="section-title">{{timelineSectionTitleText}}</text>
+    </view>
+    <state-section
+      loading="{{false}}"
+      error-text=""
+      has-data="{{timelineList.length > 0}}"
+      empty-text="暂时没有发展历程内容"
+    >
+      <view class="timeline-list">
+        <view wx:for="{{timelineList}}" wx:key="id" class="timeline-card panel">
+          <text class="timeline-year">{{item.yearLabel}}</text>
+          <text class="timeline-content">{{item.content}}</text>
+        </view>
+      </view>
+    </state-section>
+
+    <view class="section-header">
       <text class="section-title">{{teamSectionTitleText}}</text>
       <text class="section-subtitle">{{teamSectionIntroText}}</text>
     </view>

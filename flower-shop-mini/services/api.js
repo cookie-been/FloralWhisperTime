@@ -155,6 +155,13 @@ function getTeamMembers() {
   );
 }
 
+function getAboutTimeline() {
+  return withMockFallback(
+    () => request("/api/about-timeline"),
+    () => mockApi.getAboutTimeline(),
+  );
+}
+
 async function submitContact(form) {
   try {
     return await request("/api/contact", "POST", form);
@@ -167,6 +174,7 @@ async function submitContact(form) {
 
 module.exports = {
   getAboutPage,
+  getAboutTimeline,
   getBrandStory,
   getCategories,
   getFlowerById,

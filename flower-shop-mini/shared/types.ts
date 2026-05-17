@@ -72,6 +72,14 @@ export interface AboutPageContent {
   storyContent: string;
 }
 
+export interface AboutTimelineEntry {
+  id: string;
+  yearLabel: string;
+  content: string;
+  sort: number;
+  deleted?: boolean;
+}
+
 export interface SiteStat {
   value: string;
   label: string;

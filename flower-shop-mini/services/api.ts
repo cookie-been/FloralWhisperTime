@@ -2,6 +2,7 @@ import { API_BASE_URL } from "../config/api";
 import * as mockApi from "../shared/api";
 import type {
   AboutPageContent,
+  AboutTimelineEntry,
   BrandStory,
   Category,
   ContactForm,
@@ -166,6 +167,13 @@ export function getTeamMembers() {
   return withMockFallback(
     () => request<TeamMember[]>("/api/team"),
     () => mockApi.getTeamMembers(),
+  );
+}
+
+export function getAboutTimeline() {
+  return withMockFallback(
+    () => request<AboutTimelineEntry[]>("/api/about-timeline"),
+    () => mockApi.getAboutTimeline(),
   );
 }
 

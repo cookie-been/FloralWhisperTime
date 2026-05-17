@@ -23,7 +23,7 @@
 - 首页：轮播、公告、站点统计、分类入口、热门花束、品牌故事入口
 - 分类页：分类切换、关键词搜索、排序、分页加载、下拉刷新
 - 详情页：图片画廊、花材/寓意/标签、相关推荐、分享、联系门店
-- 关于页：AboutPage 首屏、品牌故事、团队成员、门店信息
+- 关于页：AboutPage 首屏、品牌故事、发展历程、团队成员、门店信息
 - 联系页：地图、拨号、复制微信、门店展示图、在线留言
 - 通用状态：加载中、空状态、错误重试、接口失败回退本地 mock
 
@@ -74,6 +74,7 @@ http://localhost:3001
 - 联系页：`contactPageTitle`、`contactIntro`、`contactPageSubmitText`、`contactSubmitSuccessText`、`consultButtonText`、`businessHoursText`、`contactImages`
 - 关于页模块：`aboutStorySectionEyebrow`、`aboutTeamSectionEyebrow`、`aboutTeamSectionTitle`、`aboutTeamSectionIntro`
 - 关于页主体：`/api/about-page` 返回的 `heroImage`、`heroEyebrow`、`heroTitle`、`heroSubtitle`、`storyTitle`、`storyContent`
+- 关于页时间轴：`/api/about-timeline`
 
 如果后台新增了前台字段，而小程序还没用上，需要同时更新：
 

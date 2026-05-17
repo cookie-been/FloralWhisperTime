@@ -1,9 +1,10 @@
-const { getAboutPage, getBrandStory, getShopInfo, getSiteConfig, getTeamMembers } = require("../../services/api");
+const { getAboutPage, getAboutTimeline, getBrandStory, getShopInfo, getSiteConfig, getTeamMembers } = require("../../services/api");
 const { fallbackText, formatBusinessHours } = require("../../utils/format");
 
 Page({
   data: {
     aboutPage: {},
+    timelineList: [],
     story: { images: [] },
     shop: {},
     siteConfig: {},
@@ -12,6 +13,8 @@ Page({
     teamAvatarFallback: "https://picsum.photos/seed/mini-team-fallback/300/300",
     pageEyebrowText: "关于我们",
     storyEyebrowText: "品牌故事",
+    timelineEyebrowText: "发展历程",
+    timelineSectionTitleText: "发展历程",
     teamSectionEyebrowText: "团队成员",
     teamSectionTitleText: "花艺师团队",
     teamSectionIntroText: "团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。",
@@ -47,8 +50,9 @@ Page({
       pageErrorText: "",
     });
     try {
-      const [aboutPage, story, shop, siteConfig, teamMemberList] = await Promise.all([
+      const [aboutPage, timelineList, story, shop, siteConfig, teamMemberList] = await Promise.all([
         getAboutPage(),
+        getAboutTimeline(),
         getBrandStory(),
         getShopInfo(),
         getSiteConfig(),
@@ -59,6 +63,9 @@ Page({
       }
       this.setData({
         aboutPage,
+        timelineList: [...timelineList].sort(
+          (left, right) => left.sort - right.sort || left.yearLabel.localeCompare(right.yearLabel, "zh-CN"),
+        ),
         story,
         shop,
         siteConfig,
@@ -69,6 +76,8 @@ Page({
         ),
         pageEyebrowText: fallbackText(aboutPage.heroEyebrow, "关于我们"),
         storyEyebrowText: fallbackText(siteConfig.aboutStorySectionEyebrow, "品牌故事"),
+        timelineEyebrowText: fallbackText(siteConfig.aboutTimelineSectionEyebrow, "发展历程"),
+        timelineSectionTitleText: fallbackText(siteConfig.aboutTimelineSectionTitle, "发展历程"),
         teamSectionEyebrowText: fallbackText(siteConfig.aboutTeamSectionEyebrow, "团队成员"),
         teamSectionTitleText: fallbackText(siteConfig.aboutTeamSectionTitle, "花艺师团队"),
         teamSectionIntroText: fallbackText(

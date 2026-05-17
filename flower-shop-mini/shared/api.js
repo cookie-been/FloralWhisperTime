@@ -77,6 +77,30 @@ async function getTeamMembers() {
   return teamMembers;
 }
 
+async function getAboutTimeline() {
+  await wait();
+  return [
+    {
+      id: "timeline-1",
+      yearLabel: "2019",
+      content: "从季节花材工作室起步，开始为日常赠礼和小型活动提供定制花束。",
+      sort: 1,
+    },
+    {
+      id: "timeline-2",
+      yearLabel: "2021",
+      content: "扩展到婚礼与宴会花艺服务，形成更完整的场景化设计方法。",
+      sort: 2,
+    },
+    {
+      id: "timeline-3",
+      yearLabel: "2024",
+      content: "完善门店展示与线上作品同步，让咨询、到店与交付体验更统一。",
+      sort: 3,
+    },
+  ];
+}
+
 async function submitContact(form) {
   await wait(300);
   if (!form.name.trim() || !form.phone.trim() || !form.message.trim()) {
@@ -87,6 +111,7 @@ async function submitContact(form) {
 }
 
 module.exports = {
+  getAboutTimeline,
   getBrandStory,
   getCategories,
   getFlowerById,
