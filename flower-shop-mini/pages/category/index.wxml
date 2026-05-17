@@ -6,6 +6,12 @@
     empty-text="当前没有可用分类"
     bind:retry="handleRetry"
   >
+    <view class="page-head">
+      <text class="page-eyebrow">作品画廊</text>
+      <text class="page-title-text">{{pageTitleText}}</text>
+      <text class="page-desc-text">{{pageIntroText}}</text>
+    </view>
+
     <category-tabs
       categories="{{categoryList}}"
       active-id="{{activeCategoryId}}"
@@ -16,7 +22,7 @@
       <input
         class="search-input"
         value="{{searchKeyword}}"
-        placeholder="搜索花束、花材或寓意"
+        placeholder="{{searchPlaceholderText}}"
         confirm-type="search"
         bindinput="handleKeywordInput"
         bindconfirm="handleKeywordConfirm"
@@ -46,7 +52,7 @@
       loading="{{false}}"
       error-text=""
       has-data="{{flowerList.length > 0}}"
-      empty-text="没有找到匹配的花束作品"
+      empty-text="{{emptyStateText}}"
     >
       <view class="flower-list">
         <flower-card wx:for="{{flowerList}}" wx:key="id" flower="{{item}}" show-price />

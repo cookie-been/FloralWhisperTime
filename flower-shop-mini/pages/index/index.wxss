@@ -6,6 +6,34 @@
   line-height: 1.7;
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 18rpx;
+}
+
+.stat-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 24rpx;
+}
+
+.stat-value {
+  color: #1f2937;
+  font-size: 34rpx;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.stat-label {
+  color: #6b7280;
+  font-size: 22rpx;
+  line-height: 1.6;
+}
+
 .section-header {
   margin-top: 36rpx;
 }
@@ -66,12 +94,29 @@
   padding: 32rpx;
 }
 
+.story-section-title {
+  display: block;
+  color: #1f2937;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.story-section-intro {
+  display: block;
+  margin-top: 10rpx;
+  color: #6b7280;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
 .story-eyebrow {
   display: block;
   color: #2e7d32;
   font-size: 22rpx;
   font-weight: 600;
   line-height: 1.5;
+  margin-top: 18rpx;
 }
 
 .story-title {

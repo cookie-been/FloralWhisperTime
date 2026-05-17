@@ -1,4 +1,4 @@
-const { getCategories, getFlowers } = require("../../services/api");
+const { getCategories, getFlowers, getSiteConfig } = require("../../services/api");
 const { showErrorMessage } = require("../../utils/message");
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -9,12 +9,18 @@ Page({
     flowerList: [],
     activeCategoryId: "all",
     sortBy: "featured",
+    siteConfig: {},
     sortOptionList: [
       { value: "featured", label: "热门" },
       { value: "latest", label: "最新" },
       { value: "price_asc", label: "价格升序" },
       { value: "price_desc", label: "价格降序" },
     ],
+    pageTitleText: "花束分类",
+    pageIntroText: "按场景、风格和价格快速浏览作品。",
+    searchPlaceholderText: "搜索花束、花材或寓意",
+    emptyStateText: "没有找到匹配的花束作品",
+    loadErrorText: "作品列表加载失败，请稍后重试",
     searchKeyword: "",
     pageNumber: 1,
     pageSize: DEFAULT_PAGE_SIZE,
@@ -53,8 +59,16 @@ Page({
       pageErrorText: "",
     });
     try {
-      const categoryList = await getCategories();
-      this.setData({ categoryList });
+      const [categoryList, siteConfig] = await Promise.all([getCategories(), getSiteConfig()]);
+      this.setData({
+        categoryList,
+        siteConfig,
+        pageTitleText: siteConfig.galleryPageTitle || "花束分类",
+        pageIntroText: siteConfig.galleryPageIntro || "按场景、风格和价格快速浏览作品。",
+        searchPlaceholderText: siteConfig.gallerySearchPlaceholder || "搜索花束、花材或寓意",
+        emptyStateText: siteConfig.galleryEmptyText || "没有找到匹配的花束作品",
+        loadErrorText: siteConfig.galleryLoadErrorText || "作品列表加载失败，请稍后重试",
+      });
       await this.loadFlowerList(true);
     } catch (error) {
       this.setData({
@@ -113,7 +127,7 @@ Page({
       }
       if (reset) {
         this.setData({
-          pageErrorText: error instanceof Error ? error.message : "作品列表加载失败，请稍后重试",
+          pageErrorText: error instanceof Error ? error.message : this.data.loadErrorText,
         });
       } else {
         showErrorMessage(error instanceof Error ? error.message : "加载更多失败");

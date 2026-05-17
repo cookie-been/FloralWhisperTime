@@ -10,6 +10,13 @@
 
     <view class="notice panel">{{noticeText}}</view>
 
+    <view wx:if="{{statCardList.length > 0}}" class="stats-grid">
+      <view wx:for="{{statCardList}}" wx:key="label" class="panel stat-card">
+        <text class="stat-value">{{item.value}}</text>
+        <text class="stat-label">{{item.label}}</text>
+      </view>
+    </view>
+
     <view class="section-header">
       <text class="section-title">花束分类</text>
       <text class="section-subtitle">按场景和风格快速浏览作品</text>
@@ -23,8 +30,8 @@
     </view>
 
     <view class="section-header">
-      <text class="section-title">热门花束</text>
-      <text class="section-subtitle">优先展示门店当前主推和高关注作品</text>
+      <text class="section-title">{{featuredSectionTitleText}}</text>
+      <text class="section-subtitle">{{featuredSectionIntroText}}</text>
     </view>
     <state-section
       loading="{{false}}"
@@ -38,6 +45,8 @@
     </state-section>
 
     <view class="story-card panel" bindtap="goAbout">
+      <text class="story-section-title">{{storySectionTitleText}}</text>
+      <text class="story-section-intro">{{storySectionIntroText}}</text>
       <text class="story-eyebrow">{{storyEyebrowText}}</text>
       <text class="story-title">{{storyTitleText}}</text>
       <text class="story-desc">{{storyDescriptionText}}</text>

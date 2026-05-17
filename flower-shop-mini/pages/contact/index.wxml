@@ -8,14 +8,14 @@
   >
     <view class="page-head">
       <text class="page-eyebrow">联系门店</text>
-      <text class="page-title-text">{{shopNameText}}</text>
+      <text class="page-title-text">{{pageTitleText}}</text>
       <text class="page-desc-text">{{contactDescription}}</text>
     </view>
 
     <shop-map shop="{{shop}}" />
 
     <view class="panel actions">
-      <button class="primary-button action-button" disabled="{{!canCallShop}}" bindtap="callShop">一键拨号</button>
+      <button class="primary-button action-button" disabled="{{!canCallShop}}" bindtap="callShop">{{consultButtonText}}</button>
       <button class="wechat-button action-button" disabled="{{!canCopyWechat}}" bindtap="copyWechat">复制微信号</button>
     </view>
 
@@ -43,7 +43,7 @@
       />
       <text class="form-tip">建议填写场景、预算和期望送达时间，沟通会更快。</text>
       <button class="primary-button submit-button" loading="{{isSubmitting}}" disabled="{{isSubmitting}}" bindtap="handleSubmit">
-        提交留言
+        {{submitButtonText}}
       </button>
     </view>
   </state-section>
