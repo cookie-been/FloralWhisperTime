@@ -99,12 +99,28 @@ Page({
   },
 
   buildBannerList(siteConfig) {
+    const configuredBannerList = (siteConfig.heroSlides || [])
+      .filter(Boolean)
+      .map((image, index) => ({
+        id: `hero-slide-${index}`,
+        image,
+        title: index === 0 ? fallbackText(siteConfig.heroTitle, "花语时光") : "首页轮播",
+        desc:
+          index === 0
+            ? fallbackText(siteConfig.heroDescription, "清新文艺的鲜花展示窗口")
+            : "由后台维护的首页轮播画面。",
+      }));
+
     const primaryBanner = {
       id: "hero",
       image: fallbackText(siteConfig.heroImage, "https://picsum.photos/seed/mini-banner-hero/900/600"),
       title: fallbackText(siteConfig.heroTitle, "花语时光"),
       desc: fallbackText(siteConfig.heroDescription, "清新文艺的鲜花展示窗口"),
     };
+
+    if (configuredBannerList.length) {
+      return configuredBannerList;
+    }
 
     return [
       primaryBanner,

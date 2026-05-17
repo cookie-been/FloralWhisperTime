@@ -74,6 +74,7 @@ export interface SiteConfig {
   heroTitle: string;
   heroDescription: string;
   heroImage: string;
+  heroSlides?: string[];
   primaryCtaText: string;
   secondaryCtaText: string;
   stats: SiteStat[];
@@ -81,6 +82,10 @@ export interface SiteConfig {
   homeStorySectionIntro?: string;
   homeFeaturedSectionTitle?: string;
   homeFeaturedSectionIntro?: string;
+  aboutStorySectionEyebrow?: string;
+  aboutTeamSectionEyebrow?: string;
+  aboutTeamSectionTitle?: string;
+  aboutTeamSectionIntro?: string;
   galleryPageTitle?: string;
   galleryPageIntro?: string;
   gallerySearchPlaceholder?: string;

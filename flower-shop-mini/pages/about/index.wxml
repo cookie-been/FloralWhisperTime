@@ -15,13 +15,13 @@
     <image class="hero" src="{{heroImageUrl}}" mode="aspectFill" />
 
     <view class="panel story-card">
-      <text class="eyebrow">品牌故事</text>
+      <text class="eyebrow">{{storyEyebrowText}}</text>
       <text class="content">{{storyContentText}}</text>
     </view>
 
     <view class="section-header">
-      <text class="section-title">团队成员</text>
-      <text class="section-subtitle">花艺表达背后的主理与设计团队</text>
+      <text class="section-title">{{teamSectionTitleText}}</text>
+      <text class="section-subtitle">{{teamSectionIntroText}}</text>
     </view>
     <state-section
       loading="{{false}}"

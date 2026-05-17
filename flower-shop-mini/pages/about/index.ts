@@ -1,14 +1,19 @@
-import { getBrandStory, getShopInfo, getTeamMembers } from "../../services/api";
-import type { BrandStory, ShopInfo, TeamMember } from "../../types";
+import { getBrandStory, getShopInfo, getSiteConfig, getTeamMembers } from "../../services/api";
+import type { BrandStory, ShopInfo, SiteConfig, TeamMember } from "../../types";
 import { fallbackText, formatBusinessHours } from "../../utils/format";
 
 Page({
   data: {
     story: { images: [] } as Partial<BrandStory>,
     shop: {} as Partial<ShopInfo>,
+    siteConfig: {} as Partial<SiteConfig>,
     teamMemberList: [] as TeamMember[],
     heroImageUrl: "",
     teamAvatarFallback: "https://picsum.photos/seed/mini-team-fallback/300/300",
+    storyEyebrowText: "品牌故事",
+    teamSectionEyebrowText: "团队成员",
+    teamSectionTitleText: "花艺师团队",
+    teamSectionIntroText: "团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。",
     storyTitleText: "花语时光",
     storySubtitleText: "以季节花材与真诚表达，服务赠礼、婚礼与空间花艺场景。",
     storyContentText: "我们坚持使用更适合当季的花材组合，让作品在视觉与情绪上都更耐看。",
@@ -40,9 +45,10 @@ Page({
       pageErrorText: "",
     });
     try {
-      const [story, shop, teamMemberList] = await Promise.all([
+      const [story, shop, siteConfig, teamMemberList] = await Promise.all([
         getBrandStory(),
         getShopInfo(),
+        getSiteConfig(),
         getTeamMembers(),
       ]);
       if (requestId !== this.currentPageRequestId) {
@@ -51,8 +57,16 @@ Page({
       this.setData({
         story,
         shop,
+        siteConfig,
         teamMemberList,
         heroImageUrl: fallbackText(story.images?.[0], "https://picsum.photos/seed/mini-about-hero/900/600"),
+        storyEyebrowText: fallbackText(siteConfig.aboutStorySectionEyebrow, "品牌故事"),
+        teamSectionEyebrowText: fallbackText(siteConfig.aboutTeamSectionEyebrow, "团队成员"),
+        teamSectionTitleText: fallbackText(siteConfig.aboutTeamSectionTitle, "花艺师团队"),
+        teamSectionIntroText: fallbackText(
+          siteConfig.aboutTeamSectionIntro,
+          "团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。",
+        ),
         storyTitleText: fallbackText(story.title, "花语时光"),
         storySubtitleText: fallbackText(story.subtitle, "以季节花材与真诚表达，服务赠礼、婚礼与空间花艺场景。"),
         storyContentText: fallbackText(story.content, "我们坚持使用更适合当季的花材组合，让作品在视觉与情绪上都更耐看。"),
