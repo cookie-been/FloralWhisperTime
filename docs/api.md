@@ -8,22 +8,17 @@
 /api
 ```
 
-开发默认地址：
+本地开发默认地址：
 
 ```text
 http://localhost:3001
 ```
 
-Docker 部署时，浏览器通常直接通过 Web 服务同源访问：
+Docker 部署时，浏览器通常通过 Web 服务同源访问：
 
 ```text
-http://localhost:<实际WEB端口>/api
+http://localhost:<WEB_PORT>/api
 ```
-
-说明：
-
-- 默认通常为 `8080`
-- 如果部署时修改了 `WEB_PORT`，或当前环境存在端口占用，以部署脚本输出的 `Site URL` 为准
 
 ## 2. 认证机制
 
@@ -35,7 +30,7 @@ http://localhost:<实际WEB端口>/api
 POST /api/admin/login
 ```
 
-获得 Bearer Token。
+获取 JWT Bearer Token。
 
 ### 2.2 鉴权头
 
@@ -45,11 +40,21 @@ POST /api/admin/login
 Authorization: Bearer <token>
 ```
 
+### 2.3 首次交付安全约束
+
+登录成功后响应中会返回 `requirePasswordChange`，用于提示是否必须先修改管理员密码。
+
+改密接口：
+
+```http
+POST /api/admin/change-password
+```
+
 ## 3. 通用返回规则
 
 ### 3.1 成功
 
-- 普通查询接口返回 JSON 对象或数组
+- 查询接口返回 JSON 对象或数组
 - 创建接口通常返回 `201 Created`
 - 删除接口通常返回 `204 No Content`
 
@@ -80,19 +85,13 @@ Authorization: Bearer <token>
 
 #### `GET /api/categories`
 
-返回：
+返回数组，字段通常包括：
 
-```json
-[
-  {
-    "id": "wedding",
-    "name": "婚礼花艺",
-    "icon": "Flower2",
-    "description": "婚礼与宴会花艺",
-    "sort": 1
-  }
-]
-```
+- `id`
+- `name`
+- `icon`
+- `description`
+- `sort`
 
 ### 4.3 作品列表
 
@@ -114,7 +113,7 @@ Authorization: Bearer <token>
 - `price_asc`
 - `price_desc`
 
-返回结构：
+返回示例：
 
 ```json
 {
@@ -125,7 +124,7 @@ Authorization: Bearer <token>
 }
 ```
 
-作品对象字段：
+作品对象字段通常包括：
 
 - `id`
 - `name`
@@ -142,7 +141,8 @@ Authorization: Bearer <token>
 
 说明：
 
-- 前端首页、后台总览、作品管理等需要统计全部作品的页面，应按分页聚合全部作品数据，不应只取前 200/500 条
+- 公开列表默认只返回未删除作品
+- 前台与后台汇总统计时，应按分页聚合全部结果，不应只抓取单页
 
 ### 4.4 作品详情
 
@@ -164,44 +164,47 @@ Authorization: Bearer <token>
 
 #### `GET /api/site-config`
 
-返回首页和站点文案配置。
+返回公开站点配置。
 
-核心字段：
+常见字段包括：
 
 - `brandName`
 - `heroEyebrow`
 - `heroTitle`
 - `heroDescription`
 - `heroImage`
+- `brandLogo`
+- `heroSlides`
+- `adminLoginSlides`
+- `contactImages`
 - `primaryCtaText`
 - `secondaryCtaText`
-- `contactIntro`
-- `businessHoursText`
 - `footerDescription`
+- `galleryPageTitle`
+- `gallerySearchPlaceholder`
 
 说明：
 
-- 公开 `GET /api/site-config` 不再返回 AI 配置
-- AI 配置仅允许管理员通过后台专用接口读取和修改
+- 公开站点配置不返回 AI 密钥等敏感配置
 
 ### 4.7 门店信息
 
 #### `GET /api/shop-info`
 
-返回：
+返回字段通常包括：
 
 - 门店名称
 - 电话
 - 微信
 - 地址
 - 经纬度
-- 每周营业时间
+- 营业时间
 
 ### 4.8 品牌故事
 
 #### `GET /api/brand-story`
 
-返回：
+返回字段通常包括：
 
 - `title`
 - `subtitle`
@@ -212,7 +215,7 @@ Authorization: Bearer <token>
 
 #### `GET /api/about-page`
 
-返回：
+返回字段通常包括：
 
 - `heroImage`
 - `heroEyebrow`
@@ -225,18 +228,22 @@ Authorization: Bearer <token>
 
 #### `GET /api/about-timeline`
 
-返回数组，每项包含：
+返回数组，每项通常包括：
 
 - `id`
 - `yearLabel`
 - `content`
 - `sort`
 
+说明：
+
+- 公开接口默认不返回已删除条目
+
 ### 4.11 团队成员
 
 #### `GET /api/team`
 
-返回数组，每项包含：
+返回数组，每项通常包括：
 
 - `id`
 - `name`
@@ -245,11 +252,15 @@ Authorization: Bearer <token>
 - `bio`
 - `sort`
 
+说明：
+
+- 公开接口默认只展示当前有效成员
+
 ### 4.12 提交留言
 
 #### `POST /api/contact`
 
-请求体：
+请求体示例：
 
 ```json
 {
@@ -278,10 +289,11 @@ Authorization: Bearer <token>
 
 说明：
 
-- 当前控制器中接口路径是公开的
-- 实际部署中后台页面按管理员流程使用该接口
+- 控制器路径位于公开路由下
+- 但实际写权限受 Spring Security 保护，当前要求管理员登录
+- 单文件大小上限为 `20MB`
 
-成功返回：
+成功返回示例：
 
 ```json
 {
@@ -291,11 +303,11 @@ Authorization: Bearer <token>
 
 ## 5. 管理员接口
 
-## 5.1 登录
+### 5.1 登录
 
 #### `POST /api/admin/login`
 
-请求体：
+请求体示例：
 
 ```json
 {
@@ -304,108 +316,151 @@ Authorization: Bearer <token>
 }
 ```
 
-返回：
+返回示例：
 
 ```json
 {
   "token": "xxxxx",
-  "username": "admin"
+  "username": "admin",
+  "requirePasswordChange": true
 }
 ```
 
-## 5.2 当前管理员
+### 5.2 当前管理员
 
 #### `GET /api/admin/me`
 
-返回：
+返回示例：
 
 ```json
 {
-  "username": "admin"
+  "username": "admin",
+  "requirePasswordChange": false,
+  "passwordChangedAt": "2026-05-17 10:30:22"
 }
 ```
 
-## 5.3 系统状态
+### 5.3 修改管理员密码
+
+#### `POST /api/admin/change-password`
+
+请求体示例：
+
+```json
+{
+  "currentPassword": "Floral@2026",
+  "newPassword": "Floral@2026#New"
+}
+```
+
+返回示例：
+
+```json
+{
+  "username": "admin",
+  "requirePasswordChange": false,
+  "changedAt": "2026-05-17 10:35:10"
+}
+```
+
+### 5.4 系统状态
 
 #### `GET /api/admin/system/status`
 
 说明：
 
 - 仅管理员可访问
-- 返回当前运行实例的只读状态信息
-- 适用于部署验收、运维巡检和售后排障
+- 用于部署验收、巡检、排障和售后支持
 
-返回示例：
+返回字段通常包括：
 
-```json
-{
-  "service": "flower-shop-backend-java",
-  "version": "1.0.0",
-  "databaseConnected": true,
-  "databaseVersion": "8.0.36",
-  "databaseSize": "128.50 MB",
-  "diskTotal": "500.00 GB",
-  "diskUsable": "320.00 GB",
-  "diskUsageRate": "36.00%",
-  "uploadDirectoryReady": true,
-  "uploadDirectoryPath": "/app/uploads",
-  "uploadFileCount": 7,
-  "uploadDirectorySize": "245.60 MB",
-  "uptimeLabel": "3小时12分钟",
-  "aiEnabled": true,
-  "aiKeyConfigured": true,
-  "aiProvider": "volcengine",
-  "aiImageModel": "doubao-seedream-5-0-260128",
-  "aiTextModel": "doubao-1-5-pro-32k-250115",
-  "latestBackupName": "20260515-002808",
-  "latestBackupPath": "/app/backups/20260515-002808",
-  "latestBackupModifiedAt": "2026-05-15 08:28:08",
-  "latestBackupDownloadUrl": "/api/admin/system/backups/latest/download",
-  "latestBackupPresent": true
-}
+- `service`
+- `version`
+- `databaseConnected`
+- `databaseVersion`
+- `databaseSize`
+- `diskTotal`
+- `diskUsable`
+- `diskUsageRate`
+- `uploadDirectoryReady`
+- `uploadDirectoryPath`
+- `uploadFileCount`
+- `uploadDirectorySize`
+- `uptimeLabel`
+- `aiEnabled`
+- `aiKeyConfigured`
+- `aiProvider`
+- `aiImageModel`
+- `aiTextModel`
+- `latestBackupName`
+- `latestBackupPath`
+- `latestBackupModifiedAt`
+- `latestBackupDownloadUrl`
+- `latestBackupPresent`
+- `requirePasswordChange`
+- `deliveryInitialized`
+- `security`
+- `protection`
+
+### 5.5 运维任务列表
+
+#### `GET /api/admin/system/ops-tasks`
+
+返回最近后台触发的备份、巡检等任务记录。
+
+### 5.6 备份列表
+
+#### `GET /api/admin/system/backups`
+
+返回当前备份目录列表。
+
+### 5.7 创建备份任务
+
+#### `POST /api/admin/system/ops-tasks/backup`
+
+返回新建的备份任务对象。
+
+### 5.8 创建巡检任务
+
+#### `POST /api/admin/system/ops-tasks/inspection`
+
+返回新建的巡检任务对象。
+
+### 5.9 下载最近备份
+
+#### `GET /api/admin/system/backups/latest/download`
+
+响应类型：
+
+```text
+application/gzip
 ```
 
-字段说明：
+### 5.10 下载指定备份
 
-- `service`：服务底层标识，前端系统状态页会转成可读服务名称展示
-- `version`：当前部署版本
-- `databaseConnected`：数据库探测结果
-- `databaseVersion`：当前数据库版本
-- `databaseSize`：当前业务库估算容量
-- `diskTotal`：当前挂载磁盘总容量
-- `diskUsable`：当前挂载磁盘可用容量
-- `diskUsageRate`：当前挂载磁盘已用比例
-- `uploadDirectoryReady`：上传目录是否存在且可写
-- `uploadDirectoryPath`：上传目录绝对路径
-- `uploadFileCount`：上传目录文件总数
-- `uploadDirectorySize`：上传目录累计容量
-- `uptimeLabel`：当前服务运行时长
-- `aiEnabled`：AI 图片能力是否启用
-- `aiKeyConfigured`：AI 密钥是否已配置
-- `aiProvider`：AI 提供商
-- `aiImageModel`：图片模型
-- `aiTextModel`：文本建议模型
-- `latestBackupName`：最近备份目录名
-- `latestBackupPath`：最近备份目录绝对路径
-- `latestBackupModifiedAt`：最近备份目录最后更新时间
-- `latestBackupDownloadUrl`：最近备份下载接口地址
-- `latestBackupPresent`：是否发现备份目录
-## 5.4 配置导出
+#### `GET /api/admin/system/backups/{backupName}/download`
+
+响应类型：
+
+```text
+application/gzip
+```
+
+### 5.11 配置导出
 
 #### `GET /api/admin/system/config-export`
 
 说明：
 
-- 仅管理员可访问
-- 下载当前动态配置导出包，格式为 JSON 文件
-- 适用于交付迁移、测试环境回填、售后恢复前留档
+- 导出当前动态配置 JSON
+- 适用于交付、迁移和售后恢复前留档
 
 导出范围包括：
 
 - 站点配置
 - 门店信息与营业时间
 - 品牌故事
-- About 页首图/标题/副标题/正文
+- About 页面
 - About 时间轴
 - 团队成员
 - AI 配置
@@ -416,7 +471,7 @@ Authorization: Bearer <token>
 - 用户留言
 - 操作日志
 
-## 5.5 配置导入
+### 5.12 配置导入
 
 #### `POST /api/admin/system/config-import`
 
@@ -425,60 +480,87 @@ Authorization: Bearer <token>
 - `multipart/form-data`
 - 字段名：`file`
 
-返回示例：
-
-```json
-{
-  "version": "1.0.0",
-  "importedAt": "2026-05-15 16:20:30",
-  "timelineCount": 3,
-  "teamCount": 2,
-  "includedAiSettings": true
-}
-```
-
 说明：
 
-- 会覆盖当前动态配置内容
-- 不会修改作品、留言和操作日志数据
-- 正式环境建议导入前先下载最近备份，再执行导入
+- 会覆盖当前动态配置
+- 不修改作品、留言和操作日志数据
+- 受高成本接口并发隔离保护
 
-## 5.6 后台站点配置
+### 5.13 操作日志归档
 
-#### `GET /api/admin/site-config`
+#### `POST /api/admin/system/operation-logs/archive`
 
-管理员读取完整站点配置，用于维护首页首屏、门店信息、品牌故事、关于我们和后台展示文案等动态内容。
+查询参数：
 
-#### `GET /api/admin/system/backups/latest/download`
+- `before`，ISO 时间格式
 
-说明：
+### 5.14 操作日志归档文件列表
 
-- 仅管理员可访问
-- 动态将最近一份备份目录打包为 `tar.gz` 并直接下载
-- 无需先在服务器额外生成临时归档文件
+#### `GET /api/admin/system/operation-logs/archive-files`
 
-成功响应头示例：
+返回已归档的日志文件列表。
+
+### 5.15 下载操作日志归档
+
+#### `GET /api/admin/system/operation-logs/archive-files/{filename}/download`
+
+响应类型：
 
 ```text
-Content-Type: application/gzip
-Content-Disposition: attachment; filename="latest-backup.tar.gz"
+text/csv;charset=UTF-8
 ```
 
-## 5.4 AI 配置
+### 5.16 AI 配置读取
 
 #### `GET /api/admin/system/ai-settings`
 
-返回脱敏后的 AI 配置：
+返回脱敏后的 AI 配置。
 
-- `apiKey` 不会返回
-- 使用 `apiKeyConfigured` 表示是否已配置
-- 使用 `apiKeyMasked` 展示脱敏摘要
+常见字段包括：
+
+- `enabled`
+- `provider`
+- `apiKeyConfigured`
+- `apiKeyMasked`
+- `model`
+- `baseUrl`
+- `generatePath`
+- `size`
+- `textModel`
+- `textGeneratePath`
+- `textTemperature`
+- `textMaxTokens`
+
+### 5.17 AI 配置更新
 
 #### `PUT /api/admin/system/ai-settings`
 
-更新后台 AI 配置。空字符串不会覆盖已有密钥。
+请求体可包含：
 
-## 5.5 用户留言列表
+- `enabled`
+- `provider`
+- `apiKey`
+- `model`
+- `baseUrl`
+- `generatePath`
+- `size`
+- `textModel`
+- `textGeneratePath`
+- `textTemperature`
+- `textMaxTokens`
+
+说明：
+
+- `apiKey` 留空时不覆盖原有密钥
+- 返回值仍为脱敏配置
+
+### 5.18 读取后台完整站点配置
+
+#### `GET /api/admin/site-config`
+
+返回后台维护所需的完整站点配置。
+
+### 5.19 留言列表
 
 #### `GET /api/admin/contacts`
 
@@ -488,62 +570,237 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
 - `limit`
 - `keyword`
 - `status`
+- `deleted`
 
-其中 `status` 支持：
+其中：
 
-- `all`
-- `read`
-- `unread`
+- `status` 支持 `all` / `read` / `unread`
+- `deleted` 支持 `active` / `deleted` / `all`
 
-返回：
-
-```json
-{
-  "list": [],
-  "total": 10,
-  "page": 1,
-  "limit": 10
-}
-```
-
-说明：
-
-- 后台列表页默认展示面向运营的访客信息和提交时间
-- 记录标识仍保留在详情页中，便于后台追踪
-
-## 5.6 标记留言已读
+### 5.20 标记留言已读
 
 #### `PATCH /api/admin/contacts/{id}/read`
 
 返回更新后的留言对象。
 
-## 5.7 AI 生成作品图
+### 5.21 删除留言
+
+#### `DELETE /api/admin/contacts/{id}`
+
+当前为逻辑删除，成功返回：
+
+```http
+204 No Content
+```
+
+### 5.22 恢复留言
+
+#### `POST /api/admin/contacts/{id}/restore`
+
+返回恢复后的留言对象。
+
+### 5.23 后台作品列表
+
+#### `GET /api/admin/flowers`
+
+查询参数：
+
+- `categoryId`
+- `tag`
+- `keyword`
+- `sortBy`
+- `page`
+- `limit`
+- `deleted`
+
+其中 `deleted` 支持：
+
+- `active`
+- `deleted`
+- `all`
+
+返回中的作品对象包含：
+
+- 常规作品字段
+- `deleted`
+
+### 5.24 恢复作品
+
+#### `POST /api/admin/flowers/{id}/restore`
+
+返回恢复后的作品对象。
+
+### 5.25 操作日志列表
+
+#### `GET /api/admin/operation-logs`
+
+查询参数：
+
+- `page`
+- `limit`
+- `module`
+- `action`
+- `operatorName`
+- `success`
+- `keyword`
+- `restorable`
+- `createdFrom`
+- `createdTo`
+
+### 5.26 导出操作日志
+
+#### `GET /api/admin/operation-logs/export`
+
+响应类型：
+
+```text
+text/csv;charset=UTF-8
+```
+
+### 5.27 操作日志详情
+
+#### `GET /api/admin/operation-logs/{id}`
+
+返回字段通常包括：
+
+- 基础日志字段
+- 请求摘要
+- 前后快照
+- 恢复来源链路
+- 字段差异
+
+### 5.28 按日志恢复
+
+#### `POST /api/admin/operation-logs/{id}/restore`
+
+请求体示例：
+
+```json
+{
+  "reason": "恢复误操作"
+}
+```
+
+### 5.29 读取关于我们页配置
+
+#### `GET /api/admin/about-page`
+
+返回后台可编辑的 About 页面内容。
+
+### 5.30 更新关于我们页配置
+
+#### `PUT /api/admin/about-page`
+
+请求体可包含：
+
+- `heroImage`
+- `heroEyebrow`
+- `heroTitle`
+- `heroSubtitle`
+- `storyTitle`
+- `storyContent`
+
+### 5.31 获取时间轴
+
+#### `GET /api/admin/about-timeline`
+
+查询参数：
+
+- `deleted`
+
+支持：
+
+- `active`
+- `deleted`
+- `all`
+
+返回条目包含：
+
+- `id`
+- `yearLabel`
+- `content`
+- `sort`
+- `deleted`
+
+### 5.32 新增时间轴条目
+
+#### `POST /api/admin/about-timeline`
+
+### 5.33 更新时间轴条目
+
+#### `PUT /api/admin/about-timeline/{id}`
+
+### 5.34 删除时间轴条目
+
+#### `DELETE /api/admin/about-timeline/{id}`
+
+当前为逻辑删除。
+
+### 5.35 恢复时间轴条目
+
+#### `POST /api/admin/about-timeline/{id}/restore`
+
+### 5.36 获取团队成员
+
+#### `GET /api/admin/team`
+
+查询参数：
+
+- `deleted`
+
+支持：
+
+- `active`
+- `deleted`
+- `all`
+
+### 5.37 新增团队成员
+
+#### `POST /api/admin/team`
+
+### 5.38 更新团队成员
+
+#### `PUT /api/admin/team/{id}`
+
+### 5.39 删除团队成员
+
+#### `DELETE /api/admin/team/{id}`
+
+当前为逻辑删除。
+
+### 5.40 恢复团队成员
+
+#### `POST /api/admin/team/{id}/restore`
+
+## 6. AI 接口
+
+### 6.1 AI 生图
 
 #### `POST /api/admin/ai/images/generate`
 
-请求类型：
+请求方式：
 
 - `multipart/form-data`
 
 请求字段：
 
-- `prompt`: string，必填
-- `referenceFiles`: file[]，可选，最多 3 张
+- `prompt`：必填
+- `referenceFiles`：可选，多文件
 
 约束：
 
-- prompt 不能为空
-- 参考图最多 3 张
+- 每次生成 1 张图
+- 最多 3 张参考图
 - 单张参考图最大 20MB
 - 仅支持图片文件
 
-成功返回：
+成功返回示例：
 
 ```json
 {
   "success": true,
   "imageUrl": "/uploads/ai/ai-1747220000000-xxxx.png",
-  "source": "Doubao-Seedream-5.0-lite",
+  "source": "doubao-seedream-5-0-260128",
   "mode": "text_to_image"
 }
 ```
@@ -554,16 +811,21 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
 {
   "success": true,
   "imageUrl": "/uploads/ai/ai-1747220000000-xxxx.png",
-  "source": "Doubao-Seedream-5.0-lite",
+  "source": "doubao-seedream-5-0-260128",
   "mode": "image_to_image"
 }
 ```
 
-## 5.6 AI 作品信息建议
+说明：
+
+- 服务端会将第三方返回的图片下载到本地 `uploads/ai/`
+- 接口受高成本并发隔离保护
+
+### 6.2 AI 作品信息建议
 
 #### `POST /api/admin/ai/flowers/suggestions`
 
-请求体：
+请求体示例：
 
 ```json
 {
@@ -573,7 +835,7 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
 }
 ```
 
-成功返回：
+返回示例：
 
 ```json
 {
@@ -588,14 +850,20 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
 
 说明：
 
-- `prompt` 必填
-- 该接口只返回建议内容，不会自动创建作品
-- 返回的 `categoryId` 会被服务端限制在现有分类内
-- 建议失败时不影响继续使用图片
+- 该接口只返回建议内容
+- 不会自动创建作品
+- `categoryId` 会被限制在系统现有分类内
 
-## 5.7 创建作品
+## 7. 作品写接口
+
+### 7.1 创建作品
 
 #### `POST /api/flowers`
+
+说明：
+
+- 路径位于公开资源控制器中
+- 实际写权限要求管理员身份
 
 请求体示例：
 
@@ -604,7 +872,7 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
   "id": "wedding-001",
   "name": "白绿婚礼手捧",
   "categoryId": "wedding",
-  "images": ["/catalog/wedding/wedding-001-a.svg"],
+  "images": ["/uploads/demo.jpg"],
   "price": 599,
   "description": "适合轻仪式感婚礼场景",
   "materials": ["白玫瑰", "尤加利"],
@@ -616,234 +884,29 @@ Content-Disposition: attachment; filename="latest-backup.tar.gz"
 }
 ```
 
-说明：
-
-- `name` 必填
-- `categoryId` 必填
-- `id` 可传，也可由服务端生成
-
-## 5.8 更新作品
+### 7.2 更新作品
 
 #### `PUT /api/flowers/{id}`
 
-请求体与创建作品相同。
+请求体结构与创建一致。
 
-## 5.9 删除作品
+### 7.3 删除作品
 
 #### `DELETE /api/flowers/{id}`
 
-成功返回：
-
-```http
-204 No Content
-```
-
-## 5.10 获取后台 AI 配置
-
-#### `GET /api/admin/system/ai-settings`
-
-需要管理员 Bearer Token。
-
-成功返回：
-
-```json
-{
-  "enabled": true,
-  "provider": "volcengine",
-  "apiKeyConfigured": true,
-  "apiKeyMasked": "3798ed26-****-****-****-f183",
-  "model": "doubao-seedream-5-0-260128",
-  "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
-  "generatePath": "/images/generations",
-  "size": "1920x1920",
-  "textModel": "doubao-1-5-pro-32k-250115",
-  "textGeneratePath": "/chat/completions",
-  "textTemperature": 0.4,
-  "textMaxTokens": 1200
-}
-```
-
 说明：
 
-- 不返回明文 `apiKey`
-- `apiKeyConfigured` 表示当前是否已配置密钥
-- `apiKeyMasked` 为脱敏展示值
+- 当前删除行为为逻辑删除
 
-## 5.11 更新后台 AI 配置
+## 8. 配置写接口
 
-#### `PUT /api/admin/system/ai-settings`
-
-需要管理员 Bearer Token。
-
-请求体示例：
-
-```json
-{
-  "enabled": true,
-  "provider": "volcengine",
-  "apiKey": "new-secret-key",
-  "model": "doubao-seedream-5-0-260128",
-  "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
-  "generatePath": "/images/generations",
-  "size": "1920x1920",
-  "textModel": "doubao-1-5-pro-32k-250115",
-  "textGeneratePath": "/chat/completions",
-  "textTemperature": 0.4,
-  "textMaxTokens": 1200
-}
-```
-
-说明：
-
-- `apiKey` 留空或不传时，不会覆盖旧密钥
-- 成功响应返回脱敏后的 AI 配置
-
-## 5.12 更新站点配置
+### 8.1 更新站点配置
 
 #### `PUT /api/site-config`
 
-这个接口用于统一更新首页、门店和品牌故事相关内容。
+说明：
 
-核心可写字段：
+- 路径位于站点控制器
+- 实际写权限要求管理员身份
 
-- `brandName`
-- `heroEyebrow`
-- `heroTitle`
-- `heroDescription`
-- `heroImage`
-- `primaryCtaText`
-- `secondaryCtaText`
-- `contactIntro`
-- `businessHoursText`
-- `footerDescription`
-- `phone`
-- `wechat`
-- `address`
-- `latitude`
-- `longitude`
-- `storyTitle`
-- `storySubtitle`
-- `storyContent`
-- `storyImages`
-
-## 5.13 获取关于我们页配置
-
-#### `GET /api/admin/about-page`
-
-返回关于我们页可编辑内容。
-
-## 5.14 更新关于我们页配置
-
-#### `PUT /api/admin/about-page`
-
-请求体：
-
-```json
-{
-  "heroImage": "/uploads/about-hero.jpg",
-  "heroEyebrow": "About Floral Whisper",
-  "heroTitle": "关于我们",
-  "heroSubtitle": "用花表达空间与情绪",
-  "storyTitle": "品牌故事",
-  "storyContent": "......"
-}
-```
-
-## 5.15 获取关于我们时间轴
-
-#### `GET /api/admin/about-timeline`
-
-返回时间轴数组。
-
-## 5.16 新增时间轴条目
-
-#### `POST /api/admin/about-timeline`
-
-请求体：
-
-```json
-{
-  "id": "timeline-2024",
-  "yearLabel": "2024",
-  "content": "完成品牌空间升级",
-  "sort": 10
-}
-```
-
-## 5.17 更新时间轴条目
-
-#### `PUT /api/admin/about-timeline/{id}`
-
-请求体与新增相同。
-
-## 5.18 删除时间轴条目
-
-#### `DELETE /api/admin/about-timeline/{id}`
-
-成功返回：
-
-```http
-204 No Content
-```
-
-## 5.16 获取团队成员
-
-#### `GET /api/admin/team`
-
-返回团队成员数组。
-
-## 5.17 新增团队成员
-
-#### `POST /api/admin/team`
-
-请求体：
-
-```json
-{
-  "id": "team-001",
-  "name": "林青",
-  "title": "主理花艺师",
-  "avatar": "/uploads/team-001.jpg",
-  "bio": "负责婚礼与品牌空间花艺",
-  "sort": 10
-}
-```
-
-## 5.18 更新团队成员
-
-#### `PUT /api/admin/team/{id}`
-
-请求体与新增相同。
-
-## 5.19 删除团队成员
-
-#### `DELETE /api/admin/team/{id}`
-
-成功返回：
-
-```http
-204 No Content
-```
-
-## 6. 状态码约定
-
-常见状态码：
-
-- `200 OK`：查询或更新成功
-- `201 Created`：创建成功
-- `204 No Content`：删除成功
-- `400 Bad Request`：参数错误
-- `401 Unauthorized`：未登录或 token 无效
-- `403 Forbidden`：无权限
-- `404 Not Found`：资源不存在
-- `500 Internal Server Error`：服务端异常
-
-## 7. 调试方式
-
-开发环境可直接访问 Swagger：
-
-```text
-http://localhost:3001/swagger-ui.html
-```
-
-部署环境下，如容器未对后端单独暴露端口，通常通过 Web 统一入口访问业务接口。
+可写字段覆盖首页、门店、品牌故事、About、后台文案和媒体资源相关内容。

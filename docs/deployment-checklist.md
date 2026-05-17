@@ -6,6 +6,7 @@
 
 - 已从 `.env.production.example` 生成正式 `.env`
 - `MYSQL_PASSWORD`、`MYSQL_ROOT_PASSWORD`、`ADMIN_PASSWORD`、`ADMIN_AUTH_SECRET` 已替换为正式强密码
+- `APP_DATA_ENCRYPTION_KEY` 已替换为正式随机值
 - `CORS_ALLOWED_ORIGIN_PATTERNS` 已替换为正式域名
 - `WEB_PORT` 与服务器端口规划一致
 - `BACKUP_DIR` 与服务器持久化目录规划一致
@@ -45,6 +46,7 @@
 - 首页可访问
 - `/api/health` 返回成功
 - 管理后台可登录
+- 首次登录改密流程正常
 - 后台 `/admin/system` 页面可正常加载
 - 当前访问端口与脚本输出的 `Site URL` 一致
 
@@ -62,7 +64,9 @@
 
 - 后台上传图片成功
 - 作品新增/编辑成功
+- 作品逻辑删除与恢复正常
 - 留言查看正常
+- 留言逻辑删除与恢复正常
 - 如启用 AI：
   - 生图可调用
   - 作品信息建议可调用
@@ -98,4 +102,5 @@
 - 首次上线当天执行一次完整备份
 - 每次升级前执行 `./backup.sh`
 - 每次升级后打开 `/admin/system` 做人工复核
+- 每次重大配置调整后导出一份配置包留档
 - 业务高峰期关注保护状态面板，必要时再调高阈值或增加实例

@@ -2,13 +2,14 @@
 
 ## 1. 系统概览
 
-花语时光是一个以品牌展示、作品展示、内容运营和线索收集为主的鲜花店展示系统，包含三端能力：
+花语时光是一个以品牌展示、作品展示、内容运营和线索收集为主的鲜花店展示系统，包含：
 
 - PC Web 前台
 - PC Web 管理后台
 - 微信小程序前台
+- Java + MySQL 后端
 
-当前默认后端主线为 Java + MySQL，默认部署方式为 Docker 三层架构。
+默认交付形态为 Docker 三层结构，适合单机部署、标准化交付和后续平滑扩展。
 
 ## 2. 总体架构
 
@@ -19,7 +20,7 @@ Browser / WeChat Mini Program
           |
           v
    flower-shop-web (Nginx)
-      - 静态资源
+      - 静态站点
       - /api 反向代理
       - /uploads 反向代理
           |
@@ -31,31 +32,32 @@ Browser / WeChat Mini Program
         MySQL 8
 ```
 
-其中：
+说明：
 
-- Web 容器对外暴露 `WEB_PORT`
-- Java 后端容器仅在 Compose 网络内暴露 `3001`
-- MySQL 仅在 Compose 网络内提供 `3306`
+- `web` 对外暴露访问端口
+- `backend` 默认仅在 Compose 网络内暴露 `3001`
+- `mysql` 默认仅在 Compose 网络内暴露 `3306`
 
 ## 3. 技术栈
 
-### 3.1 前端 Web
+### 3.1 Web 前端
 
 - React 19
 - TypeScript
 - Vite 7
 - Tailwind CSS 3
-- Ant Design 6
+- Ant Design
 - React Router
 
 ### 3.2 后端
 
 - Spring Boot 3
+- Spring Security
+- JWT
 - MyBatis-Plus
 - Flyway
 - MySQL 8
-- Spring Security
-- JWT Bearer Token
+- Caffeine
 
 ### 3.3 小程序
 
@@ -70,17 +72,27 @@ Browser / WeChat Mini Program
 /workspace/FloralWhisperTime
 ├── docker-compose.yml
 ├── deploy.sh
+├── backup.sh
+├── upgrade.sh
+├── rollback.sh
+├── restore.sh
+├── ops/
 ├── docs/
+├── logo/
 ├── shared/
 ├── flower-shop-web/
 ├── flower-shop-backend-java/
 └── flower-shop-mini/
 ```
 
-说明：
+目录职责：
 
-- `flower-shop-backend-java/` 是当前默认后端主线
-- `flower-shop-mini/` 保留为独立小程序端，使用本地 `shared/` 副本
+- `flower-shop-web/`：PC Web 前台与管理后台
+- `flower-shop-backend-java/`：主线业务后端
+- `flower-shop-mini/`：微信小程序
+- `ops/`：部署、发布、升级、回滚、巡检脚本
+- `docs/`：正式交付与运维文档
+- `logo/`：品牌 Logo 原始素材
 
 ## 5. Web 架构
 
@@ -88,45 +100,47 @@ Browser / WeChat Mini Program
 
 公开路由：
 
-- `/` 首页
-- `/gallery` 作品画廊
-- `/gallery/:id` 作品详情
-- `/about` 关于我们
-- `/contact` 联系我们
+- `/`
+- `/gallery`
+- `/gallery/:id`
+- `/about`
+- `/contact`
 
 后台路由：
 
-- `/admin/login` 管理员登录
-- `/admin` 运营总览
-- `/admin/flowers` 作品管理
-- `/admin/settings` 站点配置
-- `/admin/ai-settings` AI 生图配置
-- `/admin/contacts` 用户留言
-- `/admin/system` 运维中心
-- `/admin/operation-logs` 操作日志
+- `/admin/login`
+- `/admin`
+- `/admin/flowers`
+- `/admin/settings`
+- `/admin/ai-settings`
+- `/admin/contacts`
+- `/admin/system`
+- `/admin/operation-logs`
 
-### 5.2 主要模块
+### 5.2 后台结构
 
-- `Layout`：前台统一导航与页脚
-- `ProtectedAdminRoute`：后台鉴权路由守卫
-- `AdminShell`：后台整体框架与导航
-- `services/api.ts`：统一 API 请求封装
+后台由 `AdminShell` 承载，当前核心特点包括：
 
-补充：
+- 左侧一级导航
+- 顶部已打开页面导航切换
+- 页面级标题、副标题、说明文案动态配置
+- 小屏适配抽屉导航
 
-- `services/api.ts` 提供 `listAllFlowers()`，用于按分页拉取全部作品，保证首页统计、后台总览和作品管理在大数据量下仍能保持真实口径
+其中：
 
-### 5.3 数据访问方式
+- `站点配置` 采用 Tabs 维护站点动态内容
+- `运维中心` 采用 Tabs 维护巡检、备份、安全、归档和迁移能力
 
-Web 通过 `src/services/api.ts` 发起请求：
+### 5.3 Web 数据访问
 
-- 本地开发：默认请求 `http://localhost:3001`
-- Docker 部署：默认通过同源 `/api`
+Web 统一通过 `flower-shop-web/src/services/api.ts` 调用后端接口。
 
-后台鉴权采用：
+策略包括：
 
-- `Authorization: Bearer <token>`
-- token 保存在浏览器 `localStorage`
+- 公共内容走公开 API
+- 后台写操作走受保护接口
+- 少量公开只读数据做短时缓存
+- 后台写操作后自动失效相关缓存
 
 ## 6. 后端架构
 
@@ -134,169 +148,245 @@ Web 通过 `src/services/api.ts` 发起请求：
 
 后端采用典型分层：
 
-- `controller/`：REST API 控制器
+- `controller/`：REST API
 - `service/`：业务逻辑
 - `mapper/`：数据库访问
-- `entity/`：数据库实体
-- `dto/`：请求/响应对象
-- `security/`：JWT 和鉴权逻辑
-- `storage/`：上传文件存储
-- `migration/`：旧 JSON 数据导入
+- `entity/`：实体模型
+- `dto/`：请求与响应模型
+- `config/`：配置与安全
+- `security/`：JWT 与鉴权过滤器
+- `service/ai/`：AI 相关能力
 
 ### 6.2 控制器职责
 
 - `SiteController`
-  - 公开站点信息
-  - 联系表单
-  - 上传接口
+  - 公开站点内容
+  - 公开门店信息
+  - 关于我们
+  - 留言提交
+  - 图片上传
 - `FlowerController`
-  - 作品列表、详情、相关推荐
-  - 后台作品 CRUD
+  - 作品公开列表与详情
+  - 后台作品创建、修改、删除
 - `AdminController`
-  - 管理员登录和身份校验
-  - 用户留言管理
-  - 运维中心、手动备份、巡检与备份下载
-  - AI 配置管理
-  - 操作日志查询与恢复
-  - 关于我们页管理
-  - 时间轴管理
-  - 团队成员管理
+  - 管理员登录与改密
+  - 系统状态
+  - 备份、巡检、配置导入导出
+  - 站点配置、About、时间轴、团队
+  - 留言管理
+  - 操作日志与恢复
+- `AdminAiController`
+  - AI 生图
+  - AI 作品信息建议
 
 ### 6.3 数据持久化
 
-- Flyway 负责建表和迁移
-- MyBatis-Plus 负责实体映射
-- 上传图片文件保存在 `flower-shop-backend-java/uploads/`
-- 运行时通过 Docker bind mount 持久化到宿主目录
+数据持久化方式：
 
-### 6.4 基础并发保护
+- 业务数据：MySQL
+- 数据结构演进：Flyway
+- 上传文件：`uploads/`
+- AI 生成图片：`uploads/ai/`
+- 日志归档：操作日志归档目录
 
-当前单机单实例部署已经补齐三层基础保护：
+### 6.4 逻辑删除策略
 
-- 路由分级限流
-  - 公开读取
-  - 公开写入
-  - 管理后台
-  - 高成本接口
-- 高成本接口并发隔离
-  - AI 生图 / AI 文案建议
-  - 图片上传
-  - 配置导入
-- 公开只读热点缓存
-  - 站点配置
-  - 门店信息
-  - 品牌故事
-  - 关于页 / 时间轴 / 团队
-  - 分类列表
+以下模块已改为逻辑删除：
+
+- `flowers`
+- `contacts`
+- `about_timeline_entries`
+- `team_members`
 
 实现方式：
 
-- Spring MVC Interceptor + Bucket4j：入口限流
-- Semaphore：重接口并发隔离
-- Caffeine：单机本地只读缓存
+- 增加 `deleted` 字段
+- 后台列表支持 `active / deleted / all` 筛选
+- 提供恢复接口
 
-该方案的目标是先解决短时间突发流量导致线程、数据库连接和 AI 重任务堆积的问题，同时为后续 Redis、网关限流和多实例横向扩容保留清晰边界。
+这样做可以兼顾：
 
-### 6.5 运行态可观测性
+- 降低误删风险
+- 配合操作日志恢复
+- 满足商业交付后的运营追溯需求
 
-后台 `/admin/system` 系统状态页已经增加并发保护摘要，当前可直接查看：
+### 6.5 审计与恢复
 
-- 基础限流是否启用
-- 四组路由限流阈值
-- 三组重接口并发阈值
+系统已内置操作日志能力：
+
+- 记录后台写操作
+- 记录登录与改密等关键安全动作
+- 保留请求摘要
+- 保留前后快照
+- 支持按日志恢复
+- 记录恢复来源链路
+
+这部分是交付后“可追溯、可恢复”的核心能力之一。
+
+## 7. 认证与安全
+
+### 7.1 认证机制
+
+后台当前采用：
+
+- Spring Security
+- JWT Bearer Token
+
+权限要点：
+
+- `/api/admin/**` 受管理员权限保护
+- `/api/admin/ai/**` 受管理员权限保护
+- `POST /api/flowers`
+- `PUT /api/flowers/**`
+- `DELETE /api/flowers/**`
+- `POST /api/uploads`
+- `PUT /api/site-config`
+
+以上写接口均要求管理员身份。
+
+### 7.2 密码与密钥
+
+当前安全基线包括：
+
+- 管理员默认账号来自环境变量
+- 首次登录强制修改密码
+- 修改后的管理员密码使用 BCrypt 存储
+- JWT 密钥来自 `ADMIN_AUTH_SECRET`
+- 数据加密密钥来自 `APP_DATA_ENCRYPTION_KEY`
+- AI Key 以脱敏形式在后台展示
+
+### 7.3 安全响应头与 CORS
+
+后端已配置：
+
+- CORS 白名单
+- `Referrer-Policy`
+- `X-Permitted-Cross-Domain-Policies`
+- JWT 失效统一 JSON 错误响应
+
+## 8. 稳定性保护
+
+### 8.1 路由分级限流
+
+当前系统内置 4 组基础限流：
+
+- 公开读取
+- 公开写入
+- 管理后台
+- 高成本接口
+
+### 8.2 并发隔离
+
+以下高成本接口已做并发隔离：
+
+- AI 生图 / AI 文案建议
+- 图片上传
+- 配置导入
+
+### 8.3 公开只读缓存
+
+当前缓存对象主要包括：
+
+- 站点配置
+- 门店信息
+- 品牌故事
+- About 内容
+- 分类列表
+
+### 8.4 运行态可观测性
+
+运维中心可直接查看：
+
+- 限流阈值
+- 并发阈值
 - 已触发限流次数
 - 已触发繁忙拒绝次数
+- AI 配置状态
+- 当前安全风险摘要
 
-这部分用于部署后巡检、容量预估和后续商业化售后排障。
+## 9. 文件上传与媒体资源
 
-## 7. 数据模型
+### 9.1 上传能力
 
-核心业务对象：
+- 上传接口：`POST /api/uploads`
+- 单文件大小限制：20MB
+- 请求体总限制：64MB
 
-- `Category`：作品分类
-- `Flower`：作品
-- `FlowerImage` / `FlowerMaterial` / `FlowerTag`：作品子表
-- `SiteConfig`：首页与站点文案
-- `ShopInfo` / `ShopHour`：门店信息和营业时间
-- `BrandStory` / `BrandStoryImage`：品牌故事
-- `AboutPage`：关于我们首屏和正文
-- `AboutTimelineEntry`：关于我们时间轴
-- `TeamMember`：团队成员
-- `Contact`：用户留言
-- `OperationLog`：后台操作日志与恢复链路
-- `AiSettings`：后台 AI 配置
+### 9.2 媒体资源配置
 
-## 8. 认证与安全
+当前媒体资源配置包含：
 
-### 8.1 认证方式
+- 品牌 Logo
+- 首页主图
+- 首页轮播图
+- 后台登录页轮播图
+- 联系页配图
+- 品牌故事配图
 
-- 管理员通过 `/api/admin/login` 登录
-- 后端签发 JWT Bearer Token
-- 受保护接口由 Spring Security 控制
+其中多图字段已支持一次上传多张并追加到当前配置。
 
-### 8.2 安全相关配置
+## 10. AI 架构
 
-- `ADMIN_USERNAME`
-- `ADMIN_PASSWORD`
-- `ADMIN_AUTH_SECRET`
-- `JWT_ISSUER`
-- `CORS_ALLOWED_ORIGIN_PATTERNS`
+当前 AI 能力分为两块：
 
-生产环境必须替换默认密码和密钥。
+1. 图片生成
+2. 作品信息建议
 
-## 9. 上传与静态资源
+工作链路：
 
-### 9.1 图片上传
+```text
+后台 AI 配置
+   -> AI 生图请求
+   -> 第三方模型返回图片地址
+   -> 下载到本地 uploads/ai
+   -> 人工确认
+   -> AI 建议补全文案
+   -> 新增或编辑作品
+```
 
-- 上传入口：`POST /api/uploads`
-- 支持 `multipart/form-data`
-- 最大文件大小：5MB
+当前约束：
 
-### 9.2 访问方式
+- 每次生成 1 张图
+- 最多 3 张参考图
+- 单张参考图最大 20MB
 
-- 后端返回 `{ "url": "/uploads/..." }` 或可访问 URL
-- Web 容器通过 Nginx 将 `/uploads/` 代理给后端
+## 11. 部署架构
 
-## 10. 部署架构
+### 11.1 默认服务
 
-### 10.1 Docker Compose 服务
+Docker Compose 默认包含：
 
 - `mysql`
 - `backend`
 - `web`
 
-### 10.2 启动顺序
+### 11.2 运行时镜像构建策略
 
-- `mysql` 健康后启动 `backend`
-- `backend` 健康后启动 `web`
+当前后端运行时镜像已改为在 Docker 构建阶段容器内执行 Maven 打包，而不是依赖宿主机预先准备本地 `target/*.jar`。
 
-### 10.3 健康检查
+这带来的好处：
 
-- MySQL：`mysqladmin ping`
-- Backend：`GET /api/health`
-- Web：通过外部 HTTP 访问首页和反向代理接口验收
+- 降低“本地 jar 过期导致部署旧版本”的风险
+- 让发布链路更可重复
+- 更适合标准化交付
 
-补充：
+### 11.3 一键部署链路
 
-- 实际访问端口以 `deploy.sh` / `upgrade.sh` 输出的 `Site URL` 为准
+当前支持两条部署主链：
 
-### 10.4 后续高可用演进方向
+- 源码一键部署：`./deploy.sh`
+- 离线发布包部署：`./release-install.sh`
 
-当前默认交付仍以单机单实例为主，后续可以按以下顺序扩展：
+两条链路都支持在新服务器自动补齐 Docker / Compose 基础运行环境。
 
-1. Nginx / 云网关前置统一限流
-2. 后端多实例化
-3. 将本地限流与热点缓存迁移到 Redis
-4. 将上传目录迁移到对象存储
-5. 引入独立的备份、监控和告警组件
+## 12. 高可用扩展方向
 
-这样可以保持当前版本易交付、易维护，同时不阻塞后续商业化扩展。
+当前版本以单机单实例交付为主，后续扩展建议顺序：
 
-## 11. 历史数据导入
+1. 统一反向代理或网关前置
+2. Redis 化限流与缓存
+3. 后端多实例部署
+4. 上传目录迁移对象存储
+5. 接入独立日志、监控与告警系统
 
-Java 后端仍保留受控 JSON 导入能力，用于初始化或迁移历史样例数据：
-
-- 默认样例路径：`flower-shop-backend-java/src/main/resources/seed/legacy-db.json`
-- 启用方式：通过 `JSON_IMPORT_ENABLED=true` 显式开启
-
-这部分仅作为初始化工具，不属于线上运行主链路。
+这样可以保持当前版本易售卖、易部署、易维护，同时不阻塞后续扩容。

@@ -26,7 +26,7 @@
 |------|------|------|
 | `ADMIN_USERNAME` | 后台管理员账号 | 生产环境可改为非默认账号 |
 | `ADMIN_PASSWORD` | 后台管理员密码 | 使用强密码 |
-| `ADMIN_AUTH_SECRET` | JWT/HMAC 签名密钥 | 至少 32 位随机字符串 |
+| `ADMIN_AUTH_SECRET` | JWT 签名密钥 | 至少 32 位随机字符串 |
 | `JWT_ISSUER` | JWT 签发者标识 | 一般保持默认 |
 
 ## 跨域与备份

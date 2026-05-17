@@ -62,6 +62,7 @@ cp .env.production.example .env
 - `MYSQL_ROOT_PASSWORD`
 - `ADMIN_PASSWORD`
 - `ADMIN_AUTH_SECRET`
+- `APP_DATA_ENCRYPTION_KEY`
 - `CORS_ALLOWED_ORIGIN_PATTERNS`
 - `WEB_PORT`
 - `VOLCENGINE_API_KEY`（如启用 AI）
@@ -112,6 +113,7 @@ cp .env.production.example .env
 - 管理后台更严格限流
 - AI / 上传 / 配置导入并发隔离
 - 公开只读接口本地缓存
+- 首次登录强制改密
 
 ### 4.2 离线镜像发布包部署
 
@@ -163,6 +165,7 @@ cp .env.production.example .env
 - `Site URL` 可访问
 - `/api/health` 正常
 - 后台能登录
+- 首次登录强制改密流程正常
 - `/admin/system` 可看到版本、环境、提交号、部署时间
 - `/admin/system` 可看到并发保护阈值与拒绝次数
 
@@ -194,6 +197,7 @@ cp .env.production.example .env
 - 升级前先执行 `./backup.sh`
 - 正式升级使用 `./upgrade.sh`
 - 升级后查看后台系统状态页
+- 升级后抽查作品管理、站点配置、操作日志页面
 - 如本次业务量明显提升，复核并发保护阈值是否仍合适
 
 ## 8. 回滚建议

@@ -42,6 +42,11 @@ sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 - 首次交付后需在后台补充站点信息、关于我们、AI 配置和正式业务内容
 - 安装过程中如目标机器缺少 Docker 运行环境，脚本会先自动补齐再继续部署
 
+补充说明：
+
+- 首次登录后应立即修改管理员密码
+- 首页轮播、登录页轮播、联系页配图等媒体资源也需要按正式内容重新上传
+
 如果要改安装目录：
 
 ```bash
@@ -62,6 +67,7 @@ sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 - `MYSQL_ROOT_PASSWORD`
 - `ADMIN_PASSWORD`
 - `ADMIN_AUTH_SECRET`
+- `APP_DATA_ENCRYPTION_KEY`
 - `WEB_PORT`
 - `CORS_ALLOWED_ORIGIN_PATTERNS`
 - `PUBLIC_BASE_URL`
@@ -105,6 +111,7 @@ sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 - 解压后可用 `./release-verify.sh` 校验包内文件
 - 上传文件目录：`/opt/floralwhispertime/shared/uploads`
 - 环境文件：`/opt/floralwhispertime/shared/.env`
+- 运行后建议进入后台依次检查：站点配置、AI 生图配置、运维中心、安全状态
 
 更完整说明见仓库文档：
 

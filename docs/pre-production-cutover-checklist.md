@@ -13,6 +13,7 @@
 
 - 关键测试已通过
 - `mvn package` 能成功
+- `docker build -f flower-shop-backend-java/Dockerfile.runtime .` 能成功
 - `/api/health` 正常
 - 管理员登录正常
 - `/api/admin/system/status` 正常
@@ -59,8 +60,14 @@
 
 ```bash
 cd flower-shop-backend-java && mvn test
+cd /workspace/FloralWhisperTime && docker build -f flower-shop-backend-java/Dockerfile.runtime .
 cd /workspace/FloralWhisperTime && docker build -f flower-shop-web/Dockerfile.runtime .
 ```
+
+说明：
+
+- 当前后端运行时镜像会在 Docker 构建阶段容器内执行 Maven 打包
+- 上线前应确认运行时镜像能够独立从源码完成构建
 
 ## 8. 进入正式部署后
 
