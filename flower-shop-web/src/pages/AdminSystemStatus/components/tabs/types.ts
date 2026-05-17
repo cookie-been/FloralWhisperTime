@@ -30,5 +30,12 @@ export type BackupOverviewItem = {
   note: string;
 };
 
+export type OpsCommandItem = {
+  key: string;
+  label: string;
+  description: string;
+  command: string;
+};
+
 export type TaskTypeFilter = "all" | "backup" | "inspection";
 export type TaskStatusFilter = "all" | "success" | "failed";

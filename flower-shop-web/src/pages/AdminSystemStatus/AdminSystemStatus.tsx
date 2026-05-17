@@ -28,6 +28,7 @@ import { SystemTasksTab } from "./components/tabs/SystemTasksTab";
 import type {
   BackupOverviewItem,
   KeyValueEntry,
+  OpsCommandItem,
   RiskActionKey,
   RiskItem,
   SummaryItem,
@@ -91,6 +92,25 @@ function formatTaskTypeLabel(value?: string) {
   if (value === "backup") return "手动备份";
   if (value === "inspection") return "系统巡检";
   return value || "未知任务";
+}
+
+function resolveOpsCommand(taskType?: string) {
+  if (taskType === "backup") {
+    return {
+      commandName: "ops.sh backup",
+      commandPreview: "./ops.sh backup",
+    };
+  }
+  if (taskType === "inspection") {
+    return {
+      commandName: "ops.sh release inspect",
+      commandPreview: "./ops.sh release inspect",
+    };
+  }
+  return {
+    commandName: "",
+    commandPreview: "",
+  };
 }
 
 function getTaskStatusMeta(status?: string) {
@@ -438,6 +458,49 @@ export function AdminSystemStatus() {
     ];
   }, [backupFiles, latestBackupTask]);
 
+  const recommendedCommands = useMemo<OpsCommandItem[]>(
+    () => [
+      {
+        key: "backup",
+        label: "手动备份",
+        description: "对应后台“立即备份”动作。适合升级前、配置导入前、重要数据调整前执行。",
+        command: "./ops.sh backup",
+      },
+      {
+        key: "inspection",
+        label: "部署后巡检",
+        description: "对应后台“执行巡检”与运维核查场景。适合上线后、升级后、问题排查时执行。",
+        command: "./ops.sh release inspect",
+      },
+      {
+        key: "upgrade",
+        label: "源码升级",
+        description: "用于代码仓库模式下的更新与重建，建议先执行备份。",
+        command: "./ops.sh upgrade",
+      },
+      {
+        key: "rollback",
+        label: "备份回滚",
+        description: "用于源码部署模式下从最近备份恢复，建议先 dry-run。",
+        command: "./ops.sh rollback --latest --dry-run",
+      },
+    ],
+    [],
+  );
+
+  const opsTasksWithCommands = useMemo(
+    () =>
+      opsTasks.map((item) => {
+        const commandMeta = resolveOpsCommand(item.taskType);
+        return {
+          ...item,
+          commandName: commandMeta.commandName,
+          commandPreview: commandMeta.commandPreview,
+        };
+      }),
+    [opsTasks],
+  );
+
   const openArchiveModal = useCallback(() => {
     const suggested = status?.operationLogArchiveBefore ? status.operationLogArchiveBefore.slice(0, 10) : "";
     setArchiveBefore(suggested);
@@ -651,6 +714,7 @@ export function AdminSystemStatus() {
                 latestBackupPath={status.latestBackupPath}
                 onDownloadLatestBackup={handleDownloadLatestBackup}
                 onDownloadBackupFile={handleDownloadFile}
+                recommendedCommands={recommendedCommands}
               />
             ),
           },
@@ -659,8 +723,11 @@ export function AdminSystemStatus() {
             label: "巡检与任务",
             children: (
               <SystemTasksTab
-                filteredOpsTasks={filteredOpsTasks}
-                opsTasks={opsTasks}
+                filteredOpsTasks={filteredOpsTasks.map((item) => ({
+                  ...item,
+                  ...resolveOpsCommand(item.taskType),
+                }))}
+                opsTasks={opsTasksWithCommands}
                 opsTasksError={opsTasksError}
                 taskStats={taskStats}
                 taskTypeFilter={taskTypeFilter}
@@ -759,10 +826,15 @@ export function AdminSystemStatus() {
         {selectedTask ? (
           <div className="space-y-4 text-sm">
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="admin-subpanel px-4 py-4">
-                <p className="font-semibold text-[#1b281e]">任务类型</p>
-                <p className="mt-2 text-muted">{formatTaskTypeLabel(selectedTask.taskType)}</p>
-              </div>
+            <div className="admin-subpanel px-4 py-4">
+              <p className="font-semibold text-[#1b281e]">任务类型</p>
+              <p className="mt-2 text-muted">{formatTaskTypeLabel(selectedTask.taskType)}</p>
+              {resolveOpsCommand(selectedTask.taskType).commandPreview ? (
+                <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] p-3 text-xs text-[#1b281e]">
+                  {resolveOpsCommand(selectedTask.taskType).commandPreview}
+                </pre>
+              ) : null}
+            </div>
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">任务状态</p>
                 <p className="mt-2 text-muted">{getTaskStatusMeta(selectedTask.status).label}</p>

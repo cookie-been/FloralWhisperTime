@@ -276,6 +276,8 @@ export interface AdminOpsTask {
   id: number;
   taskType: "backup" | "inspection" | string;
   taskLabel: string;
+  commandName?: string;
+  commandPreview?: string;
   status: "running" | "success" | "failed" | string;
   triggerSource: "admin_ui" | string;
   operatorName: string;

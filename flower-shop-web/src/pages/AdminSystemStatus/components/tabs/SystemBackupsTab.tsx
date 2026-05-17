@@ -1,7 +1,7 @@
 import { Alert, Button, Tag } from "antd";
 import { Download, HardDriveDownload, SearchCheck } from "lucide-react";
 import type { AdminBackupFile } from "@/types";
-import type { BackupOverviewItem } from "./types";
+import type { BackupOverviewItem, OpsCommandItem } from "./types";
 
 type Props = {
   runningBackup: boolean;
@@ -16,6 +16,7 @@ type Props = {
   latestBackupPath?: string;
   onDownloadLatestBackup: () => void;
   onDownloadBackupFile: (downloadUrl: string, filename: string) => void;
+  recommendedCommands: OpsCommandItem[];
 };
 
 export function SystemBackupsTab({
@@ -31,6 +32,7 @@ export function SystemBackupsTab({
   latestBackupPath,
   onDownloadLatestBackup,
   onDownloadBackupFile,
+  recommendedCommands,
 }: Props) {
   return (
     <div className="space-y-6 pt-2">
@@ -40,7 +42,7 @@ export function SystemBackupsTab({
             <p className="section-eyebrow">运维操作</p>
             <h3 className="admin-section-title mt-2 text-xl">手动备份与巡检</h3>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-              这里承接日常后台运维动作。可直接从管理界面执行手动备份和系统巡检，执行结果会进入任务记录。部署、升级、回滚仍建议通过命令行脚本完成。
+              这里承接日常后台运维动作。可直接从管理界面执行手动备份和系统巡检，执行结果会进入任务记录。部署、升级、回滚仍建议通过统一命令入口 `./ops.sh` 完成。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -60,6 +62,32 @@ export function SystemBackupsTab({
               执行巡检
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section className="admin-panel admin-shell-card sm:p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="section-eyebrow">命令参考</p>
+            <h3 className="admin-section-title mt-2 text-xl">后台动作对应脚本</h3>
+          </div>
+          <Tag color="blue">统一入口</Tag>
+        </div>
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {recommendedCommands.map((item) => (
+            <div key={item.key} className="admin-subpanel px-4 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#1b281e]">{item.label}</p>
+                  <p className="mt-2 text-xs leading-6 text-muted">{item.description}</p>
+                </div>
+                <Tag color="green">ops.sh</Tag>
+              </div>
+              <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] p-3 text-xs text-[#1b281e]">
+                {item.command}
+              </pre>
+            </div>
+          ))}
         </div>
       </section>
 

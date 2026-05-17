@@ -100,11 +100,17 @@ export function SystemTasksTab({
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-[#1b281e]">{item.taskLabel || formatTaskTypeLabel(item.taskType)}</p>
                       <Tag color={getTaskStatusMeta(item.status).color}>{getTaskStatusMeta(item.status).label}</Tag>
+                      {item.commandName ? <Tag color="blue">{item.commandName}</Tag> : null}
                     </div>
                     <p className="mt-2 text-muted">类型：{item.taskType} · 操作人：{item.operatorName || "admin"}</p>
                     <p className="mt-2 text-muted">
                       开始：{formatDateTime(item.startedAt)} · 完成：{formatDateTime(item.finishedAt)}
                     </p>
+                    {item.commandPreview ? (
+                      <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] px-3 py-3 text-xs text-[#1b281e]">
+                        {item.commandPreview}
+                      </pre>
+                    ) : null}
                     <div className="mt-3 grid gap-2 md:grid-cols-2">
                       {getTaskResultEntries(item).slice(0, 4).map((entry) => (
                         <div key={`${item.id}-${entry.label}`} className="rounded-lg border border-[rgba(41,57,46,0.08)] bg-white/70 px-3 py-2">
