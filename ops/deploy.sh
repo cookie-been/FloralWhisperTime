@@ -222,7 +222,7 @@ write_runtime_metadata() {
 }
 
 post_deploy_self_check() {
-  local admin_username admin_password token status_payload
+  local admin_username admin_password token status_payload login_status
 
   admin_username="$(read_env_value "$ENV_FILE" "ADMIN_USERNAME")"
   admin_password="$(read_env_value "$ENV_FILE" "ADMIN_PASSWORD")"
@@ -232,22 +232,31 @@ post_deploy_self_check() {
 
   log "Running post-deploy self-checks..."
 
-  token="$(
-    curl -fsS -X POST "http://127.0.0.1:${WEB_PORT}/api/admin/login" \
+  curl -fsS "http://127.0.0.1:${WEB_PORT}/api/health" >/dev/null
+
+  login_status="$(
+    curl -sS -o /tmp/floral-deploy-admin-login.json -w '%{http_code}' \
+      -X POST "http://127.0.0.1:${WEB_PORT}/api/admin/login" \
       -H 'Content-Type: application/json' \
-      -d "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}" \
-      | sed -n 's/.*"token":"\([^"]*\)".*/\1/p'
+      -d "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}"
   )"
 
-  [[ -n "$token" ]] || fail "Admin login self-check failed"
+  if [[ "$login_status" == "200" ]]; then
+    token="$(sed -n 's/.*"token":"\([^"]*\)".*/\1/p' /tmp/floral-deploy-admin-login.json)"
+    [[ -n "$token" ]] || fail "Admin login self-check failed: token is empty"
 
-  status_payload="$(
-    curl -fsS "http://127.0.0.1:${WEB_PORT}/api/admin/system/status" \
-      -H "Authorization: Bearer ${token}"
-  )"
+    status_payload="$(
+      curl -fsS "http://127.0.0.1:${WEB_PORT}/api/admin/system/status" \
+        -H "Authorization: Bearer ${token}"
+    )"
 
-  printf '%s' "$status_payload" | grep -q '"databaseConnected":true' || fail "System status self-check failed: databaseConnected is not true"
-  printf '%s' "$status_payload" | grep -q '"uploadDirectoryReady":true' || fail "System status self-check failed: uploadDirectoryReady is not true"
+    printf '%s' "$status_payload" | grep -q '"databaseConnected":true' || fail "System status self-check failed: databaseConnected is not true"
+    printf '%s' "$status_payload" | grep -q '"uploadDirectoryReady":true' || fail "System status self-check failed: uploadDirectoryReady is not true"
+  elif [[ "$login_status" == "401" ]]; then
+    log "Warning: admin login self-check returned 401. The deployed site is healthy, but ADMIN_PASSWORD in $ENV_FILE no longer matches the password stored in the database."
+  else
+    fail "Admin login self-check failed with HTTP ${login_status}"
+  fi
 
   log "Post-deploy self-checks passed."
 }

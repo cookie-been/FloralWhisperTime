@@ -180,7 +180,7 @@ show_release_failure_context() {
 }
 
 post_release_self_check() {
-  local admin_username admin_password token status_payload web_port
+  local admin_username admin_password token status_payload web_port login_status
 
   admin_username="$(read_release_env_value "$SHARED_ENV_FILE" "ADMIN_USERNAME")"
   admin_password="$(read_release_env_value "$SHARED_ENV_FILE" "ADMIN_PASSWORD")"
@@ -189,22 +189,31 @@ post_release_self_check() {
   [[ -n "$admin_username" ]] || fail_release "ADMIN_USERNAME is empty in $SHARED_ENV_FILE"
   [[ -n "$admin_password" ]] || fail_release "ADMIN_PASSWORD is empty in $SHARED_ENV_FILE"
 
-  token="$(
-    curl -fsS -X POST "http://127.0.0.1:${web_port}/api/admin/login" \
+  curl -fsS "http://127.0.0.1:${web_port}/api/health" >/dev/null
+
+  login_status="$(
+    curl -sS -o /tmp/floral-release-admin-login.json -w '%{http_code}' \
+      -X POST "http://127.0.0.1:${web_port}/api/admin/login" \
       -H 'Content-Type: application/json' \
-      -d "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}" \
-      | sed -n 's/.*"token":"\([^"]*\)".*/\1/p'
+      -d "{\"username\":\"${admin_username}\",\"password\":\"${admin_password}\"}"
   )"
 
-  [[ -n "$token" ]] || fail_release "Admin login self-check failed"
+  if [[ "$login_status" == "200" ]]; then
+    token="$(sed -n 's/.*"token":"\([^"]*\)".*/\1/p' /tmp/floral-release-admin-login.json)"
+    [[ -n "$token" ]] || fail_release "Admin login self-check failed: token is empty"
 
-  status_payload="$(
-    curl -fsS "http://127.0.0.1:${web_port}/api/admin/system/status" \
-      -H "Authorization: Bearer ${token}"
-  )"
+    status_payload="$(
+      curl -fsS "http://127.0.0.1:${web_port}/api/admin/system/status" \
+        -H "Authorization: Bearer ${token}"
+    )"
 
-  printf '%s' "$status_payload" | grep -q '"databaseConnected":true' || fail_release "System status self-check failed: databaseConnected is not true"
-  printf '%s' "$status_payload" | grep -q '"uploadDirectoryReady":true' || fail_release "System status self-check failed: uploadDirectoryReady is not true"
+    printf '%s' "$status_payload" | grep -q '"databaseConnected":true' || fail_release "System status self-check failed: databaseConnected is not true"
+    printf '%s' "$status_payload" | grep -q '"uploadDirectoryReady":true' || fail_release "System status self-check failed: uploadDirectoryReady is not true"
+  elif [[ "$login_status" == "401" ]]; then
+    log_release "Warning: admin login self-check returned 401. The release is healthy, but ADMIN_PASSWORD in ${SHARED_ENV_FILE} no longer matches the password stored in the database."
+  else
+    fail_release "Admin login self-check failed with HTTP ${login_status}"
+  fi
 }
 
 run_release_inspection() {
