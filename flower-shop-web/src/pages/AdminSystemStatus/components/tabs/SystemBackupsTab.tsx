@@ -2,6 +2,7 @@ import { Alert, Button, Tag } from "antd";
 import { Download, HardDriveDownload, SearchCheck } from "lucide-react";
 import type { AdminBackupFile } from "@/types";
 import type { BackupOverviewItem, OpsCommandItem } from "./types";
+import { SystemActionGrid } from "./SystemActionGrid";
 
 type Props = {
   runningBackup: boolean;
@@ -36,60 +37,62 @@ export function SystemBackupsTab({
 }: Props) {
   return (
     <div className="space-y-6 pt-2">
-      <section className="admin-panel admin-shell-card sm:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="section-eyebrow">运维操作</p>
-            <h3 className="admin-section-title mt-2 text-xl">手动备份与巡检</h3>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-              这里承接日常后台运维动作。可直接从管理界面执行手动备份和系统巡检，执行结果会进入任务记录。部署、升级、回滚仍建议通过统一命令入口 `./ops.sh` 完成。
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              type="primary"
-              icon={<HardDriveDownload size={16} />}
-              loading={runningBackup}
-              onClick={onCreateBackupTask}
-            >
-              立即备份
-            </Button>
-            <Button
-              icon={<SearchCheck size={16} />}
-              loading={runningInspection}
-              onClick={onCreateInspectionTask}
-            >
-              执行巡检
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="admin-panel admin-shell-card sm:p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="section-eyebrow">命令参考</p>
-            <h3 className="admin-section-title mt-2 text-xl">后台动作对应脚本</h3>
-          </div>
-          <Tag color="blue">统一入口</Tag>
-        </div>
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
-          {recommendedCommands.map((item) => (
-            <div key={item.key} className="admin-subpanel px-4 py-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[#1b281e]">{item.label}</p>
-                  <p className="mt-2 text-xs leading-6 text-muted">{item.description}</p>
-                </div>
-                <Tag color="green">ops.sh</Tag>
-              </div>
-              <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] p-3 text-xs text-[#1b281e]">
-                {item.command}
-              </pre>
-            </div>
-          ))}
-        </div>
-      </section>
+      <SystemActionGrid
+        eyebrow="运维操作"
+        title="后台可执行动作"
+        description="这里承接日常后台低风险运维动作。可直接从管理界面执行手动备份和系统巡检，执行结果会进入任务记录。部署、升级、回滚仍建议通过统一命令入口 `./ops.sh` 完成。"
+        items={[
+          {
+            key: "backup",
+            title: "立即备份",
+            description: recommendedCommands[0]?.description ?? "",
+            icon: HardDriveDownload,
+            badge: "后台执行",
+            command: recommendedCommands[0]?.command,
+            action: (
+              <Button
+                type="primary"
+                icon={<HardDriveDownload size={16} />}
+                loading={runningBackup}
+                onClick={onCreateBackupTask}
+              >
+                立即备份
+              </Button>
+            ),
+          },
+          {
+            key: "inspection",
+            title: "执行巡检",
+            description: recommendedCommands[1]?.description ?? "",
+            icon: SearchCheck,
+            badge: "后台执行",
+            command: recommendedCommands[1]?.command,
+            action: (
+              <Button icon={<SearchCheck size={16} />} loading={runningInspection} onClick={onCreateInspectionTask}>
+                执行巡检
+              </Button>
+            ),
+          },
+          {
+            key: "latest-backup-download",
+            title: "下载最近备份",
+            description: "用于把当前最新备份直接下载到本地留档，适合升级前、迁移前和排障前留存快照。",
+            icon: Download,
+            badge: latestBackupPresent ? "可下载" : "暂无备份",
+            command: "./ops.sh backup",
+            action: (
+              <Button
+                type="primary"
+                icon={<Download size={16} />}
+                disabled={!latestBackupPresent || !latestBackupDownloadUrl}
+                onClick={onDownloadLatestBackup}
+              >
+                下载最近备份
+              </Button>
+            ),
+          },
+        ]}
+      />
 
       <section className="admin-panel admin-shell-card sm:p-6">
         <div className="flex items-center justify-between">
@@ -99,14 +102,6 @@ export function SystemBackupsTab({
           </div>
           <div className="flex items-center gap-3">
             <Tag color={backupFiles.length ? "green" : "gold"}>{backupFiles.length ? `${backupFiles.length} 份` : "暂无备份"}</Tag>
-            <Button
-              type="primary"
-              icon={<Download size={16} />}
-              disabled={!latestBackupPresent || !latestBackupDownloadUrl}
-              onClick={onDownloadLatestBackup}
-            >
-              下载最近备份
-            </Button>
           </div>
         </div>
         <div className="mt-5 space-y-4 text-sm">

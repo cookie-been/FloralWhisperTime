@@ -1,6 +1,7 @@
 import { Alert, Button, Tag } from "antd";
 import { Archive, Download } from "lucide-react";
 import type { OperationLogArchiveFile, OperationLogArchiveResult } from "@/types";
+import { SystemActionGrid } from "./SystemActionGrid";
 
 type Props = {
   operationLogCount: number;
@@ -25,17 +26,28 @@ export function SystemArchivesTab({
 }: Props) {
   return (
     <div className="space-y-6 pt-2">
+      <SystemActionGrid
+        eyebrow="日志归档"
+        title="操作日志保留策略"
+        description="用于控制操作日志表体积，避免长期累计后影响后台查询与维护。归档文件会进入备份目录下的 operation-logs 子目录。"
+        items={[
+          {
+            key: "archive",
+            title: "手动归档",
+            description: "适合在交付前、月度清理或后台写操作较多后执行。归档前请确认截止日期，并保留最新下载文件。",
+            icon: Archive,
+            badge: "需确认",
+            action: (
+              <Button type="primary" icon={<Archive size={16} />} onClick={openArchiveModal}>
+                手动归档
+              </Button>
+            ),
+          },
+        ]}
+      />
+
       <section className="admin-panel admin-shell-card sm:p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="section-eyebrow">日志归档</p>
-            <h3 className="admin-section-title mt-2 text-xl">操作日志保留策略</h3>
-          </div>
-          <Button type="primary" icon={<Archive size={16} />} onClick={openArchiveModal}>
-            手动归档
-          </Button>
-        </div>
-        <div className="mt-5 space-y-4 text-sm">
+        <div className="mt-1 space-y-4 text-sm">
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="admin-subpanel px-4 py-4">
               <p className="font-semibold text-[#1b281e]">当前日志数量</p>
