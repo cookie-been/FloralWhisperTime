@@ -10,6 +10,7 @@ Page({
     galleryImageList: [] as string[],
     tagList: [] as string[],
     materialsText: "",
+    flowerCodeText: "",
     isPageLoading: true,
     pageErrorText: "",
   },
@@ -23,6 +24,7 @@ Page({
       galleryImageList: Array.isArray(flower.images) ? flower.images : [],
       tagList: Array.isArray(flower.tags) ? flower.tags : [],
       materialsText: flower.materials.join(" / "),
+      flowerCodeText: flower.code || "",
     };
   },
 

@@ -23,6 +23,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -127,7 +128,9 @@ public class FlowerService {
       if (flowerMapper.selectById(id) != null) {
         throw new ApiException(HttpStatus.CONFLICT, "作品 ID 已存在");
       }
+      String code = resolveCode(request, null);
       Flower flower = toEntity(request, id);
+      flower.setCode(code);
       flowerMapper.insert(flower);
       replaceChildren(id, request);
       FlowerResponse created = getById(id);
@@ -160,9 +163,12 @@ public class FlowerService {
   public FlowerResponse update(String id, FlowerRequest request) {
     FlowerResponse before = null;
     try {
-      if (flowerMapper.selectById(id) == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
+      Flower current = flowerMapper.selectById(id);
+      if (current == null) throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
       before = getById(id);
+      String code = resolveCode(request, id);
       Flower flower = toEntity(request, id);
+      flower.setCode(code);
       flowerMapper.updateById(flower);
       replaceChildren(id, request);
       FlowerResponse updated = getById(id);
@@ -240,6 +246,7 @@ public class FlowerService {
   private Flower toEntity(FlowerRequest request, String id) {
     Flower flower = new Flower();
     flower.setId(id);
+    flower.setCode(normalizeText(request.getCode()));
     flower.setName(normalizeText(request.getName()));
     flower.setCategoryId(normalizeText(request.getCategoryId()));
     flower.setPrice(request.getPrice() == null ? BigDecimal.ZERO : request.getPrice());
@@ -268,6 +275,7 @@ public class FlowerService {
   private FlowerResponse toResponse(Flower flower) {
     FlowerResponse response = new FlowerResponse();
     response.setId(flower.getId());
+    response.setCode(flower.getCode());
     response.setName(flower.getName());
     response.setCategoryId(flower.getCategoryId());
     response.setPrice(flower.getPrice());
@@ -376,9 +384,64 @@ public class FlowerService {
   }
 
   private boolean keywordMatched(FlowerResponse flower, String keyword) {
-    String haystack = String.join(" ", flower.getName(), flower.getDescription(), flower.getMeaning(),
+    String haystack = String.join(" ", flower.getCode(), flower.getName(), flower.getDescription(), flower.getMeaning(),
         String.join(" ", flower.getMaterials()), String.join(" ", flower.getTags())).toLowerCase();
     return haystack.contains(keyword);
+  }
+
+  private String resolveCode(FlowerRequest request, String currentId) {
+    String candidate = normalizeText(request.getCode());
+    if (candidate.isBlank()) {
+      candidate = generateNextCode(request.getCreatedAt());
+    }
+
+    LambdaQueryWrapper<Flower> query = new LambdaQueryWrapper<Flower>().eq(Flower::getCode, candidate);
+    if (currentId != null && !currentId.isBlank()) {
+      query.ne(Flower::getId, currentId);
+    }
+    if (flowerMapper.selectCount(query) > 0) {
+      throw new ApiException(HttpStatus.CONFLICT, "作品编号已存在");
+    }
+    return candidate;
+  }
+
+  private String generateNextCode(String createdAt) {
+    LocalDateTime createdTime = parseDate(createdAt);
+    String day = createdTime.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE);
+    List<Flower> sameDayFlowers = flowerMapper.selectList(new LambdaQueryWrapper<Flower>().select(Flower::getCode));
+    Set<Integer> sequences = new HashSet<>();
+
+    for (Flower flower : sameDayFlowers) {
+      Integer sequence = extractSequence(flower == null ? null : flower.getCode(), day);
+      if (sequence != null) {
+        sequences.add(sequence);
+      }
+    }
+
+    int nextSequence = 1;
+    while (sequences.contains(nextSequence)) {
+      nextSequence += 1;
+    }
+    return "HW-" + day + "-" + String.format("%03d", nextSequence);
+  }
+
+  private Integer extractSequence(String code, String day) {
+    if (code == null || code.isBlank()) {
+      return null;
+    }
+    String prefix = "HW-" + day + "-";
+    if (!code.startsWith(prefix)) {
+      return null;
+    }
+    String suffix = code.substring(prefix.length()).trim();
+    if (suffix.isEmpty()) {
+      return null;
+    }
+    try {
+      return Integer.parseInt(suffix);
+    } catch (NumberFormatException ignored) {
+      return null;
+    }
   }
 
   private Comparator<FlowerResponse> comparator(String sortBy) {

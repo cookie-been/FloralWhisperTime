@@ -34,7 +34,7 @@ export function filterFlowers(flowers: Flower[], state: Omit<FlowerFilterState, 
   return flowers.filter((flower) => {
     const matchesKeyword =
       !keyword ||
-      [flower.name, flower.description, flower.meaning, flower.tags.join(" "), flower.materials.join(" ")]
+      [flower.code, flower.name, flower.description, flower.meaning, flower.tags.join(" "), flower.materials.join(" ")]
         .join(" ")
         .toLowerCase()
         .includes(keyword);

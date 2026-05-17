@@ -16,6 +16,7 @@ export const categories: Category[] = [
 export const flowers: Flower[] = [
   {
     id: "wedding_001",
+    code: "HW-20260115-001",
     name: "永恒之约",
     categoryId: "wedding",
     images: [image("wedding-rose-1"), image("wedding-rose-2"), image("wedding-rose-3")],
@@ -30,6 +31,7 @@ export const flowers: Flower[] = [
   },
   {
     id: "daily_001",
+    code: "HW-20260203-001",
     name: "晨光奶油",
     categoryId: "daily",
     images: [image("daily-cream-1"), image("daily-cream-2")],
@@ -44,6 +46,7 @@ export const flowers: Flower[] = [
   },
   {
     id: "opening_001",
+    code: "HW-20260214-001",
     name: "绿野启程",
     categoryId: "opening",
     images: [image("opening-green-1"), image("opening-green-2")],
@@ -58,6 +61,7 @@ export const flowers: Flower[] = [
   },
   {
     id: "seasonal_001",
+    code: "HW-20260301-001",
     name: "春日来信",
     categoryId: "seasonal",
     images: [image("spring-letter-1"), image("spring-letter-2")],
@@ -72,6 +76,7 @@ export const flowers: Flower[] = [
   },
   {
     id: "custom_001",
+    code: "HW-20260320-001",
     name: "森系餐桌",
     categoryId: "custom",
     images: [image("custom-table-1", 1200, 900), image("custom-table-2", 1200, 900)],
@@ -86,6 +91,7 @@ export const flowers: Flower[] = [
   },
   {
     id: "preserved_001",
+    code: "HW-20260402-001",
     name: "月光盒子",
     categoryId: "preserved",
     images: [image("preserved-box-1"), image("preserved-box-2")],
@@ -100,6 +106,7 @@ export const flowers: Flower[] = [
   },
   {
     id: "daily_002",
+    code: "HW-20260416-001",
     name: "粉雾星期天",
     categoryId: "daily",
     images: [image("pink-sunday-1"), image("pink-sunday-2")],
@@ -114,6 +121,7 @@ export const flowers: Flower[] = [
   },
   {
     id: "wedding_002",
+    code: "HW-20260424-001",
     name: "暮色誓言",
     categoryId: "wedding",
     images: [image("wedding-dusk-1"), image("wedding-dusk-2")],

@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 public class FlowerResponse {
   private String id;
+  private String code;
   private String name;
   private String categoryId;
   private List<String> images;

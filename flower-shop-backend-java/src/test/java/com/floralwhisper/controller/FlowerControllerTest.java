@@ -141,6 +141,7 @@ class FlowerControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.total").value(1))
         .andExpect(jsonPath("$.list[0].id").value("wedding_001"))
+        .andExpect(jsonPath("$.list[0].code").value("HW-20260115-001"))
         .andExpect(jsonPath("$.list[0].createdAt").value("2026-01-15T10:00:00Z"))
         .andExpect(jsonPath("$.list[0].images[0]").value("/uploads/a.jpg"))
         .andExpect(jsonPath("$.list[0].materials[1]").value("绣球"))
@@ -162,7 +163,7 @@ class FlowerControllerTest {
             .header("Authorization", "Bearer " + jwtService.createToken("admin"))
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
-                {"name":"","categoryId":"wedding","images":[],"materials":[],"tags":[]}
+                {"code":"HW-20260115-001","name":"","categoryId":"wedding","images":[],"materials":[],"tags":[]}
                 """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.message").value("花束名称不能为空"));
@@ -171,6 +172,7 @@ class FlowerControllerTest {
   private FlowerResponse flower(String id, String createdAt) {
     FlowerResponse response = new FlowerResponse();
     response.setId(id);
+    response.setCode("HW-20260115-001");
     response.setName("永恒之约");
     response.setCategoryId("wedding");
     response.setImages(List.of("/uploads/a.jpg", "/uploads/b.jpg"));

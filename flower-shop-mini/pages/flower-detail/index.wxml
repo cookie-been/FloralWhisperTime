@@ -12,6 +12,7 @@
         <text class="name">{{flower.name}}</text>
         <text class="price">¥{{flower.price}}</text>
       </view>
+      <text wx:if="{{flowerCodeText}}" class="desc">作品编号：{{flowerCodeText}}</text>
       <text class="desc">{{flower.description}}</text>
 
       <view class="info-block">

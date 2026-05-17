@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.slf4j.Logger;
@@ -195,6 +196,7 @@ public class JsonImportService {
       }
       Flower entity = new Flower();
       entity.setId(record.getId().trim());
+      entity.setCode(resolveFlowerCode(record, flowers + 1));
       entity.setName(text(record.getName()));
       entity.setCategoryId(text(record.getCategoryId()));
       entity.setPrice(record.getPrice() == null ? BigDecimal.ZERO : record.getPrice());
@@ -402,6 +404,14 @@ public class JsonImportService {
 
   private String text(String value) {
     return value == null ? "" : value.trim();
+  }
+
+  private String resolveFlowerCode(JsonImportModels.FlowerRecord record, int index) {
+    if (!blank(record.getCode())) {
+      return record.getCode().trim();
+    }
+    LocalDateTime createdAt = parseDateTime(record.getCreatedAt());
+    return "HW-" + createdAt.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE) + "-" + String.format("%03d", index);
   }
 
   private String fallback(String primary, String secondary) {

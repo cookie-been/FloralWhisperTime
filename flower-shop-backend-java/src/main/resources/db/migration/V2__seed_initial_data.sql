@@ -110,4 +110,3 @@ INSERT INTO site_config_stats (value, label, sort) VALUES
 ('860+', '已服务客户', 0),
 ('320+', '花艺作品', 1),
 ('6', '主题分类', 2);
-

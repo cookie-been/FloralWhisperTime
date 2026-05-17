@@ -1,5 +1,6 @@
 export interface Flower {
   id: string;
+  code: string;
   name: string;
   categoryId: string;
   images: string[];

@@ -32,6 +32,7 @@ export interface AiSuggestionForm {
 
 export const emptyFlower: FlowerForm = {
   id: "",
+  code: "",
   name: "",
   categoryId: "daily",
   images: "",
@@ -69,6 +70,7 @@ export function toForm(flower: Flower): FlowerForm {
 export function fromForm(values: FlowerForm): Flower {
   return {
     ...values,
+    code: values.code.trim(),
     price: Number(values.price),
     sort: Number(values.sort),
     images: splitText(values.images),

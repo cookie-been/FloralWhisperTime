@@ -12,6 +12,7 @@ import lombok.Data;
 public class Flower {
   @TableId
   private String id;
+  private String code;
   private String name;
   private String categoryId;
   private BigDecimal price;

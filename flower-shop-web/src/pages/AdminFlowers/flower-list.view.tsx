@@ -40,11 +40,16 @@ export function buildFlowerColumns({
         <div>
           <p className="font-semibold text-[#1b281e]">{record.name}</p>
           <p className="mt-1 text-xs text-muted">
-            {categoryMap.get(record.categoryId) ?? "未分类"} · 花材 {record.materials.length} 项 · 标签 {record.tags.length} 个
+            编号 {record.code} · {categoryMap.get(record.categoryId) ?? "未分类"} · 花材 {record.materials.length} 项 · 标签 {record.tags.length} 个
           </p>
           <p className="admin-cell-note line-clamp-2">{truncateText(record.description, 48) || "暂无作品描述"}</p>
         </div>
       ),
+    },
+    {
+      title: "编号",
+      dataIndex: "code",
+      width: 160,
     },
     {
       title: "分类",

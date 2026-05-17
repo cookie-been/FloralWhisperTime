@@ -122,6 +122,25 @@ export function AdminFlowers() {
   const featuredCount = useMemo(() => filteredFlowers.filter((item) => item.featured).length, [filteredFlowers]);
   const sortedFlowers = useMemo(() => sortFlowers(filteredFlowers), [filteredFlowers]);
 
+  const buildFlowerCode = (createdAt = new Date()) => {
+    const year = createdAt.getFullYear();
+    const month = String(createdAt.getMonth() + 1).padStart(2, "0");
+    const day = String(createdAt.getDate()).padStart(2, "0");
+    const dateKey = `${year}${month}${day}`;
+    const prefix = `HW-${dateKey}-`;
+    const usedSequences = flowers
+      .map((item) => item.code)
+      .filter((code) => code.startsWith(prefix))
+      .map((code) => Number.parseInt(code.slice(prefix.length), 10))
+      .filter((value) => Number.isFinite(value));
+
+    let nextSequence = 1;
+    while (usedSequences.includes(nextSequence)) {
+      nextSequence += 1;
+    }
+    return `${prefix}${String(nextSequence).padStart(3, "0")}`;
+  };
+
   const load = async () => {
     requestControllerRef.current?.abort();
     const controller = new AbortController();
@@ -164,8 +183,14 @@ export function AdminFlowers() {
   }, [deletedFilter, featuredFilter, search, selectedCategory, setSearchParams]);
 
   const startCreate = () => {
+    const now = new Date();
     setEditing(null);
-    form.setFieldsValue({ ...emptyFlower, id: `daily_${Date.now()}` });
+    form.setFieldsValue({
+      ...emptyFlower,
+      id: `daily_${Date.now()}`,
+      code: buildFlowerCode(now),
+      createdAt: now.toISOString(),
+    });
     setDrawerOpen(true);
   };
 
@@ -298,6 +323,7 @@ export function AdminFlowers() {
     form.setFieldsValue({
       ...emptyFlower,
       id: `daily_${Date.now()}`,
+      code: buildFlowerCode(),
       name: suggestion.name || "",
       categoryId: suggestion.categoryId || emptyFlower.categoryId,
       images: generatedAiImage.imageUrl,
@@ -554,7 +580,7 @@ export function AdminFlowers() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             prefix={<Search size={16} className="text-muted" />}
-            placeholder="搜索作品名称、花材、标签或描述"
+            placeholder="搜索编号、作品名称、花材、标签或描述"
           />
           <Select size="large" value={selectedCategory} onChange={setSelectedCategory} options={[{ label: "全部分类", value: "all" }, ...categoryOptions]} />
           <Select

@@ -63,8 +63,11 @@ export function AdminFlowerEditorDrawer({
             基本信息
           </div>
           <div className="mt-4 grid gap-x-4 md:grid-cols-2">
-            <Form.Item name="id" label="作品 ID" rules={[{ required: true, message: "请输入作品 ID" }]}>
-              <Input disabled={editing} placeholder="daily_001" />
+            <Form.Item name="code" label="作品编号" rules={[{ required: true, message: "请输入作品编号" }]}>
+              <Input placeholder="例如：HW-20260517-001" />
+            </Form.Item>
+            <Form.Item name="id" hidden rules={[{ required: true, message: "请输入作品 ID" }]}>
+              <Input />
             </Form.Item>
             <Form.Item name="name" label="作品名称" rules={[{ required: true, message: "请输入作品名称" }]}>
               <Input placeholder="例如：晨光奶油" />

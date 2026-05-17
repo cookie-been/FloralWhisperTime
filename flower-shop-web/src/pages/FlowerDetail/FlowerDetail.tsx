@@ -76,6 +76,7 @@ export function FlowerDetail() {
         <div>
           <p className="section-eyebrow">作品详情</p>
           <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl">{flower.name}</h1>
+          <p className="mt-3 text-sm font-medium text-muted">作品编号：{flower.code}</p>
           <p className="mt-4 text-xl font-semibold text-forest sm:text-2xl">参考价 ¥{flower.price}</p>
           <p className="site-shell-copy mt-4 sm:mt-5">{flower.description}</p>
           <p className="site-shell-copy mt-3 sm:mt-4">{flower.meaning}</p>

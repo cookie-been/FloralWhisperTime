@@ -35,6 +35,7 @@ public final class JsonImportModels {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class FlowerRecord {
     private String id;
+    private String code;
     private String name;
     private String categoryId;
     private List<String> images = new ArrayList<>();

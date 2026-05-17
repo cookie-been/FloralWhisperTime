@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface FlowerMapper extends BaseMapper<Flower> {
-  @Select("SELECT id, name, category_id, price, description, meaning, featured, sort, created_at, deleted FROM flowers WHERE id = #{id}")
+  @Select("SELECT id, code, name, category_id, price, description, meaning, featured, sort, created_at, deleted FROM flowers WHERE id = #{id}")
   Flower selectByIdIncludingDeleted(String id);
 
   @Update("UPDATE flowers SET deleted = 0 WHERE id = #{id}")
