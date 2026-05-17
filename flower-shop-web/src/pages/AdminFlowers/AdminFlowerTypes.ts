@@ -1,5 +1,9 @@
 import type { Flower } from "@/types";
 import type { AdminAiFlowerSuggestion } from "@/services/api";
+import { shouldIgnoreTableRowClick } from "@/utils/dom";
+import { joinListText, splitListText } from "@/utils/list-text";
+import { truncateText } from "@/utils/text";
+export { truncateText } from "@/utils/text";
 
 export type FlowerForm = Omit<Flower, "materials" | "tags" | "images"> & {
   images: string;
@@ -50,13 +54,8 @@ export const emptyAiSuggestion: AiSuggestionForm = {
   meaning: "",
 };
 
-export const splitText = (value: string) =>
-  value
-    .split(/[,\n，、]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-export const joinText = (value: string[]) => value.join("，");
+export const splitText = splitListText;
+export const joinText = joinListText;
 
 export function toForm(flower: Flower): FlowerForm {
   return {
@@ -79,14 +78,8 @@ export function fromForm(values: FlowerForm): Flower {
   };
 }
 
-export function truncateText(value: string, maxLength: number) {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength).trim()}...`;
-}
-
 export function shouldIgnoreRowClick(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("button, .ant-btn, .ant-checkbox-wrapper, .ant-checkbox, .ant-popover, .ant-popconfirm"));
+  return shouldIgnoreTableRowClick(target);
 }
 
 export function toAiSuggestionForm(value: AdminAiFlowerSuggestion): AiSuggestionForm {

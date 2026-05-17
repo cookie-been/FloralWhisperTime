@@ -5,58 +5,37 @@ import { CheckCircle2, ClipboardList, Copy, Download, RefreshCw, RotateCcw, Sear
 import { useSearchParams } from "react-router-dom";
 import { downloadAdminOperationLogs, getAdminOperationLogDetail, getAdminOperationLogs, isAbortError, restoreAdminOperationLog } from "@/services/api";
 import type { OperationLogDetail, OperationLogItem, OperationLogQuery, PaginatedResult } from "@/types";
+import { ADMIN_PAGE_SIZE_OPTIONS } from "@/utils/admin-table";
+import {
+  ADMIN_ACTION_OPTIONS,
+  ADMIN_MODULE_OPTIONS,
+  formatAdminActionLabel,
+  formatAdminModuleLabel,
+  formatAdminTargetTypeLabel,
+} from "@/utils/admin-display";
 import { formatDateTimeWithSeconds, getTimestamp } from "@/utils/datetime";
-
-function formatModule(value: string) {
-  const mapping: Record<string, string> = {
-    AUTH: "登录鉴权",
-    FLOWER: "作品管理",
-    CONTACT: "用户留言",
-    SITE: "站点配置",
-    ABOUT: "关于我们",
-    TEAM: "团队成员",
-    AI: "AI 配置",
-    AUDIT: "系统审计",
-  };
-  return mapping[value] ?? value;
-}
-
-function formatAction(value: string) {
-  const mapping: Record<string, string> = {
-    LOGIN: "登录",
-    CREATE: "新增",
-    UPDATE: "修改",
-    DELETE: "删除",
-    MARK_READ: "标记已读",
-    RESTORE: "恢复",
-    ARCHIVE: "归档",
-  };
-  return mapping[value] ?? value;
-}
-
-function formatTargetType(value: string) {
-  const mapping: Record<string, string> = {
-    FLOWER: "作品",
-    CONTACT: "留言",
-    SITE_CONFIG: "站点配置",
-    ABOUT_PAGE: "关于页",
-    ABOUT_TIMELINE: "时间轴",
-    TEAM_MEMBER: "团队成员",
-    AI_SETTINGS: "AI 配置",
-    AUTH: "鉴权",
-    OPERATION_LOG_ARCHIVE: "操作日志归档",
-  };
-  return mapping[value] ?? value;
-}
-
-function formatTargetIdentifier(value?: string) {
-  return value?.trim() ? value : "系统级记录";
-}
-
-function shouldIgnoreRowClick(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("button, .ant-btn, .ant-popover, .ant-popconfirm"));
-}
+import { copyTextToClipboard } from "@/utils/clipboard";
+import { shouldIgnoreTableRowClick } from "@/utils/dom";
+import { renderAdminCurrentViewTag, renderAdminRestoreRecordTag, renderAdminSuccessTag } from "@/utils/admin-status";
+import {
+  buildDefaultOperationLogFilterState,
+  buildOperationLogFilterState,
+  buildSnapshotDiff,
+  buildOperationLogFilterSummary,
+  buildOperationLogMetrics,
+  buildOperationLogModuleStats,
+  buildOperationLogPresetState,
+  buildOperationLogQuickViewState,
+  formatRangeBoundary,
+  formatTargetIdentifier,
+  getTodayDateValue,
+  hasOperationLogActiveFilters,
+  resolveOperationLogPreset,
+  resolveQuickView,
+  type FilterPreset,
+  type QuickView,
+  type ResultFilter,
+} from "./operation-log.helpers";
 
 async function copyText(value: string, successText: string) {
   if (!value.trim()) {
@@ -65,115 +44,10 @@ async function copyText(value: string, successText: string) {
   }
 
   try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
-    } else {
-      const textarea = document.createElement("textarea");
-      textarea.value = value;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      document.execCommand("copy");
-      textarea.remove();
-    }
+    await copyTextToClipboard(value);
     message.success(successText);
   } catch {
     message.error("复制失败，请稍后重试");
-  }
-}
-
-type ResultFilter = "all" | "true" | "false";
-type QuickView = "all" | "failed" | "restorable" | "restore";
-type FilterPreset = "todayFailed" | "todayRestore" | "flowerOps" | "contactOps" | "aiOps" | "none";
-
-function getTodayDateValue() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = `${now.getMonth() + 1}`.padStart(2, "0");
-  const day = `${now.getDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatRangeBoundary(value?: string, mode: "start" | "end" = "start") {
-  if (!value) return undefined;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return undefined;
-  if (mode === "start") {
-    date.setHours(0, 0, 0, 0);
-  } else {
-    date.setHours(23, 59, 59, 999);
-  }
-  return date.toISOString().slice(0, 19);
-}
-
-function formatDiffValue(value: unknown) {
-  if (value === undefined) return "未提供";
-  if (value === null) return "null";
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  return JSON.stringify(value, null, 2);
-}
-
-function flattenSnapshot(value: unknown, prefix = "", result: Map<string, string> = new Map()) {
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => {
-      flattenSnapshot(item, `${prefix}[${index}]`, result);
-    });
-    if (!value.length && prefix) result.set(prefix, "[]");
-    return result;
-  }
-
-  if (value && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>);
-    if (!entries.length && prefix) result.set(prefix, "{}");
-    entries.forEach(([key, item]) => {
-      const nextKey = prefix ? `${prefix}.${key}` : key;
-      flattenSnapshot(item, nextKey, result);
-    });
-    return result;
-  }
-
-  if (prefix) {
-    result.set(prefix, formatDiffValue(value));
-  }
-  return result;
-}
-
-function buildSnapshotDiff(beforeSnapshot?: string, afterSnapshot?: string) {
-  if (!beforeSnapshot && !afterSnapshot) {
-    return { changes: [], error: "当前日志没有可对比的结构化快照。" };
-  }
-
-  try {
-    const beforeParsed = beforeSnapshot ? JSON.parse(beforeSnapshot) : undefined;
-    const afterParsed = afterSnapshot ? JSON.parse(afterSnapshot) : undefined;
-    const beforeMap = flattenSnapshot(beforeParsed);
-    const afterMap = flattenSnapshot(afterParsed);
-    const keys = Array.from(new Set([...beforeMap.keys(), ...afterMap.keys()])).sort();
-    const changes = keys
-      .map((path) => {
-        const before = beforeMap.get(path) ?? "未提供";
-        const after = afterMap.get(path) ?? "未提供";
-        return {
-          path,
-          before,
-          after,
-          status: before === "未提供" ? "added" : after === "未提供" ? "removed" : before === after ? "same" : "changed",
-        };
-      })
-      .filter((item) => item.status !== "same");
-
-    return {
-      changes,
-      error: changes.length ? "" : "当前日志的前后快照没有结构化字段差异。",
-    };
-  } catch {
-    return {
-      changes: [],
-      error: "当前快照不是标准 JSON，无法自动生成差异对比。",
-    };
   }
 }
 
@@ -278,20 +152,16 @@ export function AdminOperationLogs() {
     setSearchParams(next, { replace: true });
   }, [action, createdFrom, createdTo, keyword, module, operatorName, restorable, setSearchParams, success]);
 
-  const currentQuickView = useMemo<QuickView>(() => {
-    if (action === "RESTORE") return "restore";
-    if (restorable === true) return "restorable";
-    if (success === "false") return "failed";
-    return "all";
-  }, [action, restorable, success]);
+  const currentQuickView = useMemo<QuickView>(
+    () => resolveQuickView({ action, restorable, success }),
+    [action, restorable, success],
+  );
 
   const metrics = useMemo(() => {
     const list = data?.list ?? [];
-    const successCount = list.filter((item) => item.success).length;
-    const failedCount = list.length - successCount;
-    const restorableCount = list.filter((item) => item.restorable).length;
+    const { total, successCount, failedCount, restorableCount } = buildOperationLogMetrics(list);
     return [
-      { label: "当前页日志", value: list.length, note: "展示当前筛选条件下的日志数量", icon: ClipboardList },
+      { label: "当前页日志", value: total, note: "展示当前筛选条件下的日志数量", icon: ClipboardList },
       { label: "成功操作", value: successCount, note: "已成功写入的后台操作与登录行为", icon: CheckCircle2 },
       { label: "失败操作", value: failedCount, note: "优先排查失败请求与异常链路", icon: ShieldAlert },
       { label: "可恢复记录", value: restorableCount, note: "具备变更前快照，可单条恢复", icon: RotateCcw },
@@ -310,104 +180,32 @@ export function AdminOperationLogs() {
     });
   }, [activeDetail]);
 
-  const moduleStats = useMemo(() => {
-    const counts = new Map<string, number>();
-    (data?.list ?? []).forEach((item) => {
-      counts.set(item.module, (counts.get(item.module) ?? 0) + 1);
-    });
-    return Array.from(counts.entries())
-      .map(([key, count]) => ({ key, label: formatModule(key), count }))
-      .sort((left, right) => right.count - left.count);
-  }, [data]);
+  const moduleStats = useMemo(
+    () => buildOperationLogModuleStats(data?.list ?? [], formatAdminModuleLabel),
+    [data],
+  );
 
-  const filterSummary = useMemo(() => {
-    const parts: string[] = [];
-    if (keyword.trim()) parts.push(`关键词“${keyword.trim()}”`);
-    if (module) parts.push(formatModule(module));
-    if (operatorName.trim()) parts.push(`操作人 ${operatorName.trim()}`);
-    if (action) parts.push(`动作 ${formatAction(action)}`);
-    if (success === "true") parts.push("仅成功");
-    if (success === "false") parts.push("仅失败");
-    if (restorable === true) parts.push("仅可恢复");
-    if (restorable === false) parts.push("仅不可恢复");
-    if (createdFrom || createdTo) parts.push(`时间 ${createdFrom || "开始"} 至 ${createdTo || "结束"}`);
-    return parts;
-  }, [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success]);
+  const filterSummary = useMemo(
+    () =>
+      buildOperationLogFilterSummary(
+        { keyword, module, operatorName, success, action, restorable, createdFrom, createdTo },
+        formatAdminModuleLabel,
+        formatAdminActionLabel,
+      ),
+    [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success],
+  );
 
-  const hasActiveFilters =
-    Boolean(keyword.trim()) ||
-    Boolean(module) ||
-    Boolean(operatorName.trim()) ||
-    Boolean(action) ||
-    success !== "all" ||
-    restorable !== undefined ||
-    Boolean(createdFrom) ||
-    Boolean(createdTo);
+  const hasActiveFilters = hasOperationLogActiveFilters({
+    ...buildOperationLogFilterState({ keyword, module, operatorName, success, action, restorable, createdFrom, createdTo }),
+  });
 
-  const currentPreset = useMemo<FilterPreset>(() => {
-    const today = getTodayDateValue();
-    if (
-      success === "false" &&
-      !module &&
-      !action &&
-      restorable === undefined &&
-      !keyword.trim() &&
-      !operatorName.trim() &&
-      createdFrom === today &&
-      createdTo === today
-    ) {
-      return "todayFailed";
-    }
-    if (
-      success === "all" &&
-      action === "RESTORE" &&
-      !module &&
-      restorable === undefined &&
-      !keyword.trim() &&
-      !operatorName.trim() &&
-      createdFrom === today &&
-      createdTo === today
-    ) {
-      return "todayRestore";
-    }
-    if (
-      module === "FLOWER" &&
-      !keyword.trim() &&
-      !operatorName.trim() &&
-      !action &&
-      success === "all" &&
-      restorable === undefined &&
-      !createdFrom &&
-      !createdTo
-    ) {
-      return "flowerOps";
-    }
-    if (
-      module === "CONTACT" &&
-      !keyword.trim() &&
-      !operatorName.trim() &&
-      !action &&
-      success === "all" &&
-      restorable === undefined &&
-      !createdFrom &&
-      !createdTo
-    ) {
-      return "contactOps";
-    }
-    if (
-      module === "AI" &&
-      !keyword.trim() &&
-      !operatorName.trim() &&
-      !action &&
-      success === "all" &&
-      restorable === undefined &&
-      !createdFrom &&
-      !createdTo
-    ) {
-      return "aiOps";
-    }
-    return "none";
-  }, [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success]);
+  const currentPreset = useMemo<FilterPreset>(
+    () =>
+      resolveOperationLogPreset({
+        ...buildOperationLogFilterState({ keyword, module, operatorName, success, action, restorable, createdFrom, createdTo }),
+      }),
+    [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success],
+  );
 
   const snapshotDiff = useMemo(
     () => buildSnapshotDiff(activeDetail?.beforeSnapshot, activeDetail?.afterSnapshot),
@@ -469,106 +267,46 @@ export function AdminOperationLogs() {
   const restoreConfirmPhrase = pendingRestoreId ? `恢复${pendingRestoreId}` : "";
 
   const applyQuickView = (view: QuickView) => {
-    if (view === "all") {
-      setSuccess("all");
-      setAction(undefined);
-      setRestorable(undefined);
-      void load(1, pageSize, keyword, module, operatorName, "all", undefined, undefined, createdFrom, createdTo);
-      return;
-    }
-    if (view === "failed") {
-      setSuccess("false");
-      setAction(undefined);
-      setRestorable(undefined);
-      void load(1, pageSize, keyword, module, operatorName, "false", undefined, undefined, createdFrom, createdTo);
-      return;
-    }
-    if (view === "restorable") {
-      setSuccess("all");
-      setAction(undefined);
-      setRestorable(true);
-      void load(1, pageSize, keyword, module, operatorName, "all", undefined, true, createdFrom, createdTo);
-      return;
-    }
-    setSuccess("all");
-    setAction("RESTORE");
-    setRestorable(undefined);
-    void load(1, pageSize, keyword, module, operatorName, "all", "RESTORE", undefined, createdFrom, createdTo);
+    const nextState = buildOperationLogQuickViewState(view, {
+      keyword,
+      module,
+      operatorName,
+      success,
+      action,
+      restorable,
+      createdFrom,
+      createdTo,
+    });
+    setSuccess(nextState.success);
+    setAction(nextState.action);
+    setRestorable(nextState.restorable);
+    void load(1, pageSize, nextState.keyword, nextState.module, nextState.operatorName, nextState.success, nextState.action, nextState.restorable, nextState.createdFrom, nextState.createdTo);
   };
 
   const applyPreset = (preset: FilterPreset) => {
-    const today = getTodayDateValue();
-    if (preset === "todayFailed") {
-      setKeyword("");
-      setModule(undefined);
-      setOperatorName("");
-      setSuccess("false");
-      setAction(undefined);
-      setRestorable(undefined);
-      setCreatedFrom(today);
-      setCreatedTo(today);
-      void load(1, pageSize, "", undefined, "", "false", undefined, undefined, today, today);
-      return;
-    }
-    if (preset === "todayRestore") {
-      setKeyword("");
-      setModule(undefined);
-      setOperatorName("");
-      setSuccess("all");
-      setAction("RESTORE");
-      setRestorable(undefined);
-      setCreatedFrom(today);
-      setCreatedTo(today);
-      void load(1, pageSize, "", undefined, "", "all", "RESTORE", undefined, today, today);
-      return;
-    }
-    if (preset === "flowerOps") {
-      setKeyword("");
-      setModule("FLOWER");
-      setOperatorName("");
-      setSuccess("all");
-      setAction(undefined);
-      setRestorable(undefined);
-      setCreatedFrom("");
-      setCreatedTo("");
-      void load(1, pageSize, "", "FLOWER", "", "all", undefined, undefined, "", "");
-      return;
-    }
-    if (preset === "contactOps") {
-      setKeyword("");
-      setModule("CONTACT");
-      setOperatorName("");
-      setSuccess("all");
-      setAction(undefined);
-      setRestorable(undefined);
-      setCreatedFrom("");
-      setCreatedTo("");
-      void load(1, pageSize, "", "CONTACT", "", "all", undefined, undefined, "", "");
-      return;
-    }
-    if (preset === "aiOps") {
-      setKeyword("");
-      setModule("AI");
-      setOperatorName("");
-      setSuccess("all");
-      setAction(undefined);
-      setRestorable(undefined);
-      setCreatedFrom("");
-      setCreatedTo("");
-      void load(1, pageSize, "", "AI", "", "all", undefined, undefined, "", "");
-    }
+    const nextState = buildOperationLogPresetState(preset);
+    setKeyword(nextState.keyword);
+    setModule(nextState.module);
+    setOperatorName(nextState.operatorName);
+    setSuccess(nextState.success);
+    setAction(nextState.action);
+    setRestorable(nextState.restorable);
+    setCreatedFrom(nextState.createdFrom);
+    setCreatedTo(nextState.createdTo);
+    void load(1, pageSize, nextState.keyword, nextState.module, nextState.operatorName, nextState.success, nextState.action, nextState.restorable, nextState.createdFrom, nextState.createdTo);
   };
 
   const resetFilters = () => {
-    setKeyword("");
-    setModule(undefined);
-    setOperatorName("");
-    setSuccess("all");
-    setAction(undefined);
-    setRestorable(undefined);
-    setCreatedFrom("");
-    setCreatedTo("");
-    void load(1, pageSize, "", undefined, "", "all", undefined, undefined, "", "");
+    const nextState = buildDefaultOperationLogFilterState();
+    setKeyword(nextState.keyword);
+    setModule(nextState.module);
+    setOperatorName(nextState.operatorName);
+    setSuccess(nextState.success);
+    setAction(nextState.action);
+    setRestorable(nextState.restorable);
+    setCreatedFrom(nextState.createdFrom);
+    setCreatedTo(nextState.createdTo);
+    void load(1, pageSize, nextState.keyword, nextState.module, nextState.operatorName, nextState.success, nextState.action, nextState.restorable, nextState.createdFrom, nextState.createdTo);
   };
 
   const handleExport = async () => {
@@ -600,13 +338,13 @@ export function AdminOperationLogs() {
       title: "模块",
       dataIndex: "module",
       width: 140,
-      render: (value: string) => <Tag color="green">{formatModule(value)}</Tag>,
+      render: (value: string) => <Tag color="green">{formatAdminModuleLabel(value)}</Tag>,
     },
     {
       title: "动作",
       dataIndex: "action",
       width: 120,
-      render: (value: string) => <Tag color={value === "RESTORE" ? "gold" : "default"}>{formatAction(value)}</Tag>,
+      render: (value: string) => <Tag color={value === "RESTORE" ? "gold" : "default"}>{formatAdminActionLabel(value)}</Tag>,
     },
     {
       title: "目标",
@@ -614,7 +352,7 @@ export function AdminOperationLogs() {
       width: 220,
       render: (_: unknown, record) => (
         <div>
-          <p className="font-semibold text-[#1b281e]">{formatTargetType(record.targetType)}</p>
+          <p className="font-semibold text-[#1b281e]">{formatAdminTargetTypeLabel(record.targetType, { archiveLabel: "操作日志归档" })}</p>
           <p className="mt-1 break-all text-xs text-muted">{formatTargetIdentifier(record.targetId)}</p>
         </div>
       ),
@@ -629,7 +367,7 @@ export function AdminOperationLogs() {
       title: "结果",
       dataIndex: "success",
       width: 120,
-      render: (value: boolean) => (value ? <Tag color="success">成功</Tag> : <Tag color="error">失败</Tag>),
+      render: (value: boolean) => renderAdminSuccessTag(value),
     },
     {
       title: "摘要",
@@ -761,15 +499,7 @@ export function AdminOperationLogs() {
             value={module}
             onChange={(value) => setModule(value)}
             placeholder="筛选模块"
-            options={[
-              { label: "登录鉴权", value: "AUTH" },
-              { label: "作品管理", value: "FLOWER" },
-              { label: "用户留言", value: "CONTACT" },
-              { label: "站点配置", value: "SITE" },
-              { label: "关于我们", value: "ABOUT" },
-              { label: "团队成员", value: "TEAM" },
-              { label: "AI 配置", value: "AI" },
-            ]}
+            options={ADMIN_MODULE_OPTIONS.filter((item) => item.value !== "AUDIT")}
           />
           <Input
             className="min-w-0"
@@ -783,14 +513,7 @@ export function AdminOperationLogs() {
             value={action}
             onChange={(value) => setAction(value)}
             placeholder="筛选动作"
-            options={[
-              { label: "登录", value: "LOGIN" },
-              { label: "新增", value: "CREATE" },
-              { label: "修改", value: "UPDATE" },
-              { label: "删除", value: "DELETE" },
-              { label: "标记已读", value: "MARK_READ" },
-              { label: "恢复", value: "RESTORE" },
-            ]}
+            options={ADMIN_ACTION_OPTIONS}
           />
           <Select
             value={success}
@@ -888,13 +611,13 @@ export function AdminOperationLogs() {
             total: data?.total ?? 0,
             showSizeChanger: true,
             size: screens.sm ? undefined : "small",
-            pageSizeOptions: ["10", "20", "50"],
+            pageSizeOptions: ADMIN_PAGE_SIZE_OPTIONS,
             showTotal: (total) => `共 ${total} 条日志`,
             onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo),
           }}
           onRow={(record) => ({
             onClick: (event) => {
-              if (shouldIgnoreRowClick(event.target)) return;
+              if (shouldIgnoreTableRowClick(event.target)) return;
               void openDetail(record.id);
             },
           })}
@@ -907,7 +630,7 @@ export function AdminOperationLogs() {
         title={
           <div className="admin-drawer-title">
             <p>日志详情</p>
-            <h3>{activeDetail ? `${formatModule(activeDetail.module)} / ${formatAction(activeDetail.action)}` : "日志详情"}</h3>
+            <h3>{activeDetail ? `${formatAdminModuleLabel(activeDetail.module)} / ${formatAdminActionLabel(activeDetail.action)}` : "日志详情"}</h3>
             <span>查看完整请求、前后快照、异常信息与恢复入口。</span>
           </div>
         }
@@ -950,9 +673,9 @@ export function AdminOperationLogs() {
             <div className="admin-subpanel px-4 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">基础信息</p>
               <div className="mt-3 space-y-2 text-muted">
-                <p>模块：{formatModule(activeDetail.module)}</p>
-                <p>动作：{formatAction(activeDetail.action)}</p>
-                <p>目标：{formatTargetType(activeDetail.targetType)} / {formatTargetIdentifier(activeDetail.targetId)}</p>
+                <p>模块：{formatAdminModuleLabel(activeDetail.module)}</p>
+                <p>动作：{formatAdminActionLabel(activeDetail.action)}</p>
+                <p>目标：{formatAdminTargetTypeLabel(activeDetail.targetType, { archiveLabel: "操作日志归档" })} / {formatTargetIdentifier(activeDetail.targetId)}</p>
                 <p>操作人：{activeDetail.operatorName || "系统"}</p>
                 <p>结果：{activeDetail.success ? "成功" : "失败"}</p>
                 <p>时间：{formatDateTimeWithSeconds(activeDetail.createdAt, activeDetail.createdAt)}</p>
@@ -997,16 +720,16 @@ export function AdminOperationLogs() {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <p className="text-sm font-semibold text-[#1b281e]">
-                              #{item.id} · {formatAction(item.action)}
+                              #{item.id} · {formatAdminActionLabel(item.action)}
                             </p>
                             <p className="mt-1 text-xs text-muted">
-                              {formatModule(item.module)} / {formatTargetType(item.targetType)} / {formatDateTimeWithSeconds(item.createdAt, item.createdAt)}
+                              {formatAdminModuleLabel(item.module)} / {formatAdminTargetTypeLabel(item.targetType, { archiveLabel: "操作日志归档" })} / {formatDateTimeWithSeconds(item.createdAt, item.createdAt)}
                             </p>
                           </div>
                           <Space size={[8, 8]} wrap>
-                            {isCurrent ? <Tag color="processing">当前查看</Tag> : null}
-                            {item.restoredFromLogId ? <Tag color="gold">恢复记录</Tag> : null}
-                            {item.success ? <Tag color="success">成功</Tag> : <Tag color="error">失败</Tag>}
+                            {isCurrent ? renderAdminCurrentViewTag() : null}
+                            {item.restoredFromLogId ? renderAdminRestoreRecordTag() : null}
+                            {renderAdminSuccessTag(item.success)}
                           </Space>
                         </div>
                         <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted">
@@ -1167,15 +890,15 @@ export function AdminOperationLogs() {
               <div className="admin-restore-risk-grid">
                 <div>
                   <p>模块</p>
-                  <strong>{formatModule(pendingRestoreContext.module)}</strong>
+                  <strong>{formatAdminModuleLabel(pendingRestoreContext.module)}</strong>
                 </div>
                 <div>
                   <p>动作</p>
-                  <strong>{formatAction(pendingRestoreContext.action)}</strong>
+                  <strong>{formatAdminActionLabel(pendingRestoreContext.action)}</strong>
                 </div>
                 <div>
                   <p>目标</p>
-                  <strong>{formatTargetType(pendingRestoreContext.targetType)}</strong>
+                  <strong>{formatAdminTargetTypeLabel(pendingRestoreContext.targetType, { archiveLabel: "操作日志归档" })}</strong>
                 </div>
                 <div>
                   <p>记录标识</p>

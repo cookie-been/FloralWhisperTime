@@ -123,6 +123,7 @@ Browser / WeChat Mini Program
 
 - 左侧一级导航
 - 顶部已打开页面导航切换
+- 已打开页面状态写入浏览器本地存储，刷新后仍可恢复
 - 页面级标题、副标题、说明文案动态配置
 - 小屏适配抽屉导航
 
@@ -130,8 +131,45 @@ Browser / WeChat Mini Program
 
 - `站点配置` 采用 Tabs 维护站点动态内容
 - `运维中心` 采用 Tabs 维护巡检、备份、安全、归档和迁移能力
+- `操作日志` 已拆分出独立筛选、恢复和快照对比工作台
 
-### 5.3 Web 数据访问
+### 5.3 Web 前端组织方式
+
+近期 Web 端做过一轮按规约的收敛，当前组织原则包括：
+
+- 路由页面优先通过 `React.lazy` 懒加载
+- 页面级公共逻辑优先下沉到 `src/utils/`
+- 单个后台重页面的纯计算、纯映射、纯预设逻辑优先下沉到页面本地 helper
+- 后台展示文案、状态 Tag、Tabs 查询参数同步、时间格式化、本地存储访问均已集中复用
+
+当前已落地的公共工具方向：
+
+- `storage.ts`
+- `datetime.ts`
+- `query-tabs.ts`
+- `admin-display.ts`
+- `admin-status.tsx`
+- `admin-table.ts`
+- `dom.ts`
+- `list-text.ts`
+- `text.ts`
+- `clipboard.ts`
+
+### 5.4 Web 构建策略
+
+Web 构建固定为：
+
+```text
+tsc -b && vite build
+```
+
+构建约束：
+
+- 不跳过 TypeScript build
+- `vite.config.ts` 仅对 `react`、`router`、`icons` 做稳定手工拆分
+- 避免对 `antd` / `rc-*` 生态做激进手工切包，减少循环依赖与空 chunk 风险
+
+### 5.5 Web 数据访问
 
 Web 统一通过 `flower-shop-web/src/services/api.ts` 调用后端接口。
 

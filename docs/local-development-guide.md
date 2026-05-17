@@ -105,6 +105,7 @@ admin / Floral@2026
 - `flower-shop-web/src/pages/`
 - `flower-shop-web/src/components/`
 - `flower-shop-web/src/services/api.ts`
+- `flower-shop-web/src/utils/`
 
 ### 共享类型
 
@@ -121,8 +122,19 @@ admin / Floral@2026
 2. 后端改鉴权、AI、系统状态时，优先跑相关测试类
 3. 本地开发环境可以保留开发默认值，但不要把正式密钥写进仓库
 4. 如果本地要模拟正式环境变量，单独建本地 `.env` 或 shell 导出变量
+5. Web 端新增后台逻辑时，优先复用 `src/utils/` 里的公共工具，不要在页面里重复写本地存储、时间格式化、Tabs 查询参数同步、状态 Tag 映射
+6. 后台页面如果超过一个完整视窗的大工作流，优先拆成 Tabs 或页面内局部 helper，再继续堆功能
 
-## 8. 相关文档
+## 8. Web 前端开发补充
+
+当前 Web 端推荐遵循这些约束：
+
+- 管理后台页面优先走懒加载
+- 后台公共展示文案与状态优先集中管理
+- 表格筛选、分页、行点击等公共模式优先复用现有实现
+- 构建优化以稳定为先，避免对 `antd` / `rc-*` 做复杂手工切包
+
+## 9. 相关文档
 
 - [local-dev-env-example.md](./reference/local-dev-env-example.md)
 - [pre-production-cutover-checklist.md](./pre-production-cutover-checklist.md)

@@ -7,9 +7,30 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ["react", "react-dom", "react-router-dom"],
-          icons: ["lucide-react"],
+        manualChunks(id) {
+          if (!id.includes("node_modules")) {
+            return undefined;
+          }
+
+          const packagePath = id.split("node_modules/")[1];
+          const packageSegments = packagePath.split("/");
+          const packageName = packageSegments[0].startsWith("@")
+            ? `${packageSegments[0]}/${packageSegments[1]}`
+            : packageSegments[0];
+
+          if (packageName === "lucide-react") {
+            return "icons";
+          }
+
+          if (packageName === "react" || packageName === "react-dom" || packageName === "scheduler") {
+            return "react";
+          }
+
+          if (packageName === "react-router" || packageName === "react-router-dom") {
+            return "router";
+          }
+
+          return undefined;
         },
       },
     },

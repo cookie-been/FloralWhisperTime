@@ -5,17 +5,11 @@ import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "l
 import { useSearchParams } from "react-router-dom";
 import { deleteAdminContact, getAdminContacts, isAbortError, markAdminContactRead, restoreAdminContact } from "@/services/api";
 import type { ContactMessage, PaginatedResult } from "@/types";
+import { ADMIN_PAGE_SIZE_OPTIONS } from "@/utils/admin-table";
 import { formatDateTime } from "@/utils/datetime";
-
-function truncateText(value: string, maxLength: number) {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength).trim()}...`;
-}
-
-function shouldIgnoreRowClick(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("button, .ant-btn, .ant-checkbox-wrapper, .ant-checkbox, .ant-popover, .ant-popconfirm"));
-}
+import { shouldIgnoreTableRowClick } from "@/utils/dom";
+import { renderAdminPendingTag, renderAdminReadStatusTag } from "@/utils/admin-status";
+import { truncateText } from "@/utils/text";
 
 export function AdminContacts() {
   const screens = Grid.useBreakpoint();
@@ -283,7 +277,7 @@ export function AdminContacts() {
         <div>
           <div className="flex items-center gap-2">
             <p className="font-semibold text-[#1b281e]">{name}</p>
-            {!record.readAt ? <Tag color="green">待处理</Tag> : null}
+            {!record.readAt ? renderAdminPendingTag() : null}
           </div>
           <p className="mt-1 text-xs text-muted">提交于 {formatDateTime(record.createdAt)}</p>
         </div>
@@ -299,8 +293,7 @@ export function AdminContacts() {
       title: "状态",
       dataIndex: "readAt",
       width: 120,
-      render: (readAt?: string | null) =>
-        readAt ? <Tag color="default">已读</Tag> : <Tag color="green">未读</Tag>,
+      render: (readAt?: string | null) => renderAdminReadStatusTag(readAt),
     },
     {
       title: "留言内容",
@@ -554,7 +547,7 @@ export function AdminContacts() {
             total: data?.total ?? 0,
             showSizeChanger: true,
             size: screens.sm ? undefined : "small",
-            pageSizeOptions: ["10", "20", "50"],
+            pageSizeOptions: ADMIN_PAGE_SIZE_OPTIONS,
             showTotal: (total) => `共 ${total} 条留言`,
             onChange: (nextPage, nextPageSize) => {
               load(nextPage, nextPageSize, keyword, status).catch(() => undefined);
@@ -563,7 +556,7 @@ export function AdminContacts() {
           rowClassName={(record) => (!record.readAt ? "admin-row-unread" : "")}
           onRow={(record) => ({
             onClick: (event) => {
-              if (shouldIgnoreRowClick(event.target)) return;
+              if (shouldIgnoreTableRowClick(event.target)) return;
               openDetail(record);
             },
           })}
@@ -624,7 +617,7 @@ export function AdminContacts() {
                 <div>
                   <p className="text-sm font-medium text-muted">状态</p>
                   <div className="mt-2">
-                    {activeContact.readAt ? <Tag color="default">已读</Tag> : <Tag color="green">未读</Tag>}
+                    {renderAdminReadStatusTag(activeContact.readAt)}
                   </div>
                 </div>
               </div>

@@ -4,7 +4,9 @@ import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAdminContacts, getAdminOperationLogs, getDashboardData, isAbortError } from "@/services/api";
 import type { BrandStory, Category, ContactMessage, Flower, OperationLogItem, PaginatedResult, ShopInfo, SiteConfig } from "@/types";
+import { formatAdminActionLabel, formatAdminModuleLabel, formatAdminTargetTypeLabel } from "@/utils/admin-display";
 import { formatDate, getTimestamp } from "@/utils/datetime";
+import { renderAdminSuccessTag } from "@/utils/admin-status";
 
 interface DashboardData {
   flowers: Flower[];
@@ -16,48 +18,6 @@ interface DashboardData {
   unreadContacts: PaginatedResult<ContactMessage>;
   failedOperationLogs: PaginatedResult<OperationLogItem>;
   restorableOperationLogs: PaginatedResult<OperationLogItem>;
-}
-
-function formatModuleLabel(value?: string) {
-  const mapping: Record<string, string> = {
-    AUTH: "登录鉴权",
-    FLOWER: "作品管理",
-    CONTACT: "用户留言",
-    SITE: "站点配置",
-    ABOUT: "关于我们",
-    TEAM: "团队成员",
-    AI: "AI 配置",
-    AUDIT: "系统审计",
-  };
-  return value ? (mapping[value] ?? value) : "系统模块";
-}
-
-function formatActionLabel(value?: string) {
-  const mapping: Record<string, string> = {
-    LOGIN: "登录",
-    CREATE: "新增",
-    UPDATE: "修改",
-    DELETE: "删除",
-    MARK_READ: "标记已读",
-    RESTORE: "恢复",
-    ARCHIVE: "归档",
-  };
-  return value ? (mapping[value] ?? value) : "操作";
-}
-
-function formatTargetTypeLabel(value?: string) {
-  const mapping: Record<string, string> = {
-    FLOWER: "作品",
-    CONTACT: "留言",
-    SITE_CONFIG: "站点配置",
-    ABOUT_PAGE: "关于页",
-    ABOUT_TIMELINE: "时间轴",
-    TEAM_MEMBER: "团队成员",
-    AI_SETTINGS: "AI 配置",
-    AUTH: "鉴权",
-    OPERATION_LOG_ARCHIVE: "日志归档",
-  };
-  return value ? (mapping[value] ?? value) : "数据项";
 }
 
 export function AdminDashboard() {
@@ -185,7 +145,7 @@ export function AdminDashboard() {
       value: data.failedOperationLogs.total,
       icon: AlertTriangle,
       note: summary.latestFailedLog
-        ? `${formatModuleLabel(summary.latestFailedLog.module)} · ${formatActionLabel(summary.latestFailedLog.action)}`
+        ? `${formatAdminModuleLabel(summary.latestFailedLog.module)} · ${formatAdminActionLabel(summary.latestFailedLog.action)}`
         : "当前没有失败日志",
       to: "/admin/operation-logs?success=false",
       tone: "text-[#9f4b45]",
@@ -196,7 +156,7 @@ export function AdminDashboard() {
       value: data.restorableOperationLogs.total,
       icon: RotateCcw,
       note: summary.latestRestorableLog
-        ? `${formatTargetTypeLabel(summary.latestRestorableLog.targetType)} · ${summary.latestRestorableLog.targetId || "可恢复记录"}`
+        ? `${formatAdminTargetTypeLabel(summary.latestRestorableLog.targetType)} · ${summary.latestRestorableLog.targetId || "可恢复记录"}`
         : "当前没有可恢复日志",
       to: "/admin/operation-logs?restorable=true",
       tone: "text-forest",
@@ -404,7 +364,7 @@ export function AdminDashboard() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-forest/70">今日关注</p>
             <p className="mt-3 text-sm leading-7 text-muted">
               {summary.latestFailedLog
-                ? `最近失败项来自${formatModuleLabel(summary.latestFailedLog.module)}，发生于 ${formatDate(summary.latestFailedLog.createdAt)}，建议优先核对失败原因并确认是否需要回滚。`
+                ? `最近失败项来自${formatAdminModuleLabel(summary.latestFailedLog.module)}，发生于 ${formatDate(summary.latestFailedLog.createdAt)}，建议优先核对失败原因并确认是否需要回滚。`
                 : "当前没有失败操作，建议继续关注可恢复日志和最近的配置修改。"}
             </p>
           </div>
@@ -426,14 +386,14 @@ export function AdminDashboard() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[#1b281e]">
-                        {formatModuleLabel(item.module)} · {formatActionLabel(item.action)}
+                        {formatAdminModuleLabel(item.module)} · {formatAdminActionLabel(item.action)}
                       </p>
                       <p className="mt-1 text-sm text-muted">
-                        {formatTargetTypeLabel(item.targetType)} / {formatDate(item.createdAt)}
+                        {formatAdminTargetTypeLabel(item.targetType)} / {formatDate(item.createdAt)}
                       </p>
                       <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#9f4b45]">{item.errorMessage || item.requestSummary || "失败日志"}</p>
                     </div>
-                    <Tag color="error">失败</Tag>
+                    {renderAdminSuccessTag(false)}
                   </div>
                 </Link>
               ))

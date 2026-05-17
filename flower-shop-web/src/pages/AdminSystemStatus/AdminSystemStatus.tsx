@@ -19,211 +19,59 @@ import {
 import { useAdminShell } from "@/components/admin/AdminShell";
 import type { AdminBackupFile, AdminOpsTask, OperationLogArchiveFile, OperationLogArchiveResult, SystemStatus } from "@/types";
 import type { RcFile } from "antd/es/upload";
+import { buildQueryTabSearchParams, resolveQueryTab } from "@/utils/query-tabs";
+import {
+  AUTO_REFRESH_ERROR_THRESHOLD,
+  AUTO_REFRESH_INTERVAL_MS,
+  buildSystemRisks,
+  DEFAULT_SYSTEM_TAB,
+  isSystemTabKey,
+  SYSTEM_TAB_LABELS,
+  type SystemTabKey,
+} from "./system-status.constants";
 import { SystemArchivesTab } from "./components/tabs/SystemArchivesTab";
 import { SystemBackupsTab } from "./components/tabs/SystemBackupsTab";
 import { SystemMigrationTab } from "./components/tabs/SystemMigrationTab";
 import { SystemOverviewTab } from "./components/tabs/SystemOverviewTab";
 import { SystemSecurityTab } from "./components/tabs/SystemSecurityTab";
 import { SystemTasksTab } from "./components/tabs/SystemTasksTab";
-import { formatDateTimeWithSeconds } from "@/utils/datetime";
+import { formatCurrentDateTime, formatDateTimeWithSeconds } from "@/utils/datetime";
+import {
+  formatServiceName,
+  formatTaskTypeLabel,
+  buildBackupOverview,
+  buildRecommendedCommands,
+  buildTaskStats,
+  enrichOpsTasksWithCommands,
+  getTaskResultEntries,
+  getTaskStatusMeta,
+  resolveOpsCommand,
+} from "./system-status.helpers";
 import type {
   BackupOverviewItem,
   KeyValueEntry,
   OpsCommandItem,
   RiskActionKey,
-  RiskItem,
   SummaryItem,
   TaskStatusFilter,
   TaskTypeFilter,
 } from "./components/tabs/types";
 
-const AUTO_REFRESH_INTERVAL_MS = 60000;
-const AUTO_REFRESH_ERROR_THRESHOLD = 3;
-
-type SystemTabKey = "overview" | "backups" | "tasks" | "security" | "archives" | "migration";
-
-const TAB_LABELS: Record<SystemTabKey, string> = {
-  overview: "总览",
-  backups: "备份与下载",
-  tasks: "巡检与任务",
-  security: "安全与风险",
-  archives: "日志归档",
-  migration: "配置迁移",
-};
-
-const DEFAULT_TAB: SystemTabKey = "overview";
-
 const formatDateTime = (value?: string) => formatDateTimeWithSeconds(value, value);
-
-function isSystemTabKey(value: string | null): value is SystemTabKey {
-  return Boolean(value && value in TAB_LABELS);
-}
-
-function resolveTab(searchParams: URLSearchParams): SystemTabKey {
-  const tab = searchParams.get("tab");
-  return isSystemTabKey(tab) ? tab : DEFAULT_TAB;
-}
-
-function buildTabSearchParams(searchParams: URLSearchParams, nextTab: SystemTabKey) {
-  const nextParams = new URLSearchParams(searchParams);
-  nextParams.set("tab", nextTab);
-  return nextParams;
-}
-
-function formatServiceName(value?: string) {
-  const mapping: Record<string, string> = {
-    "flower-shop-backend-java": "Java 主线后端",
-  };
-  return value ? (mapping[value] ?? value) : "未知服务";
-}
-
-function formatTaskTypeLabel(value?: string) {
-  if (value === "backup") return "手动备份";
-  if (value === "inspection") return "系统巡检";
-  return value || "未知任务";
-}
-
-function resolveOpsCommand(taskType?: string) {
-  if (taskType === "backup") {
-    return {
-      commandName: "ops.sh backup",
-      commandPreview: "./ops.sh backup",
-    };
-  }
-  if (taskType === "inspection") {
-    return {
-      commandName: "ops.sh release inspect",
-      commandPreview: "./ops.sh release inspect",
-    };
-  }
-  return {
-    commandName: "",
-    commandPreview: "",
-  };
-}
-
-function getTaskStatusMeta(status?: string) {
-  if (status === "success") return { color: "green" as const, label: "成功" };
-  if (status === "failed") return { color: "red" as const, label: "失败" };
-  return { color: "blue" as const, label: "执行中" };
-}
-
-function readString(value: unknown, fallback = "暂无") {
-  return typeof value === "string" && value.trim() ? value : fallback;
-}
-
-function readBooleanLabel(value: unknown, positive = "正常", negative = "异常") {
-  return value === true ? positive : value === false ? negative : "未知";
-}
-
-function getTaskResultEntries(task: AdminOpsTask): KeyValueEntry[] {
-  const result = task.resultData ?? {};
-  if (task.taskType === "backup") {
-    return [
-      { label: "备份标识", value: readString(result.backupName) },
-      { label: "备份目录", value: readString(result.backupPath) },
-      { label: "配置快照", value: readString(result.configExport) },
-      { label: "上传归档", value: readString(result.uploadsArchive) },
-    ];
-  }
-  if (task.taskType === "inspection") {
-    return [
-      { label: "数据库", value: readBooleanLabel(result.databaseConnected) },
-      { label: "上传目录", value: readBooleanLabel(result.uploadDirectoryReady) },
-      { label: "最近备份", value: readBooleanLabel(result.latestBackupPresent, "已发现", "缺失") },
-      { label: "AI 启用", value: readBooleanLabel(result.aiEnabled, "已启用", "未启用") },
-      { label: "AI 密钥", value: readBooleanLabel(result.aiKeyConfigured, "已配置", "未配置") },
-      { label: "安全等级", value: readString(result.securityLevel) },
-      { label: "安全摘要", value: readString(result.securitySummary) },
-      { label: "限流次数", value: String(result.rateLimitedCount ?? 0) },
-      { label: "繁忙拒绝", value: String(result.busyRejectedCount ?? 0) },
-    ];
-  }
-  return Object.entries(result).map(([key, value]) => ({
-    label: key,
-    value: typeof value === "string" ? value : JSON.stringify(value),
-  }));
-}
-
-function buildSystemRisks(status: SystemStatus): RiskItem[] {
-  const items: RiskItem[] = [];
-
-  if (!status.databaseConnected) {
-    items.push({
-      level: "error",
-      priority: 100,
-      title: "数据库连接异常",
-      detail: "后台核心数据当前无法稳定读写，需优先检查数据库容器、连接串与账号权限。",
-      suggestion: "先确认 MySQL 容器是否健康，再核对 DB 连接配置、账号权限与最近失败日志。",
-      actionKey: "failed-logs",
-      actionLabel: "查看失败日志",
-    });
-  }
-  if (!status.uploadDirectoryReady) {
-    items.push({
-      level: "error",
-      priority: 90,
-      title: "上传目录不可用",
-      detail: "作品图片、AI 出图和素材上传可能失败，需检查挂载目录、权限和磁盘状态。",
-      suggestion: "检查 uploads 挂载目录是否存在、是否可写，以及当前磁盘可用空间是否足够。",
-      actionKey: "upload",
-      actionLabel: "定位上传目录",
-    });
-  }
-  if (!status.latestBackupPresent) {
-    items.push({
-      level: "warning",
-      priority: 70,
-      title: "尚无可用备份",
-      detail: "正式环境建议至少保留一份最近备份，再执行配置导入、升级或数据清理。",
-      suggestion: "建议先执行一次手动备份，确认备份目录生成成功并可下载后再继续其他高风险操作。",
-      actionKey: "backup",
-      actionLabel: "前往备份区",
-    });
-  }
-  if (status.aiEnabled && !status.aiKeyConfigured) {
-    items.push({
-      level: "warning",
-      priority: 60,
-      title: "AI 已启用但未配置密钥",
-      detail: "AI 生图与相关生成能力当前不可用，需补齐可用的 API Key 与模型。",
-      suggestion: "进入 AI 配置页补齐可用密钥、模型与接口地址，并完成一次生图验证。",
-      actionKey: "ai-settings",
-      actionLabel: "前往 AI 配置",
-    });
-  }
-  if (status.requirePasswordChange) {
-    items.push({
-      level: "warning",
-      priority: 80,
-      title: "管理员仍在使用初始密码",
-      detail: "当前实例尚未完成交付初始化，需先修改默认管理员密码后再投入正式使用。",
-      suggestion: "建议立即改为仅内部掌握的强密码，并完成一次重新登录验证。",
-      actionKey: "change-password",
-      actionLabel: "立即修改密码",
-    });
-  }
-  if (status.security?.securityLevel === "risk") {
-    items.push({
-      level: "error",
-      priority: 95,
-      title: "存在默认安全配置",
-      detail: status.security?.securitySummary || "JWT 密钥、加密密钥或密码初始化状态仍有高风险项。",
-      suggestion: "优先替换默认 JWT 密钥和数据加密密钥，再复核管理员密码初始化状态。",
-      actionKey: "security",
-      actionLabel: "定位安全状态",
-    });
-  }
-
-  return items.sort((a, b) => b.priority - a.priority);
-}
 
 export function AdminSystemStatus() {
   const navigate = useNavigate();
   const adminShell = useAdminShell();
   const screens = Grid.useBreakpoint();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = useMemo(() => resolveTab(searchParams), [searchParams]);
+  const activeTab = useMemo(
+    () =>
+      resolveQueryTab(searchParams, {
+        defaultValue: DEFAULT_SYSTEM_TAB,
+        isValid: isSystemTabKey,
+      }),
+    [searchParams],
+  );
 
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -257,7 +105,7 @@ export function AdminSystemStatus() {
   const securitySectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const normalizedParams = buildTabSearchParams(searchParams, activeTab);
+    const normalizedParams = buildQueryTabSearchParams(searchParams, activeTab);
     if (normalizedParams.toString() !== searchParams.toString()) {
       setSearchParams(normalizedParams, { replace: true });
     }
@@ -313,7 +161,7 @@ export function AdminSystemStatus() {
         setBackupFilesError(backupsResult.reason instanceof Error ? backupsResult.reason.message : "备份资产加载失败");
       }
 
-      setLastRefreshAt(new Date().toLocaleString("zh-CN", { hour12: false }));
+      setLastRefreshAt(formatCurrentDateTime());
       setRefreshErrorCount(0);
       setLastRefreshError("");
       setAutoRefreshPaused(false);
@@ -430,67 +278,19 @@ export function AdminSystemStatus() {
     });
   }, [opsTasks, taskStatusFilter, taskTypeFilter]);
 
-  const taskStats = useMemo(() => {
-    const failed = opsTasks.filter((item) => item.status === "failed").length;
-    const inspection = opsTasks.filter((item) => item.taskType === "inspection").length;
-    const backup = opsTasks.filter((item) => item.taskType === "backup").length;
-    return { failed, inspection, backup };
-  }, [opsTasks]);
+  const taskStats = useMemo(() => buildTaskStats(opsTasks), [opsTasks]);
 
   const riskItems = useMemo(() => (status ? buildSystemRisks(status) : []), [status]);
   const inspectionOverview = useMemo(() => (latestInspectionTask ? getTaskResultEntries(latestInspectionTask).slice(0, 6) : []), [latestInspectionTask]);
 
-  const backupOverview = useMemo<BackupOverviewItem[]>(() => {
-    const latestBackupFile = backupFiles[0];
-    return [
-      { label: "备份总数", value: `${backupFiles.length} 份`, note: "当前可直接下载的备份目录数量" },
-      { label: "最新备份", value: latestBackupFile?.backupName || "暂无", note: latestBackupFile?.modifiedAt || "尚未产生可用备份" },
-      { label: "最新体积", value: latestBackupFile?.size || "未知", note: latestBackupTask?.finishedAt ? `最近手动备份完成于 ${formatDateTimeWithSeconds(latestBackupTask.finishedAt, latestBackupTask.finishedAt)}` : "尚未记录后台触发的备份任务" },
-    ];
-  }, [backupFiles, latestBackupTask]);
-
-  const recommendedCommands = useMemo<OpsCommandItem[]>(
-    () => [
-      {
-        key: "backup",
-        label: "手动备份",
-        description: "对应后台“立即备份”动作。适合升级前、配置导入前、重要数据调整前执行。",
-        command: "./ops.sh backup",
-      },
-      {
-        key: "inspection",
-        label: "部署后巡检",
-        description: "对应后台“执行巡检”与运维核查场景。适合上线后、升级后、问题排查时执行。",
-        command: "./ops.sh release inspect",
-      },
-      {
-        key: "upgrade",
-        label: "源码升级",
-        description: "用于代码仓库模式下的更新与重建，建议先执行备份。",
-        command: "./ops.sh upgrade",
-      },
-      {
-        key: "rollback",
-        label: "备份回滚",
-        description: "用于源码部署模式下从最近备份恢复，建议先 dry-run。",
-        command: "./ops.sh rollback --latest --dry-run",
-      },
-    ],
-    [],
+  const backupOverview = useMemo<BackupOverviewItem[]>(
+    () => buildBackupOverview(backupFiles, latestBackupTask?.finishedAt ? formatDateTimeWithSeconds(latestBackupTask.finishedAt, latestBackupTask.finishedAt) : null),
+    [backupFiles, latestBackupTask],
   );
 
-  const opsTasksWithCommands = useMemo(
-    () =>
-      opsTasks.map((item) => {
-        const commandMeta = resolveOpsCommand(item.taskType);
-        return {
-          ...item,
-          commandName: commandMeta.commandName,
-          commandPreview: commandMeta.commandPreview,
-        };
-      }),
-    [opsTasks],
-  );
+  const recommendedCommands = useMemo<OpsCommandItem[]>(() => buildRecommendedCommands(), []);
+
+  const opsTasksWithCommands = useMemo(() => enrichOpsTasksWithCommands(opsTasks), [opsTasks]);
 
   const openArchiveModal = useCallback(() => {
     const suggested = status?.operationLogArchiveBefore ? status.operationLogArchiveBefore.slice(0, 10) : "";
@@ -523,7 +323,7 @@ export function AdminSystemStatus() {
     try {
       const result = await importAdminConfig(file);
       message.success(`配置已导入：时间轴 ${result.timelineCount} 条，团队 ${result.teamCount} 人`);
-      setLatestConfigImportAt(new Date().toLocaleString("zh-CN", { hour12: false }));
+      setLatestConfigImportAt(formatCurrentDateTime());
       await loadStatus("refresh");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "配置导入失败");
@@ -562,7 +362,7 @@ export function AdminSystemStatus() {
   }, [runningInspection, loadStatus]);
 
   const setTab = useCallback((nextTab: SystemTabKey) => {
-    setSearchParams(buildTabSearchParams(searchParams, nextTab), { replace: true });
+    setSearchParams(buildQueryTabSearchParams(searchParams, nextTab), { replace: true });
   }, [searchParams, setSearchParams]);
 
   const handleRiskAction = useCallback((actionKey?: RiskActionKey) => {
@@ -625,7 +425,7 @@ export function AdminSystemStatus() {
   const handleConfigExport = useCallback(() => {
     downloadAdminConfigExport()
       .then(() => {
-        setLatestConfigExportAt(new Date().toLocaleString("zh-CN", { hour12: false }));
+        setLatestConfigExportAt(formatCurrentDateTime());
         message.success("已开始下载配置导出包");
       })
       .catch((error) => message.error(error instanceof Error ? error.message : "配置导出失败"));
@@ -667,7 +467,7 @@ export function AdminSystemStatus() {
           </Button>
         </div>
         <p className="mt-4 text-sm text-muted">
-          当前为 {TAB_LABELS[activeTab]}，Tabs 仅重组展示结构，所有接口、任务记录、归档逻辑和弹窗链路保持原样。
+          当前为 {SYSTEM_TAB_LABELS[activeTab]}，Tabs 仅重组展示结构，所有接口、任务记录、归档逻辑和弹窗链路保持原样。
         </p>
       </section>
 

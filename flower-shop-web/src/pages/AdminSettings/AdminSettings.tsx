@@ -3,6 +3,8 @@ import { Button, Form, Grid, Spin, Tabs, message } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { getAdminSiteConfig, getBrandStory, getShopInfo, updateSiteConfig, uploadFlowerImage } from "@/services/api";
 import type { SiteConfig } from "@/types";
+import { joinListText, splitListText } from "@/utils/list-text";
+import { buildQueryTabSearchParams, resolveQueryTab } from "@/utils/query-tabs";
 import { AdminCopySettingsTab } from "./components/tabs/AdminCopySettingsTab";
 import { ContactSettingsTab } from "./components/tabs/ContactSettingsTab";
 import { HomeSettingsTab } from "./components/tabs/HomeSettingsTab";
@@ -55,36 +57,10 @@ const TAB_LABELS: Record<SettingsTabKey, string> = {
 
 const DEFAULT_TAB: SettingsTabKey = "home";
 
-const joinText = (items: string[]) => items.join("，");
-export const splitText = (value: string) =>
-  value
-    .split(/[,\n，、]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+export const splitText = splitListText;
 
 function isSettingsTabKey(value: string | null): value is SettingsTabKey {
   return Boolean(value && value in TAB_LABELS);
-}
-
-function resolveTab(searchParams: URLSearchParams): SettingsTabKey {
-  const tab = searchParams.get("tab");
-  if (isSettingsTabKey(tab)) {
-    return tab;
-  }
-
-  const legacySection = searchParams.get("section");
-  if (legacySection && legacySection in LEGACY_SECTION_TO_TAB) {
-    return LEGACY_SECTION_TO_TAB[legacySection];
-  }
-
-  return DEFAULT_TAB;
-}
-
-function buildTabSearchParams(searchParams: URLSearchParams, nextTab: SettingsTabKey) {
-  const nextParams = new URLSearchParams(searchParams);
-  nextParams.set("tab", nextTab);
-  nextParams.delete("section");
-  return nextParams;
 }
 
 type UploadState = Partial<Record<SettingsImageFieldName, boolean>>;
@@ -98,10 +74,23 @@ export function AdminSettings() {
   const [booting, setBooting] = useState(true);
   const [uploading, setUploading] = useState<UploadState>({});
   const [aboutSaveSignal, setAboutSaveSignal] = useState(0);
-  const activeTab = useMemo(() => resolveTab(searchParams), [searchParams]);
+  const activeTab = useMemo(
+    () =>
+      resolveQueryTab(searchParams, {
+        defaultValue: DEFAULT_TAB,
+        isValid: isSettingsTabKey,
+        legacyKeys: [
+          {
+            key: "section",
+            mapping: LEGACY_SECTION_TO_TAB,
+          },
+        ],
+      }),
+    [searchParams],
+  );
 
   useEffect(() => {
-    const normalizedParams = buildTabSearchParams(searchParams, activeTab);
+    const normalizedParams = buildQueryTabSearchParams(searchParams, activeTab, { removeKeys: ["section"] });
     if (normalizedParams.toString() !== searchParams.toString()) {
       setSearchParams(normalizedParams, { replace: true });
     }
@@ -120,13 +109,13 @@ export function AdminSettings() {
           storyTitle: story.title,
           storySubtitle: story.subtitle ?? "",
           storyContent: story.content,
-          storyImages: joinText(story.images),
-          heroSlidesText: joinText(siteConfig.heroSlides ?? []),
-          adminLoginSlidesText: joinText(siteConfig.adminLoginSlides ?? []),
-          contactImagesText: joinText(siteConfig.contactImages ?? []),
+          storyImages: joinListText(story.images),
+          heroSlidesText: joinListText(siteConfig.heroSlides ?? []),
+          adminLoginSlidesText: joinListText(siteConfig.adminLoginSlides ?? []),
+          contactImagesText: joinListText(siteConfig.contactImages ?? []),
         });
       })
-      .catch((error) => message.error(error.message))
+      .catch((error) => message.error(error instanceof Error ? error.message : "站点配置加载失败"))
       .finally(() => setBooting(false));
   }, [form]);
 
@@ -157,7 +146,7 @@ export function AdminSettings() {
   const appendUrlsToField = (field: keyof SettingsForm, urls: string[]) => {
     const currentValue = String(form.getFieldValue(field) ?? "").trim();
     const currentItems = splitText(currentValue);
-    const nextValue = [...currentItems, ...urls].join("，");
+    const nextValue = joinListText([...currentItems, ...urls]);
     form.setFieldValue(field, nextValue);
   };
 
@@ -239,7 +228,7 @@ export function AdminSettings() {
         <Tabs
           activeKey={activeTab}
           onChange={(nextTab) => {
-            setSearchParams(buildTabSearchParams(searchParams, nextTab as SettingsTabKey), { replace: true });
+            setSearchParams(buildQueryTabSearchParams(searchParams, nextTab as SettingsTabKey, { removeKeys: ["section"] }), { replace: true });
           }}
           tabBarGutter={screens.sm ? 24 : 12}
           items={[

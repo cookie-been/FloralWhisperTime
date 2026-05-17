@@ -3,6 +3,7 @@ import type { FormInstance } from "antd";
 import { ImagePlus } from "lucide-react";
 import type { RcFile } from "antd/es/upload";
 import type { SettingsForm, SettingsImageFieldName } from "../../AdminSettings";
+import { splitListText } from "@/utils/list-text";
 import { SettingsMediaListField } from "../SettingsMediaListField";
 import { SettingsMediaField } from "../SettingsMediaField";
 import { SettingsPreviewPanel } from "../SettingsPreviewPanel";
@@ -23,12 +24,6 @@ type MediaSettingsTabProps = {
     successMessage: string,
   ) => boolean | Promise<boolean>;
 };
-
-const splitText = (value: string) =>
-  value
-    .split(/[,\n，、]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
 
 const scopeBadgeClassName = "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold";
 const miniSyncBadgeClassName = `${scopeBadgeClassName} bg-[#e8f5e9] text-[#2e7d32]`;
@@ -56,10 +51,10 @@ export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImage
   const contactImagesText = Form.useWatch("contactImagesText", form) ?? "";
   const storyImages = Form.useWatch("storyImages", form) ?? "";
 
-  const heroPreviewSlides = splitText(heroSlidesText);
-  const adminLoginPreviewSlides = splitText(adminLoginSlidesText);
-  const contactPreviewImages = splitText(contactImagesText);
-  const storyPreviewImages = splitText(storyImages);
+  const heroPreviewSlides = splitListText(heroSlidesText);
+  const adminLoginPreviewSlides = splitListText(adminLoginSlidesText);
+  const contactPreviewImages = splitListText(contactImagesText);
+  const storyPreviewImages = splitListText(storyImages);
 
   return (
     <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
