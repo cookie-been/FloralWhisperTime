@@ -45,10 +45,10 @@
 
     <view class="quick-actions">
       <button class="primary-button quick-button" bindtap="goAllCategories">
-        浏览全部作品
+        {{primaryActionText}}
       </button>
       <button class="secondary-button quick-button" bindtap="goContact">
-        联系门店
+        {{secondaryActionText}}
       </button>
     </view>
   </state-section>

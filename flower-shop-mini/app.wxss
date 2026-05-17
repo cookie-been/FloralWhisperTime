@@ -10,6 +10,33 @@ page {
   box-sizing: border-box;
 }
 
+.page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-bottom: 28rpx;
+}
+
+.page-eyebrow {
+  color: #2e7d32;
+  font-size: 22rpx;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.page-title-text {
+  color: #1f2937;
+  font-size: 44rpx;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.page-desc-text {
+  color: #6b7280;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
 .section-title {
   margin: 36rpx 0 20rpx;
   font-size: 36rpx;

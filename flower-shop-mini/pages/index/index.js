@@ -11,6 +11,8 @@ Page({
     storyEyebrowText: "品牌故事",
     storyTitleText: "让花束像一封慢慢抵达的信",
     storyDescriptionText: "了解花语时光的品牌故事",
+    primaryActionText: "浏览全部作品",
+    secondaryActionText: "联系门店",
     isPageLoading: true,
     pageErrorText: "",
     noticeText: "今日可预约婚礼手捧花、生日花束和开业花篮。",
@@ -60,6 +62,8 @@ Page({
         storyEyebrowText: fallbackText(siteConfig.heroEyebrow, "品牌故事"),
         storyTitleText: fallbackText(siteConfig.heroTitle, "让花束像一封慢慢抵达的信"),
         storyDescriptionText: fallbackText(siteConfig.heroDescription, "了解花语时光的品牌故事"),
+        primaryActionText: fallbackText(siteConfig.primaryCtaText, "浏览全部作品"),
+        secondaryActionText: fallbackText(siteConfig.secondaryCtaText, "联系门店"),
       });
     } catch (error) {
       if (requestId !== this.currentPageRequestId) {

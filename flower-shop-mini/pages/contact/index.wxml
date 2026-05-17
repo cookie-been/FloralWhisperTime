@@ -6,9 +6,10 @@
     empty-text="暂时无法展示联系信息"
     bind:retry="handleRetry"
   >
-    <view class="contact-head">
-      <text class="title">联系我们</text>
-      <text class="desc">{{contactDescription}}</text>
+    <view class="page-head">
+      <text class="page-eyebrow">联系门店</text>
+      <text class="page-title-text">{{shopNameText}}</text>
+      <text class="page-desc-text">{{contactDescription}}</text>
     </view>
 
     <shop-map shop="{{shop}}" />

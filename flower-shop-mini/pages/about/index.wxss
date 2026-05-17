@@ -17,15 +17,6 @@
   font-weight: 600;
 }
 
-.title {
-  display: block;
-  margin-top: 12rpx;
-  color: #1f2937;
-  font-size: 38rpx;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
 .subtitle,
 .content,
 .shop-line {
@@ -35,12 +26,8 @@
   line-height: 1.8;
 }
 
-.subtitle {
-  margin-top: 18rpx;
-}
-
 .content {
-  margin-top: 14rpx;
+  margin-top: 12rpx;
 }
 
 .section-header {

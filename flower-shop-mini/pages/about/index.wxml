@@ -6,12 +6,16 @@
     empty-text="关于我们内容暂不可用"
     bind:retry="handleRetry"
   >
+    <view class="page-head">
+      <text class="page-eyebrow">关于我们</text>
+      <text class="page-title-text">{{storyTitleText}}</text>
+      <text class="page-desc-text">{{storySubtitleText}}</text>
+    </view>
+
     <image class="hero" src="{{heroImageUrl}}" mode="aspectFill" />
 
     <view class="panel story-card">
-      <text class="eyebrow">Brand Story</text>
-      <text class="title">{{storyTitleText}}</text>
-      <text class="subtitle">{{storySubtitleText}}</text>
+      <text class="eyebrow">品牌故事</text>
       <text class="content">{{storyContentText}}</text>
     </view>
 
