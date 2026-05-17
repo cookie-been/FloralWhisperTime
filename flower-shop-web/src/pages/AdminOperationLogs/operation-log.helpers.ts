@@ -201,6 +201,34 @@ export function buildOperationLogFilterState(state: OperationLogFilterState) {
   return state;
 }
 
+export function buildOperationLogSearchParams(state: OperationLogFilterState) {
+  const next = new URLSearchParams();
+  if (state.keyword.trim()) next.set("keyword", state.keyword.trim());
+  if (state.module) next.set("module", state.module);
+  if (state.operatorName.trim()) next.set("operatorName", state.operatorName.trim());
+  if (state.success !== "all") next.set("success", state.success);
+  if (state.action) next.set("action", state.action);
+  if (state.restorable !== undefined) next.set("restorable", String(state.restorable));
+  if (state.createdFrom) next.set("createdFrom", state.createdFrom);
+  if (state.createdTo) next.set("createdTo", state.createdTo);
+  return next;
+}
+
+export function buildOperationLogQuery(state: OperationLogFilterState, page?: number, limit?: number) {
+  return {
+    page,
+    limit,
+    keyword: state.keyword.trim() || undefined,
+    module: state.module || undefined,
+    operatorName: state.operatorName.trim() || undefined,
+    action: state.action || undefined,
+    success: state.success === "all" ? undefined : state.success === "true",
+    restorable: state.restorable,
+    createdFrom: formatRangeBoundary(state.createdFrom, "start"),
+    createdTo: formatRangeBoundary(state.createdTo, "end"),
+  };
+}
+
 export function buildOperationLogQuickViewState(
   view: QuickView,
   currentState: OperationLogFilterState,

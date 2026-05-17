@@ -3,13 +3,21 @@ import { Button, Form, Grid, Spin, Tabs, message } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { getAdminSiteConfig, getBrandStory, getShopInfo, updateSiteConfig, uploadFlowerImage } from "@/services/api";
 import type { SiteConfig } from "@/types";
-import { joinListText, splitListText } from "@/utils/list-text";
 import { buildQueryTabSearchParams, resolveQueryTab } from "@/utils/query-tabs";
 import { AdminCopySettingsTab } from "./components/tabs/AdminCopySettingsTab";
 import { ContactSettingsTab } from "./components/tabs/ContactSettingsTab";
 import { HomeSettingsTab } from "./components/tabs/HomeSettingsTab";
 import { MediaSettingsTab } from "./components/tabs/MediaSettingsTab";
 import { StorySettingsTab } from "./components/tabs/StorySettingsTab";
+import {
+  appendSettingsFieldUrls,
+  buildSettingsFormValues,
+  buildSettingsUpdatePayload,
+  DEFAULT_TAB,
+  isSettingsTabKey,
+  LEGACY_SECTION_TO_TAB,
+  TAB_LABELS,
+} from "./settings.helpers";
 
 const AdminAboutLazy = lazy(() =>
   import("@/pages/AdminAbout/AdminAbout").then((module) => ({ default: module.AdminAbout })),
@@ -39,29 +47,6 @@ export type SettingsForm = SiteConfig & {
   adminLoginSlidesText: string;
   contactImagesText: string;
 };
-
-const LEGACY_SECTION_TO_TAB: Record<string, Exclude<SettingsTabKey, "about">> = {
-  brand: "home",
-  contact: "contact",
-  story: "story",
-};
-
-const TAB_LABELS: Record<SettingsTabKey, string> = {
-  home: "首页与品牌",
-  contact: "门店与联系",
-  story: "品牌故事",
-  about: "关于我们",
-  "admin-copy": "后台文案",
-  media: "媒体资源",
-};
-
-const DEFAULT_TAB: SettingsTabKey = "home";
-
-export const splitText = splitListText;
-
-function isSettingsTabKey(value: string | null): value is SettingsTabKey {
-  return Boolean(value && value in TAB_LABELS);
-}
 
 type UploadState = Partial<Record<SettingsImageFieldName, boolean>>;
 
@@ -99,21 +84,7 @@ export function AdminSettings() {
   useEffect(() => {
     Promise.all([getAdminSiteConfig(), getShopInfo(), getBrandStory()])
       .then(([siteConfig, shopInfo, story]) => {
-        form.setFieldsValue({
-          ...siteConfig,
-          phone: shopInfo.phone,
-          wechat: shopInfo.wechat ?? "",
-          address: shopInfo.address,
-          latitude: shopInfo.latitude,
-          longitude: shopInfo.longitude,
-          storyTitle: story.title,
-          storySubtitle: story.subtitle ?? "",
-          storyContent: story.content,
-          storyImages: joinListText(story.images),
-          heroSlidesText: joinListText(siteConfig.heroSlides ?? []),
-          adminLoginSlidesText: joinListText(siteConfig.adminLoginSlides ?? []),
-          contactImagesText: joinListText(siteConfig.contactImages ?? []),
-        });
+        form.setFieldsValue(buildSettingsFormValues(siteConfig, shopInfo, story));
       })
       .catch((error) => message.error(error instanceof Error ? error.message : "站点配置加载失败"))
       .finally(() => setBooting(false));
@@ -128,13 +99,7 @@ export function AdminSettings() {
     const values = await form.validateFields();
     setLoading(true);
     try {
-      await updateSiteConfig({
-        ...values,
-        storyImages: splitText(values.storyImages),
-        heroSlides: splitText(values.heroSlidesText),
-        adminLoginSlides: splitText(values.adminLoginSlidesText),
-        contactImages: splitText(values.contactImagesText),
-      });
+      await updateSiteConfig(buildSettingsUpdatePayload(values));
       message.success("站点配置已保存");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "保存失败");
@@ -145,9 +110,7 @@ export function AdminSettings() {
 
   const appendUrlsToField = (field: keyof SettingsForm, urls: string[]) => {
     const currentValue = String(form.getFieldValue(field) ?? "").trim();
-    const currentItems = splitText(currentValue);
-    const nextValue = joinListText([...currentItems, ...urls]);
-    form.setFieldValue(field, nextValue);
+    form.setFieldValue(field, appendSettingsFieldUrls(currentValue, urls));
   };
 
   const uploadImageToField = async (

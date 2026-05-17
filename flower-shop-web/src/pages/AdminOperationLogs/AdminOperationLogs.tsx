@@ -20,15 +20,15 @@ import { renderAdminCurrentViewTag, renderAdminRestoreRecordTag, renderAdminSucc
 import {
   buildDefaultOperationLogFilterState,
   buildOperationLogFilterState,
+  buildOperationLogQuery,
+  buildOperationLogSearchParams,
   buildSnapshotDiff,
   buildOperationLogFilterSummary,
   buildOperationLogMetrics,
   buildOperationLogModuleStats,
   buildOperationLogPresetState,
   buildOperationLogQuickViewState,
-  formatRangeBoundary,
   formatTargetIdentifier,
-  getTodayDateValue,
   hasOperationLogActiveFilters,
   resolveOperationLogPreset,
   resolveQuickView,
@@ -36,6 +36,7 @@ import {
   type QuickView,
   type ResultFilter,
 } from "./operation-log.helpers";
+import { buildOperationLogColumns, buildRestoreConfirmationState } from "./operation-log.view";
 
 async function copyText(value: string, successText: string) {
   if (!value.trim()) {
@@ -86,36 +87,22 @@ export function AdminOperationLogs() {
   const [createdTo, setCreatedTo] = useState(initialCreatedTo);
   const listRequestControllerRef = useRef<AbortController | null>(null);
   const detailRequestControllerRef = useRef<AbortController | null>(null);
+  const filterState = useMemo(
+    () => buildOperationLogFilterState({ keyword, module, operatorName, success, action, restorable, createdFrom, createdTo }),
+    [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success],
+  );
 
   const load = async (
     nextPage = page,
     nextPageSize = pageSize,
-    nextKeyword = keyword,
-    nextModule = module,
-    nextOperatorName = operatorName,
-    nextSuccess = success,
-    nextAction = action,
-    nextRestorable = restorable,
-    nextCreatedFrom = createdFrom,
-    nextCreatedTo = createdTo,
+    nextState = filterState,
   ) => {
     listRequestControllerRef.current?.abort();
     const controller = new AbortController();
     listRequestControllerRef.current = controller;
     setLoading(true);
     try {
-      const query: OperationLogQuery = {
-        page: nextPage,
-        limit: nextPageSize,
-        keyword: nextKeyword.trim() || undefined,
-        module: nextModule || undefined,
-        operatorName: nextOperatorName.trim() || undefined,
-        action: nextAction || undefined,
-        success: nextSuccess === "all" ? undefined : nextSuccess === "true",
-        restorable: nextRestorable,
-        createdFrom: formatRangeBoundary(nextCreatedFrom, "start"),
-        createdTo: formatRangeBoundary(nextCreatedTo, "end"),
-      };
+      const query: OperationLogQuery = buildOperationLogQuery(nextState, nextPage, nextPageSize);
       const result = await getAdminOperationLogs(query, { signal: controller.signal });
       setData(result);
       setPage(result.page);
@@ -132,7 +119,7 @@ export function AdminOperationLogs() {
   };
 
   useEffect(() => {
-    void load(1, 10, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo);
+    void load(1, 10, filterState);
     return () => {
       listRequestControllerRef.current?.abort();
       detailRequestControllerRef.current?.abort();
@@ -140,21 +127,13 @@ export function AdminOperationLogs() {
   }, []);
 
   useEffect(() => {
-    const next = new URLSearchParams();
-    if (keyword.trim()) next.set("keyword", keyword.trim());
-    if (module) next.set("module", module);
-    if (operatorName.trim()) next.set("operatorName", operatorName.trim());
-    if (success !== "all") next.set("success", success);
-    if (action) next.set("action", action);
-    if (restorable !== undefined) next.set("restorable", String(restorable));
-    if (createdFrom) next.set("createdFrom", createdFrom);
-    if (createdTo) next.set("createdTo", createdTo);
+    const next = buildOperationLogSearchParams(filterState);
     setSearchParams(next, { replace: true });
-  }, [action, createdFrom, createdTo, keyword, module, operatorName, restorable, setSearchParams, success]);
+  }, [filterState, setSearchParams]);
 
   const currentQuickView = useMemo<QuickView>(
-    () => resolveQuickView({ action, restorable, success }),
-    [action, restorable, success],
+    () => resolveQuickView({ action: filterState.action, restorable: filterState.restorable, success: filterState.success }),
+    [filterState.action, filterState.restorable, filterState.success],
   );
 
   const metrics = useMemo(() => {
@@ -188,23 +167,18 @@ export function AdminOperationLogs() {
   const filterSummary = useMemo(
     () =>
       buildOperationLogFilterSummary(
-        { keyword, module, operatorName, success, action, restorable, createdFrom, createdTo },
+        filterState,
         formatAdminModuleLabel,
         formatAdminActionLabel,
       ),
-    [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success],
+    [filterState],
   );
 
-  const hasActiveFilters = hasOperationLogActiveFilters({
-    ...buildOperationLogFilterState({ keyword, module, operatorName, success, action, restorable, createdFrom, createdTo }),
-  });
+  const hasActiveFilters = hasOperationLogActiveFilters(filterState);
 
   const currentPreset = useMemo<FilterPreset>(
-    () =>
-      resolveOperationLogPreset({
-        ...buildOperationLogFilterState({ keyword, module, operatorName, success, action, restorable, createdFrom, createdTo }),
-      }),
-    [action, createdFrom, createdTo, keyword, module, operatorName, restorable, success],
+    () => resolveOperationLogPreset(filterState),
+    [filterState],
   );
 
   const snapshotDiff = useMemo(
@@ -241,7 +215,7 @@ export function AdminOperationLogs() {
       setRestoreModalOpen(false);
       setRestoreReason("");
       setPendingRestoreId(null);
-      await load(page, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo);
+      await load(page, pageSize);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "恢复失败");
     } finally {
@@ -264,23 +238,23 @@ export function AdminOperationLogs() {
     setRestoreModalOpen(true);
   };
 
-  const restoreConfirmPhrase = pendingRestoreId ? `恢复${pendingRestoreId}` : "";
+  const restoreConfirmation = useMemo(
+    () =>
+      buildRestoreConfirmationState({
+        pendingRestoreId,
+        restoringId,
+        restoreReason,
+        restoreConfirmText,
+      }),
+    [pendingRestoreId, restoreConfirmText, restoreReason, restoringId],
+  );
 
   const applyQuickView = (view: QuickView) => {
-    const nextState = buildOperationLogQuickViewState(view, {
-      keyword,
-      module,
-      operatorName,
-      success,
-      action,
-      restorable,
-      createdFrom,
-      createdTo,
-    });
+    const nextState = buildOperationLogQuickViewState(view, filterState);
     setSuccess(nextState.success);
     setAction(nextState.action);
     setRestorable(nextState.restorable);
-    void load(1, pageSize, nextState.keyword, nextState.module, nextState.operatorName, nextState.success, nextState.action, nextState.restorable, nextState.createdFrom, nextState.createdTo);
+    void load(1, pageSize, nextState);
   };
 
   const applyPreset = (preset: FilterPreset) => {
@@ -293,7 +267,7 @@ export function AdminOperationLogs() {
     setRestorable(nextState.restorable);
     setCreatedFrom(nextState.createdFrom);
     setCreatedTo(nextState.createdTo);
-    void load(1, pageSize, nextState.keyword, nextState.module, nextState.operatorName, nextState.success, nextState.action, nextState.restorable, nextState.createdFrom, nextState.createdTo);
+    void load(1, pageSize, nextState);
   };
 
   const resetFilters = () => {
@@ -306,110 +280,29 @@ export function AdminOperationLogs() {
     setRestorable(nextState.restorable);
     setCreatedFrom(nextState.createdFrom);
     setCreatedTo(nextState.createdTo);
-    void load(1, pageSize, nextState.keyword, nextState.module, nextState.operatorName, nextState.success, nextState.action, nextState.restorable, nextState.createdFrom, nextState.createdTo);
+    void load(1, pageSize, nextState);
   };
 
   const handleExport = async () => {
     try {
-      await downloadAdminOperationLogs({
-        keyword: keyword.trim() || undefined,
-        module: module || undefined,
-        operatorName: operatorName.trim() || undefined,
-        action: action || undefined,
-        success: success === "all" ? undefined : success === "true",
-        restorable,
-        createdFrom: formatRangeBoundary(createdFrom, "start"),
-        createdTo: formatRangeBoundary(createdTo, "end"),
-      });
+      await downloadAdminOperationLogs(buildOperationLogQuery(filterState));
       message.success("操作日志导出成功");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "导出失败");
     }
   };
 
-  const columns: ColumnsType<OperationLogItem> = [
-    {
-      title: "时间",
-      dataIndex: "createdAt",
-      width: 190,
-      render: (value: string) => <span className="text-sm text-muted">{formatDateTimeWithSeconds(value, value)}</span>,
-    },
-    {
-      title: "模块",
-      dataIndex: "module",
-      width: 140,
-      render: (value: string) => <Tag color="green">{formatAdminModuleLabel(value)}</Tag>,
-    },
-    {
-      title: "动作",
-      dataIndex: "action",
-      width: 120,
-      render: (value: string) => <Tag color={value === "RESTORE" ? "gold" : "default"}>{formatAdminActionLabel(value)}</Tag>,
-    },
-    {
-      title: "目标",
-      key: "target",
-      width: 220,
-      render: (_: unknown, record) => (
-        <div>
-          <p className="font-semibold text-[#1b281e]">{formatAdminTargetTypeLabel(record.targetType, { archiveLabel: "操作日志归档" })}</p>
-          <p className="mt-1 break-all text-xs text-muted">{formatTargetIdentifier(record.targetId)}</p>
-        </div>
-      ),
-    },
-    {
-      title: "操作人",
-      dataIndex: "operatorName",
-      width: 140,
-      render: (value: string) => value || "系统",
-    },
-    {
-      title: "结果",
-      dataIndex: "success",
-      width: 120,
-      render: (value: boolean) => renderAdminSuccessTag(value),
-    },
-    {
-      title: "摘要",
-      dataIndex: "requestSummary",
-      render: (value: string, record) => (
-        <div>
-          <p className="line-clamp-2 text-sm leading-6 text-muted">{value || "暂无"}</p>
-          {!record.success && record.errorMessage ? (
-            <p className="admin-cell-note break-all text-[#9f4b45]">失败原因：{record.errorMessage}</p>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      title: "操作",
-      key: "actions",
-      width: 220,
-      render: (_: unknown, record) => (
-        <Space wrap>
-          <Button className="admin-action-button" size="small" onClick={() => void openDetail(record.id)}>
-            查看详情
-          </Button>
-          {record.restorable ? (
-            <Popconfirm
-              title="确认按该日志快照恢复数据？"
-              description="下一步需要填写恢复原因，并会新增一条恢复日志。"
-              onConfirm={() => openRestoreModalWithContext(record)}
-            >
-              <Button
-                size="small"
-                className="admin-action-button"
-                loading={restoringId === record.id}
-                icon={<RotateCcw size={14} />}
-              >
-                恢复
-              </Button>
-            </Popconfirm>
-          ) : null}
-        </Space>
-      ),
-    },
-  ];
+  const columns: ColumnsType<OperationLogItem> = useMemo(
+    () =>
+      buildOperationLogColumns({
+        restoringId,
+        onOpenDetail: (id) => {
+          void openDetail(id);
+        },
+        onOpenRestore: openRestoreModalWithContext,
+      }),
+    [restoringId],
+  );
 
   if (loading && !data) {
     return (
@@ -490,7 +383,7 @@ export function AdminOperationLogs() {
             allowClear
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
-            onPressEnter={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
+            onPressEnter={() => void load(1, pageSize)}
             placeholder="按记录标识、错误信息或请求摘要搜索"
             prefix={<Search size={16} className="text-muted" />}
           />
@@ -543,7 +436,7 @@ export function AdminOperationLogs() {
               className="w-full sm:w-auto"
               type="primary"
               icon={<RefreshCw size={16} />}
-              onClick={() => void load(1, pageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo)}
+              onClick={() => void load(1, pageSize)}
             >
               刷新日志
             </Button>
@@ -613,7 +506,7 @@ export function AdminOperationLogs() {
             size: screens.sm ? undefined : "small",
             pageSizeOptions: ADMIN_PAGE_SIZE_OPTIONS,
             showTotal: (total) => `共 ${total} 条日志`,
-            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize, keyword, module, operatorName, success, action, restorable, createdFrom, createdTo),
+            onChange: (nextPage, nextPageSize) => void load(nextPage, nextPageSize),
           }}
           onRow={(record) => ({
             onClick: (event) => {
@@ -864,7 +757,7 @@ export function AdminOperationLogs() {
             message.warning("请填写恢复原因");
             return;
           }
-          if (!restoreConfirmPhrase || restoreConfirmText.trim() !== restoreConfirmPhrase) {
+          if (!restoreConfirmation.restoreConfirmPhrase || restoreConfirmation.disabled) {
             message.warning("请输入正确的确认短语后再执行恢复");
             return;
           }
@@ -872,10 +765,10 @@ export function AdminOperationLogs() {
         }}
         okText="确认恢复"
         cancelText="取消"
-        confirmLoading={pendingRestoreId !== null && restoringId === pendingRestoreId}
+        confirmLoading={restoreConfirmation.confirmLoading}
         okButtonProps={{
           danger: true,
-          disabled: !restoreReason.trim() || !restoreConfirmPhrase || restoreConfirmText.trim() !== restoreConfirmPhrase,
+          disabled: restoreConfirmation.disabled,
         }}
       >
         <div className="space-y-3">
@@ -932,13 +825,17 @@ export function AdminOperationLogs() {
             <p className="text-sm leading-6 text-muted">
               请输入确认短语后才能恢复：
               <span className="ml-2 inline-flex rounded-md bg-[#f4ece3] px-2 py-1 font-semibold text-[#7a4d28]">
-                {restoreConfirmPhrase || "恢复"}
+                {restoreConfirmation.restoreConfirmPhrase || "恢复"}
               </span>
             </p>
             <Input
               value={restoreConfirmText}
               onChange={(event) => setRestoreConfirmText(event.target.value)}
-              placeholder={restoreConfirmPhrase ? `请输入 ${restoreConfirmPhrase}` : "请输入确认短语"}
+              placeholder={
+                restoreConfirmation.restoreConfirmPhrase
+                  ? `请输入 ${restoreConfirmation.restoreConfirmPhrase}`
+                  : "请输入确认短语"
+              }
               maxLength={32}
             />
           </div>
