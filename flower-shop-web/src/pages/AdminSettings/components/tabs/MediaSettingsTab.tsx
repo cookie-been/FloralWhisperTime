@@ -52,7 +52,7 @@ export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImage
       <SettingsSection
         title="媒体资源"
         icon={<ImagePlus size={16} className="text-forest" />}
-        description="统一维护首页主图、品牌 Logo 和各页面展示图。这里不改变任何保存字段，只把上传能力从大表单里收拢出来。"
+        description="统一维护首页主图、品牌 Logo 和各页面展示图。标注包含“小程序首页 / 联系页 / 关于页”的资源会被微信小程序同步使用。"
       >
         <div className="grid gap-x-4 md:grid-cols-2">
           <SettingsMediaField
@@ -66,7 +66,7 @@ export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImage
           />
           <SettingsMediaField
             name="heroImage"
-            label="首屏背景图"
+            label="首屏背景图（Web 与小程序首页）"
             placeholder="可直接粘贴图片 URL，或使用上传按钮"
             buttonText="上传图片并回填"
             uploadHandler={(file) => onUploadImage(file, "heroImage", "首屏背景图已上传")}
@@ -75,7 +75,7 @@ export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImage
         </div>
         <SettingsMediaListField
           name="heroSlidesText"
-          label="首页轮播图 URL"
+          label="首页轮播图 URL（Web 与小程序首页）"
           placeholder="多个 URL 用逗号或换行分隔"
           buttonText="多上传并追加到首页轮播"
           uploadHandler={(files) => onUploadImages(files, "heroSlidesText", `已追加 ${files.length} 张首页轮播图`)}
@@ -93,7 +93,7 @@ export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImage
         />
         <SettingsMediaListField
           name="contactImagesText"
-          label="联系页展示图 URL"
+          label="联系页展示图 URL（Web 与小程序联系页）"
           placeholder="多个 URL 用逗号或换行分隔"
           buttonText="多上传并追加到联系页"
           uploadHandler={(files) => onUploadImages(files, "contactImagesText", `已追加 ${files.length} 张联系页展示图`)}
@@ -102,7 +102,7 @@ export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImage
         />
         <SettingsMediaListField
           name="storyImages"
-          label="故事图片 URL"
+          label="故事图片 URL（小程序关于页兜底图）"
           placeholder="多个 URL 用逗号或换行分隔"
           buttonText="多上传并追加到故事图片"
           uploadHandler={(files) => onUploadImages(files, "storyImages", `已追加 ${files.length} 张故事图片`)}

@@ -6,6 +6,7 @@ Page({
   data: {
     shop: {},
     siteConfig: {},
+    contactImageList: [],
     businessHoursText: "",
     contactDescription: "",
     submitSuccessText: "留言已提交，我们会尽快联系你",
@@ -54,6 +55,7 @@ Page({
       this.setData({
         shop,
         siteConfig,
+        contactImageList: Array.isArray(siteConfig.contactImages) ? siteConfig.contactImages.slice(0, 4) : [],
         businessHoursText: formatBusinessHours(shop.hours),
         contactDescription: fallbackText(siteConfig.contactIntro, "预约花束、婚礼花艺、开业花篮与空间花艺。"),
         pageTitleText: fallbackText(siteConfig.contactPageTitle, "联系我们"),
@@ -196,7 +198,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: "联系花语时光门店",
+      title: fallbackText(this.data.pageTitleText, "联系花语时光门店"),
       path: "/pages/contact/index",
     };
   },

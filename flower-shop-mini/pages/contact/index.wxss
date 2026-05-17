@@ -50,6 +50,24 @@
   padding: 30rpx;
 }
 
+.contact-image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-top: 18rpx;
+}
+
+.contact-image-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.contact-image {
+  display: block;
+  width: 100%;
+  height: 220rpx;
+}
+
 .info-line {
   display: block;
   color: #6b7280;

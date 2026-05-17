@@ -27,6 +27,16 @@
       <text class="info-line multiline">营业时间：{{businessHoursDisplayText}}</text>
     </view>
 
+    <view wx:if="{{contactImageList.length}}" class="section-header">
+      <text class="section-title">门店环境</text>
+      <text class="section-subtitle">联系页展示图由后台媒体资源统一维护</text>
+    </view>
+    <view wx:if="{{contactImageList.length}}" class="contact-image-grid">
+      <view wx:for="{{contactImageList}}" wx:key="*this" class="contact-image-card panel">
+        <image class="contact-image" src="{{item}}" mode="aspectFill" />
+      </view>
+    </view>
+
     <view class="section-header">
       <text class="section-title">在线留言</text>
       <text class="section-subtitle">留下需求，我们会尽快联系你</text>

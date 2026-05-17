@@ -9,6 +9,8 @@ type HomeSettingsTabProps = {
   form: FormInstance<SettingsForm>;
 };
 
+const miniSharedHint = "同时影响 Web 前台与微信小程序";
+
 export function HomeSettingsTab({ form }: HomeSettingsTabProps) {
   const brandName = Form.useWatch("brandName", form) ?? "";
   const heroEyebrow = Form.useWatch("heroEyebrow", form) ?? "";
@@ -40,7 +42,7 @@ export function HomeSettingsTab({ form }: HomeSettingsTabProps) {
       <SettingsSection
         title="首页与品牌文案"
         icon={<Sparkles size={16} className="text-forest" />}
-        description="集中维护首屏、品牌识别和首页主要内容区的文本。图片资源与轮播素材移到“媒体资源”单独管理。"
+        description="集中维护首屏、品牌识别和首页主要内容区的文本。图片资源与轮播素材移到“媒体资源”单独管理；标注“同时影响 Web 前台与微信小程序”的字段会跨端同步。"
       >
         <div className="grid gap-x-4 md:grid-cols-2">
           <Form.Item name="brandName" label="品牌名称" rules={[{ required: true, message: "请输入品牌名称" }]}>
@@ -52,31 +54,31 @@ export function HomeSettingsTab({ form }: HomeSettingsTabProps) {
           <Form.Item name="adminBrandSubtitle" label="后台品牌副标题">
             <Input />
           </Form.Item>
-          <Form.Item name="heroEyebrow" label="首屏小标语">
+          <Form.Item name="heroEyebrow" label={`首屏小标语（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
-          <Form.Item name="heroTitle" label="首页主标题" rules={[{ required: true, message: "请输入首页主标题" }]}>
+          <Form.Item name="heroTitle" label={`首页主标题（${miniSharedHint}）`} rules={[{ required: true, message: "请输入首页主标题" }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="primaryCtaText" label="主按钮文字">
+          <Form.Item name="primaryCtaText" label={`主按钮文字（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
-          <Form.Item name="secondaryCtaText" label="副按钮文字">
+          <Form.Item name="secondaryCtaText" label={`副按钮文字（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
-          <Form.Item name="consultButtonText" label="咨询按钮文字">
+          <Form.Item name="consultButtonText" label={`咨询按钮文字（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
           <Form.Item name="homeStoryDetailLinkText" label="首页品牌故事按钮">
             <Input />
           </Form.Item>
-          <Form.Item name="homeStorySectionTitle" label="首页品牌故事标题">
+          <Form.Item name="homeStorySectionTitle" label={`首页品牌故事标题（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
           <Form.Item name="homeFeaturedSectionEyebrow" label="首页精选区眉题">
             <Input />
           </Form.Item>
-          <Form.Item name="homeFeaturedSectionTitle" label="首页精选区标题">
+          <Form.Item name="homeFeaturedSectionTitle" label={`首页精选区标题（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
           <Form.Item name="homeFeaturedSectionLinkText" label="首页精选区按钮">
@@ -110,14 +112,14 @@ export function HomeSettingsTab({ form }: HomeSettingsTabProps) {
         <Form.Item name="adminBrandDescription" label="后台品牌简介">
           <Input.TextArea rows={2} />
         </Form.Item>
-        <Form.Item name="heroDescription" label="首页简介">
+        <Form.Item name="heroDescription" label={`首页简介（${miniSharedHint}）`}>
           <Input.TextArea rows={4} />
         </Form.Item>
-        <Form.Item name="homeStorySectionIntro" label="首页品牌故事导语">
+        <Form.Item name="homeStorySectionIntro" label={`首页品牌故事导语（${miniSharedHint}）`}>
           <Input.TextArea rows={3} />
         </Form.Item>
         <div className="grid gap-4 md:grid-cols-2">
-          <Form.Item name="homeFeaturedSectionIntro" label="首页精选区导语">
+          <Form.Item name="homeFeaturedSectionIntro" label={`首页精选区导语（${miniSharedHint}）`}>
             <Input.TextArea rows={3} />
           </Form.Item>
           <Form.Item name="homeServiceSectionIntro" label="首页服务区导语">

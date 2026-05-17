@@ -52,6 +52,7 @@
 - `contactSubmitSuccessText`
 - `consultButtonText`
 - `businessHoursText`
+- `contactImages`
 
 ### 关于页模块文案
 
@@ -63,37 +64,28 @@
 说明：
 
 - Web 关于页还消费更多 `AboutPageContent` 独立内容
-- 小程序关于页目前主要消费 `BrandStory`、`TeamMember`、`ShopInfo`，并叠加以上模块文案字段
+- 小程序关于页现在也会消费 `AboutPageContent` 的首屏标题、副标题、主图和故事正文
+
+### 关于页主体内容
+
+- `AboutPageContent.heroImage`
+- `AboutPageContent.heroEyebrow`
+- `AboutPageContent.heroTitle`
+- `AboutPageContent.heroSubtitle`
+- `AboutPageContent.storyTitle`
+- `AboutPageContent.storyContent`
 
 ## 仍未完全统一的部分
 
 以下内容目前还没有做到完全同源：
 
-### 关于页主体内容
+### 关于页时间轴
 
-Web 关于页使用：
+Web 关于页额外使用：
 
-- `AboutPageContent`
 - `AboutTimelineEntry`
 
-小程序关于页当前仍主要使用：
-
-- `BrandStory`
-- `TeamMember`
-- `ShopInfo`
-
-这意味着：
-
-- Web 关于页首屏、时间轴、故事块的自由度更高
-- 小程序关于页目前更轻量，但配置能力还没有完全追平 Web
-
-### 联系页媒体资源
-
-Web 联系页会使用：
-
-- `contactImages`
-
-小程序联系页当前还没有消费该字段。
+小程序关于页当前仍未消费时间轴数据。
 
 ## 小程序接入新字段时必须同步的文件
 
@@ -110,7 +102,6 @@ Web 联系页会使用：
 
 推荐按下面顺序继续推进：
 
-1. 联系页接入 `contactImages`
-2. 关于页切换到更接近 Web 的 `AboutPageContent`
-3. 评估是否让小程序消费时间轴数据
-4. 继续把后台“站点配置”页面中的前台字段按“Web + 小程序共用 / Web 独有”进行分组标识
+1. 评估是否让小程序消费时间轴数据
+2. 继续把后台“站点配置”页面中的前台字段按“Web + 小程序共用 / Web 独有”进行分组标识
+3. 继续把更多 About 页独立配置做成明确的跨端标注

@@ -9,6 +9,8 @@ type ContactSettingsTabProps = {
   form: FormInstance<SettingsForm>;
 };
 
+const miniSharedHint = "同时影响 Web 前台与微信小程序";
+
 export function ContactSettingsTab({ form }: ContactSettingsTabProps) {
   const brandName = Form.useWatch("brandName", form) ?? "";
   const phone = Form.useWatch("phone", form) ?? "";
@@ -28,7 +30,7 @@ export function ContactSettingsTab({ form }: ContactSettingsTabProps) {
       <SettingsSection
         title="门店与联系"
         icon={<MapPin size={16} className="text-forest" />}
-        description="维护门店基础信息、联系页和画廊页文案。联系页展示图已归到“媒体资源”统一维护。"
+        description="维护门店基础信息、联系页和画廊页文案。联系页展示图已归到“媒体资源”统一维护；标注“同时影响 Web 前台与微信小程序”的字段会跨端同步。"
       >
         <div className="grid gap-x-4 md:grid-cols-2">
           <Form.Item name="phone" label="电话">
@@ -47,40 +49,40 @@ export function ContactSettingsTab({ form }: ContactSettingsTabProps) {
         <Form.Item name="address" label="地址">
           <Input />
         </Form.Item>
-        <Form.Item name="businessHoursText" label="营业时间展示文案">
+        <Form.Item name="businessHoursText" label={`营业时间展示文案（${miniSharedHint}）`}>
           <Input />
         </Form.Item>
-        <Form.Item name="contactIntro" label="联系我们页简介">
+        <Form.Item name="contactIntro" label={`联系我们页简介（${miniSharedHint}）`}>
           <Input.TextArea rows={2} />
         </Form.Item>
         <div className="grid gap-x-4 md:grid-cols-2">
-          <Form.Item name="contactPageTitle" label="联系页主标题">
+          <Form.Item name="contactPageTitle" label={`联系页主标题（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
-          <Form.Item name="contactPageSubmitText" label="联系页提交按钮">
+          <Form.Item name="contactPageSubmitText" label={`联系页提交按钮（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
-          <Form.Item name="contactSubmitSuccessText" label="联系页提交成功提示">
+          <Form.Item name="contactSubmitSuccessText" label={`联系页提交成功提示（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
           <Form.Item name="galleryPageEyebrow" label="画廊页眉题">
             <Input />
           </Form.Item>
-          <Form.Item name="galleryPageTitle" label="画廊页标题">
+          <Form.Item name="galleryPageTitle" label={`画廊页标题（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
-          <Form.Item name="gallerySearchPlaceholder" label="画廊搜索占位文案">
+          <Form.Item name="gallerySearchPlaceholder" label={`画廊搜索占位文案（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
         </div>
-        <Form.Item name="galleryPageIntro" label="画廊页简介">
+        <Form.Item name="galleryPageIntro" label={`画廊页简介（${miniSharedHint}）`}>
           <Input.TextArea rows={3} />
         </Form.Item>
         <div className="grid gap-4 md:grid-cols-2">
-          <Form.Item name="galleryEmptyText" label="画廊空状态文案">
+          <Form.Item name="galleryEmptyText" label={`画廊空状态文案（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
-          <Form.Item name="galleryLoadErrorText" label="画廊加载失败文案">
+          <Form.Item name="galleryLoadErrorText" label={`画廊加载失败文案（${miniSharedHint}）`}>
             <Input />
           </Form.Item>
         </div>

@@ -85,6 +85,7 @@ function getSiteConfig() {
       heroDescription: "以季节花材和克制表达，为赠礼、婚礼和空间场景提供更耐看的花艺作品。",
       heroImage: "",
       heroSlides: [],
+      contactImages: [],
       primaryCtaText: "浏览作品",
       secondaryCtaText: "联系门店",
       stats: [],
@@ -133,6 +134,20 @@ function getBrandStory() {
   );
 }
 
+function getAboutPage() {
+  return withMockFallback(
+    () => request("/api/about-page"),
+    async () => ({
+      heroImage: "",
+      heroEyebrow: "关于我们",
+      heroTitle: "关于花语时光",
+      heroSubtitle: "品牌信息与服务内容由后台统一维护。",
+      storyTitle: "品牌故事",
+      storyContent: "我们从季节花材出发，为婚礼、日常赠礼、商业空间和私人宴会设计花艺。",
+    }),
+  );
+}
+
 function getTeamMembers() {
   return withMockFallback(
     () => request("/api/team"),
@@ -151,6 +166,7 @@ async function submitContact(form) {
 }
 
 module.exports = {
+  getAboutPage,
   getBrandStory,
   getCategories,
   getFlowerById,

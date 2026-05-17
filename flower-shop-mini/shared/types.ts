@@ -63,6 +63,15 @@ export interface BrandStory {
   images: string[];
 }
 
+export interface AboutPageContent {
+  heroImage: string;
+  heroEyebrow: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  storyTitle: string;
+  storyContent: string;
+}
+
 export interface SiteStat {
   value: string;
   label: string;
@@ -75,6 +84,7 @@ export interface SiteConfig {
   heroDescription: string;
   heroImage: string;
   heroSlides?: string[];
+  contactImages?: string[];
   primaryCtaText: string;
   secondaryCtaText: string;
   stats: SiteStat[];

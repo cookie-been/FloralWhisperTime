@@ -17,6 +17,15 @@
   font-weight: 600;
 }
 
+.story-title {
+  display: block;
+  margin-top: 10rpx;
+  color: #1f2937;
+  font-size: 34rpx;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .subtitle,
 .content,
 .shop-line {
