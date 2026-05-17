@@ -12,6 +12,7 @@ type Props = {
   latestArchiveResult: OperationLogArchiveResult | null;
   openArchiveModal: () => void;
   onDownloadArchiveFile: (downloadUrl: string, filename: string) => void;
+  onDownloadLatestArchive: () => void;
 };
 
 export function SystemArchivesTab({
@@ -23,6 +24,7 @@ export function SystemArchivesTab({
   latestArchiveResult,
   openArchiveModal,
   onDownloadArchiveFile,
+  onDownloadLatestArchive,
 }: Props) {
   return (
     <div className="space-y-6 pt-2">
@@ -50,9 +52,18 @@ export function SystemArchivesTab({
                 ? `建议截止：${operationLogArchiveBefore}`
                 : undefined,
             action: (
-              <Button type="primary" icon={<Archive size={16} />} onClick={openArchiveModal}>
-                手动归档
-              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button type="primary" icon={<Archive size={16} />} onClick={openArchiveModal}>
+                  手动归档
+                </Button>
+                <Button
+                  icon={<Download size={16} />}
+                  disabled={!latestArchiveResult}
+                  onClick={onDownloadLatestArchive}
+                >
+                  下载本次归档
+                </Button>
+              </div>
             ),
           },
         ]}

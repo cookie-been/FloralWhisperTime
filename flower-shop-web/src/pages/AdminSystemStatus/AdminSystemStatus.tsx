@@ -623,6 +623,16 @@ export function AdminSystemStatus() {
       .catch((error) => message.error(error instanceof Error ? error.message : "文件下载失败"));
   }, []);
 
+  const handleDownloadLatestArchive = useCallback(() => {
+    if (!latestArchiveResult) return;
+    const matchedFile = archiveFiles.find((item) => item.filename === latestArchiveResult.archiveFilename);
+    if (!matchedFile) {
+      message.warning("本次归档文件尚未出现在列表中，请稍后刷新后再下载");
+      return;
+    }
+    handleDownloadFile(matchedFile.downloadUrl, matchedFile.filename);
+  }, [archiveFiles, handleDownloadFile, latestArchiveResult]);
+
   const handleConfigExport = useCallback(() => {
     downloadAdminConfigExport()
       .then(() => {
@@ -778,6 +788,7 @@ export function AdminSystemStatus() {
                 latestArchiveResult={latestArchiveResult}
                 openArchiveModal={openArchiveModal}
                 onDownloadArchiveFile={handleDownloadFile}
+                onDownloadLatestArchive={handleDownloadLatestArchive}
               />
             ),
           },
