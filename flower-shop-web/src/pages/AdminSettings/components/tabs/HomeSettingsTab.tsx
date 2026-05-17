@@ -9,7 +9,7 @@ type HomeSettingsTabProps = {
   form: FormInstance<SettingsForm>;
 };
 
-const miniSharedHint = "同时影响 Web 前台与微信小程序";
+const miniSharedHint = "小程序同步";
 
 export function HomeSettingsTab({ form }: HomeSettingsTabProps) {
   const brandName = Form.useWatch("brandName", form) ?? "";
@@ -42,7 +42,7 @@ export function HomeSettingsTab({ form }: HomeSettingsTabProps) {
       <SettingsSection
         title="首页与品牌文案"
         icon={<Sparkles size={16} className="text-forest" />}
-        description="集中维护首屏、品牌识别和首页主要内容区的文本。图片资源与轮播素材移到“媒体资源”单独管理；标注“同时影响 Web 前台与微信小程序”的字段会跨端同步。"
+        description="集中维护首屏、品牌识别和首页主要内容区的文本。图片资源与轮播素材移到“媒体资源”单独管理；标注“小程序同步”的字段会同步影响 Web 前台与微信小程序。"
       >
         <div className="grid gap-x-4 md:grid-cols-2">
           <Form.Item name="brandName" label="品牌名称" rules={[{ required: true, message: "请输入品牌名称" }]}>

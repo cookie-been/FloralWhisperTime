@@ -9,7 +9,7 @@ type StorySettingsTabProps = {
   form: FormInstance<SettingsForm>;
 };
 
-const miniSharedHint = "同时影响 Web 前台与微信小程序";
+const miniSharedHint = "小程序同步";
 
 export function StorySettingsTab({ form }: StorySettingsTabProps) {
   const storyTitle = Form.useWatch("storyTitle", form) ?? "";
@@ -26,7 +26,7 @@ export function StorySettingsTab({ form }: StorySettingsTabProps) {
       <SettingsSection
         title="品牌故事"
         icon={<ImageIcon size={16} className="text-forest" />}
-        description="维护品牌故事正文和 About 页面里与故事相关的区块文案。故事图片已归到“媒体资源”统一维护；标注“同时影响 Web 前台与微信小程序”的字段会跨端同步。"
+        description="维护品牌故事正文和 About 页面里与故事相关的区块文案。故事图片已归到“媒体资源”统一维护；标注“小程序同步”的字段会同步影响 Web 前台与微信小程序。"
       >
         <Form.Item name="storyTitle" label="故事标题">
           <Input />

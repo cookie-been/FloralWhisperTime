@@ -9,7 +9,7 @@ type ContactSettingsTabProps = {
   form: FormInstance<SettingsForm>;
 };
 
-const miniSharedHint = "同时影响 Web 前台与微信小程序";
+const miniSharedHint = "小程序同步";
 
 export function ContactSettingsTab({ form }: ContactSettingsTabProps) {
   const brandName = Form.useWatch("brandName", form) ?? "";
@@ -30,7 +30,7 @@ export function ContactSettingsTab({ form }: ContactSettingsTabProps) {
       <SettingsSection
         title="门店与联系"
         icon={<MapPin size={16} className="text-forest" />}
-        description="维护门店基础信息、联系页和画廊页文案。联系页展示图已归到“媒体资源”统一维护；标注“同时影响 Web 前台与微信小程序”的字段会跨端同步。"
+        description="维护门店基础信息、联系页和画廊页文案。联系页展示图已归到“媒体资源”统一维护；标注“小程序同步”的字段会同步影响 Web 前台与微信小程序。"
       >
         <div className="grid gap-x-4 md:grid-cols-2">
           <Form.Item name="phone" label="电话">
