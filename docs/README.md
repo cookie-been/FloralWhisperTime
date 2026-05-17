@@ -24,6 +24,7 @@
 7. [运维 SOP 手册](./operations-sop.md)
 8. [权限与安全说明](./security-and-permissions.md)
 9. [接口调用示例](./api-examples.md)
+10. [客户验收清单](./customer-acceptance-checklist.md)
 
 ## 产品与架构
 
@@ -37,6 +38,7 @@
 ## 交付与上线
 
 - [客户交付快速开始](./customer-delivery-quick-start.md)
+- [客户验收清单](./customer-acceptance-checklist.md)
 - [安装手册](./installation-guide.md)
 - [后台操作手册](./admin-operations-manual.md)
 - [新服务器首次上线操作手册](./first-server-go-live.md)
@@ -49,6 +51,7 @@
 - [售后排障手册](./support-troubleshooting-manual.md)
 - [运维 SOP 手册](./operations-sop.md)
 - [版本发布说明模板](./release-notes-template.md)
+- [首个正式版本发布样例](./releases/2026-05-17-v1.0.0-release-notes.md)
 - [数据字典](./database-dictionary.md)
 - [备份与恢复说明](./backup-restore.md)
 - [升级说明](./upgrade-guide.md)
@@ -79,6 +82,7 @@
 7. [商业交付说明](./commercial-delivery.md)
 8. [版本发布说明模板](./release-notes-template.md)
 9. [权限与安全说明](./security-and-permissions.md)
+10. [客户验收清单](./customer-acceptance-checklist.md)
 
 ### 面向开发接手
 
