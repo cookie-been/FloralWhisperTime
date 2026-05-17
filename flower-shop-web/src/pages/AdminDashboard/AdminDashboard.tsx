@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAdminContacts, getAdminOperationLogs, getDashboardData, isAbortError } from "@/services/api";
 import type { BrandStory, Category, ContactMessage, Flower, OperationLogItem, PaginatedResult, ShopInfo, SiteConfig } from "@/types";
+import { formatDate, getTimestamp } from "@/utils/datetime";
 
 interface DashboardData {
   flowers: Flower[];
@@ -59,13 +60,6 @@ function formatTargetTypeLabel(value?: string) {
   return value ? (mapping[value] ?? value) : "数据项";
 }
 
-function formatDate(value?: string) {
-  if (!value) return "暂无";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "暂无";
-  return new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" }).format(date);
-}
-
 export function AdminDashboard() {
   const screens = Grid.useBreakpoint();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -114,14 +108,14 @@ export function AdminDashboard() {
 
     const categoryCount = data.categories.filter((item) => item.id !== "all").length;
     const featuredCount = data.flowers.filter((item) => item.featured).length;
-    const latestFlower = [...data.flowers].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    const latestFlower = [...data.flowers].sort((a, b) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt))[0];
     const latestContact = data.latestContacts.list[0];
     const attentionFlowers = data.flowers
       .filter((item) => !item.featured)
       .sort((a, b) => b.sort - a.sort)
       .slice(0, 4);
     const recentFlowers = [...data.flowers]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort((a, b) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt))
       .slice(0, 4);
     const categoryDistribution = data.categories
       .filter((item) => item.id !== "all")

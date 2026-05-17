@@ -5,6 +5,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { changeAdminPassword, clearAdminToken, getAdminSession, getCurrentAdmin, getSiteConfig } from "@/services/api";
 import { adminNavItems, adminPublicLink, resolveAdminPageMeta } from "./adminMeta";
 import type { SiteConfig } from "@/types";
+import { safeReadJsonStorage, safeReadStorage, safeRemoveStorage, safeWriteStorage } from "@/utils/storage";
 
 const adminRoutePreloaders: Record<string, () => Promise<unknown>> = {
   "/admin": () => import("@/pages/AdminDashboard/AdminDashboard"),
@@ -54,16 +55,12 @@ function readStoredAdminTabs() {
   if (typeof window === "undefined") {
     return [{ path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) }];
   }
-  try {
-    return sanitizeAdminTabs(JSON.parse(window.localStorage.getItem(ADMIN_TAB_STORAGE_KEY) ?? "[]"));
-  } catch {
-    return [{ path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) }];
-  }
+  return sanitizeAdminTabs(safeReadJsonStorage<unknown[]>(ADMIN_TAB_STORAGE_KEY, []));
 }
 
 function readStoredActiveAdminTab() {
   if (typeof window === "undefined") return ADMIN_FIXED_TAB_PATH;
-  const value = window.localStorage.getItem(ADMIN_ACTIVE_TAB_STORAGE_KEY) ?? "";
+  const value = safeReadStorage(ADMIN_ACTIVE_TAB_STORAGE_KEY) ?? "";
   return value.startsWith("/admin") ? value : ADMIN_FIXED_TAB_PATH;
 }
 
@@ -140,8 +137,8 @@ export function AdminShell() {
 
   const logout = () => {
     clearAdminToken();
-    window.localStorage.removeItem(ADMIN_TAB_STORAGE_KEY);
-    window.localStorage.removeItem(ADMIN_ACTIVE_TAB_STORAGE_KEY);
+    safeRemoveStorage(ADMIN_TAB_STORAGE_KEY);
+    safeRemoveStorage(ADMIN_ACTIVE_TAB_STORAGE_KEY);
     message.success("已退出管理后台");
     navigate("/admin/login", { replace: true });
   };
@@ -166,11 +163,11 @@ export function AdminShell() {
         ...previous,
         { path: nextPath, label: resolveTabLabel(nextPath) },
       ]);
-      window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+      safeWriteStorage(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
       return nextTabs;
     });
     setActiveTabPath(nextPath);
-    window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, nextPath);
+    safeWriteStorage(ADMIN_ACTIVE_TAB_STORAGE_KEY, nextPath);
   }, [location.pathname]);
 
   const closeTab = (targetPath: string) => {
@@ -183,10 +180,10 @@ export function AdminShell() {
         nextTabs[activeIndex] ??
         nextTabs[nextTabs.length - 1] ??
         { path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) };
-      window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+      safeWriteStorage(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
       if (activeTabPath === targetPath) {
         setActiveTabPath(fallbackTab.path);
-        window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, fallbackTab.path);
+        safeWriteStorage(ADMIN_ACTIVE_TAB_STORAGE_KEY, fallbackTab.path);
         navigate(fallbackTab.path);
       }
       return nextTabs;
@@ -200,8 +197,8 @@ export function AdminShell() {
     ]);
     setOpenTabs(nextTabs);
     setActiveTabPath(targetPath);
-    window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
-    window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, targetPath);
+    safeWriteStorage(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+    safeWriteStorage(ADMIN_ACTIVE_TAB_STORAGE_KEY, targetPath);
     if (location.pathname !== targetPath) {
       navigate(targetPath);
     }
@@ -211,8 +208,8 @@ export function AdminShell() {
     const nextTabs = [{ path: ADMIN_FIXED_TAB_PATH, label: resolveTabLabel(ADMIN_FIXED_TAB_PATH) }];
     setOpenTabs(nextTabs);
     setActiveTabPath(ADMIN_FIXED_TAB_PATH);
-    window.localStorage.setItem(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
-    window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, ADMIN_FIXED_TAB_PATH);
+    safeWriteStorage(ADMIN_TAB_STORAGE_KEY, JSON.stringify(nextTabs));
+    safeWriteStorage(ADMIN_ACTIVE_TAB_STORAGE_KEY, ADMIN_FIXED_TAB_PATH);
     if (location.pathname !== ADMIN_FIXED_TAB_PATH) {
       navigate(ADMIN_FIXED_TAB_PATH);
     }
@@ -333,7 +330,7 @@ export function AdminShell() {
                           className="admin-tab-link"
                           onClick={() => {
                             setActiveTabPath(tab.path);
-                            window.localStorage.setItem(ADMIN_ACTIVE_TAB_STORAGE_KEY, tab.path);
+                            safeWriteStorage(ADMIN_ACTIVE_TAB_STORAGE_KEY, tab.path);
                             if (location.pathname !== tab.path) {
                               navigate(tab.path);
                             }

@@ -5,20 +5,7 @@ import { CheckCircle2, ClipboardList, Copy, Download, RefreshCw, RotateCcw, Sear
 import { useSearchParams } from "react-router-dom";
 import { downloadAdminOperationLogs, getAdminOperationLogDetail, getAdminOperationLogs, isAbortError, restoreAdminOperationLog } from "@/services/api";
 import type { OperationLogDetail, OperationLogItem, OperationLogQuery, PaginatedResult } from "@/types";
-
-function formatDateTime(value?: string) {
-  if (!value) return "暂无";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(date);
-}
+import { formatDateTimeWithSeconds, getTimestamp } from "@/utils/datetime";
 
 function formatModule(value: string) {
   const mapping: Record<string, string> = {
@@ -316,8 +303,8 @@ export function AdminOperationLogs() {
     const merged = [activeDetail, ...(activeDetail.relatedLogs ?? [])];
     const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
     return unique.sort((left, right) => {
-      const leftTime = new Date(left.createdAt).getTime();
-      const rightTime = new Date(right.createdAt).getTime();
+      const leftTime = getTimestamp(left.createdAt);
+      const rightTime = getTimestamp(right.createdAt);
       if (leftTime !== rightTime) return leftTime - rightTime;
       return left.id - right.id;
     });
@@ -607,7 +594,7 @@ export function AdminOperationLogs() {
       title: "时间",
       dataIndex: "createdAt",
       width: 190,
-      render: (value: string) => <span className="text-sm text-muted">{formatDateTime(value)}</span>,
+      render: (value: string) => <span className="text-sm text-muted">{formatDateTimeWithSeconds(value, value)}</span>,
     },
     {
       title: "模块",
@@ -968,7 +955,7 @@ export function AdminOperationLogs() {
                 <p>目标：{formatTargetType(activeDetail.targetType)} / {formatTargetIdentifier(activeDetail.targetId)}</p>
                 <p>操作人：{activeDetail.operatorName || "系统"}</p>
                 <p>结果：{activeDetail.success ? "成功" : "失败"}</p>
-                <p>时间：{formatDateTime(activeDetail.createdAt)}</p>
+                <p>时间：{formatDateTimeWithSeconds(activeDetail.createdAt, activeDetail.createdAt)}</p>
                 <p>来源 IP：{activeDetail.ipAddress || "暂无"}</p>
                 <p>UA：{activeDetail.userAgent || "暂无"}</p>
                 {activeDetail.restoredFromLogId ? (
@@ -1013,7 +1000,7 @@ export function AdminOperationLogs() {
                               #{item.id} · {formatAction(item.action)}
                             </p>
                             <p className="mt-1 text-xs text-muted">
-                              {formatModule(item.module)} / {formatTargetType(item.targetType)} / {formatDateTime(item.createdAt)}
+                              {formatModule(item.module)} / {formatTargetType(item.targetType)} / {formatDateTimeWithSeconds(item.createdAt, item.createdAt)}
                             </p>
                           </div>
                           <Space size={[8, 8]} wrap>
@@ -1196,7 +1183,7 @@ export function AdminOperationLogs() {
                 </div>
                 <div>
                   <p>原日志时间</p>
-                  <strong>{formatDateTime(pendingRestoreContext.createdAt)}</strong>
+                  <strong>{formatDateTimeWithSeconds(pendingRestoreContext.createdAt, pendingRestoreContext.createdAt)}</strong>
                 </div>
                 <div>
                   <p>原日志结果</p>

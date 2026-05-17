@@ -5,19 +5,7 @@ import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "l
 import { useSearchParams } from "react-router-dom";
 import { deleteAdminContact, getAdminContacts, isAbortError, markAdminContactRead, restoreAdminContact } from "@/services/api";
 import type { ContactMessage, PaginatedResult } from "@/types";
-
-function formatDateTime(value?: string) {
-  if (!value) return "暂无";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "暂无";
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
+import { formatDateTime } from "@/utils/datetime";
 
 function truncateText(value: string, maxLength: number) {
   if (value.length <= maxLength) return value;

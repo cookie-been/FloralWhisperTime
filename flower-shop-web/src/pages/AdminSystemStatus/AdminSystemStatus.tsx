@@ -25,6 +25,7 @@ import { SystemMigrationTab } from "./components/tabs/SystemMigrationTab";
 import { SystemOverviewTab } from "./components/tabs/SystemOverviewTab";
 import { SystemSecurityTab } from "./components/tabs/SystemSecurityTab";
 import { SystemTasksTab } from "./components/tabs/SystemTasksTab";
+import { formatDateTimeWithSeconds } from "@/utils/datetime";
 import type {
   BackupOverviewItem,
   KeyValueEntry,
@@ -52,6 +53,8 @@ const TAB_LABELS: Record<SystemTabKey, string> = {
 
 const DEFAULT_TAB: SystemTabKey = "overview";
 
+const formatDateTime = (value?: string) => formatDateTimeWithSeconds(value, value);
+
 function isSystemTabKey(value: string | null): value is SystemTabKey {
   return Boolean(value && value in TAB_LABELS);
 }
@@ -65,20 +68,6 @@ function buildTabSearchParams(searchParams: URLSearchParams, nextTab: SystemTabK
   const nextParams = new URLSearchParams(searchParams);
   nextParams.set("tab", nextTab);
   return nextParams;
-}
-
-function formatDateTime(value?: string) {
-  if (!value) return "暂无";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(date);
 }
 
 function formatServiceName(value?: string) {
@@ -456,7 +445,7 @@ export function AdminSystemStatus() {
     return [
       { label: "备份总数", value: `${backupFiles.length} 份`, note: "当前可直接下载的备份目录数量" },
       { label: "最新备份", value: latestBackupFile?.backupName || "暂无", note: latestBackupFile?.modifiedAt || "尚未产生可用备份" },
-      { label: "最新体积", value: latestBackupFile?.size || "未知", note: latestBackupTask?.finishedAt ? `最近手动备份完成于 ${formatDateTime(latestBackupTask.finishedAt)}` : "尚未记录后台触发的备份任务" },
+      { label: "最新体积", value: latestBackupFile?.size || "未知", note: latestBackupTask?.finishedAt ? `最近手动备份完成于 ${formatDateTimeWithSeconds(latestBackupTask.finishedAt, latestBackupTask.finishedAt)}` : "尚未记录后台触发的备份任务" },
     ];
   }, [backupFiles, latestBackupTask]);
 
@@ -871,11 +860,11 @@ export function AdminSystemStatus() {
               </div>
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">开始时间</p>
-                <p className="mt-2 text-muted">{formatDateTime(selectedTask.startedAt)}</p>
+                <p className="mt-2 text-muted">{formatDateTimeWithSeconds(selectedTask.startedAt, selectedTask.startedAt)}</p>
               </div>
               <div className="admin-subpanel px-4 py-4">
                 <p className="font-semibold text-[#1b281e]">完成时间</p>
-                <p className="mt-2 text-muted">{formatDateTime(selectedTask.finishedAt)}</p>
+                <p className="mt-2 text-muted">{formatDateTimeWithSeconds(selectedTask.finishedAt, selectedTask.finishedAt)}</p>
               </div>
             </div>
             <div className="admin-subpanel px-4 py-4">

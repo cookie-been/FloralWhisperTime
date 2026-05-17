@@ -25,6 +25,7 @@ import type {
   SystemStatus,
   TeamMember,
 } from "@/types";
+import { safeReadJsonStorage, safeReadStorage, safeRemoveStorage, safeWriteStorage } from "@/utils/storage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_TOKEN_KEY = "flower_shop_admin_token";
@@ -77,31 +78,24 @@ function delay(ms: number) {
 }
 
 export function getAdminToken() {
-  return localStorage.getItem(ADMIN_TOKEN_KEY);
+  return safeReadStorage(ADMIN_TOKEN_KEY);
 }
 
 export function getAdminSession() {
-  const raw = localStorage.getItem(ADMIN_SESSION_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as AdminSession;
-  } catch {
-    localStorage.removeItem(ADMIN_SESSION_KEY);
-    return null;
-  }
+  return safeReadJsonStorage<AdminSession | null>(ADMIN_SESSION_KEY, null);
 }
 
 export function clearAdminToken() {
-  localStorage.removeItem(ADMIN_TOKEN_KEY);
-  localStorage.removeItem(ADMIN_SESSION_KEY);
+  safeRemoveStorage(ADMIN_TOKEN_KEY);
+  safeRemoveStorage(ADMIN_SESSION_KEY);
 }
 
 function setAdminToken(token: string) {
-  localStorage.setItem(ADMIN_TOKEN_KEY, token);
+  safeWriteStorage(ADMIN_TOKEN_KEY, token);
 }
 
 function setAdminSession(session: AdminSession) {
-  localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+  safeWriteStorage(ADMIN_SESSION_KEY, JSON.stringify(session));
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
