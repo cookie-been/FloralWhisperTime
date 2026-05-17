@@ -27,6 +27,8 @@
 10. [客户验收清单](./customer-acceptance-checklist.md)
 11. [素材交付规范](./assets-delivery-spec.md)
 12. [内容填写规范](./branding-content-guide.md)
+13. [交付包目录说明](./delivery-package-guide.md)
+14. [最终交付清单模板](./final-delivery-checklist-template.md)
 
 ## 产品与架构
 
@@ -41,6 +43,8 @@
 
 - [客户交付快速开始](./customer-delivery-quick-start.md)
 - [客户验收清单](./customer-acceptance-checklist.md)
+- [交付包目录说明](./delivery-package-guide.md)
+- [最终交付清单模板](./final-delivery-checklist-template.md)
 - [安装手册](./installation-guide.md)
 - [后台操作手册](./admin-operations-manual.md)
 - [素材交付规范](./assets-delivery-spec.md)
@@ -89,6 +93,8 @@
 10. [客户验收清单](./customer-acceptance-checklist.md)
 11. [素材交付规范](./assets-delivery-spec.md)
 12. [内容填写规范](./branding-content-guide.md)
+13. [交付包目录说明](./delivery-package-guide.md)
+14. [最终交付清单模板](./final-delivery-checklist-template.md)
 
 ### 面向开发接手
 
