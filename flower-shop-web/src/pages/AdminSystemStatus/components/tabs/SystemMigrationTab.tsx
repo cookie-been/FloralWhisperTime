@@ -1,5 +1,6 @@
-import { Button, Upload, message } from "antd";
+import { Alert, Button, Modal, Upload, message } from "antd";
 import { Download, UploadCloud } from "lucide-react";
+import { useState } from "react";
 import type { RcFile } from "antd/es/upload";
 import { SystemActionGrid } from "./SystemActionGrid";
 
@@ -12,6 +13,20 @@ type Props = {
 };
 
 export function SystemMigrationTab({ importingConfig, latestConfigExportAt, latestConfigImportAt, onConfigImport, onConfigExport }: Props) {
+  const [pendingImportFile, setPendingImportFile] = useState<RcFile | null>(null);
+
+  const handleBeforeUpload = (file: RcFile) => {
+    setPendingImportFile(file);
+    return false;
+  };
+
+  const handleConfirmImport = async () => {
+    if (!pendingImportFile) return;
+    const currentFile = pendingImportFile;
+    setPendingImportFile(null);
+    await onConfigImport(currentFile);
+  };
+
   return (
     <div className="space-y-6 pt-2">
       <SystemActionGrid
@@ -46,7 +61,7 @@ export function SystemMigrationTab({ importingConfig, latestConfigExportAt, late
             resultSummary: latestConfigImportAt ? "当前会话已执行过配置导入，请刷新前台首页、关于页和后台设置页确认结果。" : "当前会话还没有执行配置导入。",
             resultMeta: latestConfigImportAt ? `执行时间：${latestConfigImportAt}` : undefined,
             action: (
-              <Upload beforeUpload={onConfigImport} showUploadList={false} accept=".json,application/json">
+              <Upload beforeUpload={handleBeforeUpload} showUploadList={false} accept=".json,application/json">
                 <Button loading={importingConfig} icon={<UploadCloud size={16} />}>
                   导入配置
                 </Button>
@@ -72,6 +87,35 @@ export function SystemMigrationTab({ importingConfig, latestConfigExportAt, late
           </div>
         </div>
       </section>
+
+      <Modal
+        title="确认导入配置"
+        open={Boolean(pendingImportFile)}
+        onCancel={() => {
+          if (importingConfig) return;
+          setPendingImportFile(null);
+        }}
+        onOk={() => void handleConfirmImport()}
+        okText="确认导入"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+        confirmLoading={importingConfig}
+      >
+        <div className="space-y-3">
+          <Alert
+            showIcon
+            type="warning"
+            message="导入会覆盖当前动态配置"
+            description="本次导入会覆盖站点配置、门店信息、品牌故事、关于我们、时间轴、团队成员和 AI 配置。作品、留言与操作日志不会被本次导入覆盖。"
+          />
+          <div className="rounded-lg border border-[rgba(41,57,46,0.08)] bg-[#f7f8f5] px-4 py-3 text-sm text-muted">
+            <p>待导入文件：{pendingImportFile?.name || "未选择"}</p>
+            <p className="mt-2">建议先执行两步：</p>
+            <p className="mt-1">1. 下载最近备份或先执行一次手动备份</p>
+            <p className="mt-1">2. 先导出当前配置，作为回退基线</p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -815,8 +815,16 @@ export function AdminSystemStatus() {
             showIcon
             type="warning"
             message="归档会导出并删除截止日期之前的操作日志"
-            description="归档文件会写入备份目录下的 operation-logs 子目录。该操作适用于控制日志表体积，执行前请确认截止日期。"
+            description="归档文件会写入备份目录下的 operation-logs 子目录。该操作适用于控制日志表体积，执行前请确认截止日期，并建议先下载已有归档文件留档。"
           />
+          <div className="rounded-lg border border-[rgba(41,57,46,0.08)] bg-[#f7f8f5] px-4 py-3 text-sm text-muted">
+            <p>影响范围：</p>
+            <p className="mt-1">- 删除截止日期之前的操作日志记录</p>
+            <p className="mt-1">- 同时生成一份对应归档文件，便于后续留档或下载</p>
+            <p className="mt-2">执行建议：</p>
+            <p className="mt-1">- 先确认当前建议截止日期是否符合预期</p>
+            <p className="mt-1">- 如需长期留档，归档后及时下载归档文件</p>
+          </div>
           <div>
             <p className="mb-2 text-sm text-muted">归档截止日期</p>
             <Input type="date" value={archiveBefore} onChange={(event) => setArchiveBefore(event.target.value)} />
