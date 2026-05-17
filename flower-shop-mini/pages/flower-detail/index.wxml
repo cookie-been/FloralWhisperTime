@@ -1,29 +1,55 @@
-<view class="page" wx:if="{{flower}}">
-  <image-gallery images="{{flower.images}}" />
-  <view class="detail panel">
-    <view class="name-row">
-      <text class="name">{{flower.name}}</text>
-      <text class="price">¥{{flower.price}}</text>
-    </view>
-    <text class="desc">{{flower.description}}</text>
-    <view class="info-block">
-      <text class="label">主要花材</text>
-      <text class="value">{{materialsText}}</text>
-    </view>
-    <view class="info-block">
-      <text class="label">花语寓意</text>
-      <text class="value">{{flower.meaning}}</text>
-    </view>
-    <view class="tags">
-      <text wx:for="{{flower.tags}}" wx:key="*this" class="tag">{{item}}</text>
-    </view>
-  </view>
+<view class="page">
+  <state-section
+    loading="{{isPageLoading}}"
+    error-text="{{pageErrorText}}"
+    has-data="{{!!flower}}"
+    empty-text="作品不存在或已下架"
+    bind:retry="handleRetry"
+  >
+    <image-gallery images="{{galleryImageList}}" />
+    <view class="detail panel">
+      <view class="name-row">
+        <text class="name">{{flower.name}}</text>
+        <text class="price">¥{{flower.price}}</text>
+      </view>
+      <text class="desc">{{flower.description}}</text>
 
-  <view class="section-title">相关推荐</view>
-  <view class="related-list">
-    <flower-card wx:for="{{related}}" wx:key="id" flower="{{item}}" show-price />
-  </view>
-</view>
-<view class="page" wx:else>
-  <view class="empty panel">作品不存在或加载中</view>
+      <view class="info-block">
+        <text class="label">主要花材</text>
+        <text class="value">{{materialsText}}</text>
+      </view>
+
+      <view class="info-block">
+        <text class="label">花语寓意</text>
+        <text class="value">{{flower.meaning}}</text>
+      </view>
+
+      <view class="info-block">
+        <text class="label">风格标签</text>
+        <view class="tags">
+          <text wx:for="{{tagList}}" wx:key="*this" class="tag">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="action-row">
+      <button class="primary-button action-button" bindtap="contactShop">联系门店</button>
+      <button open-type="share" class="secondary-button action-button">分享作品</button>
+    </view>
+
+    <view class="section-header">
+      <text class="section-title">相关推荐</text>
+      <text class="section-subtitle">相近风格和相同场景的延伸选择</text>
+    </view>
+    <state-section
+      loading="{{false}}"
+      error-text=""
+      has-data="{{relatedFlowerList.length > 0}}"
+      empty-text="暂时没有相关推荐"
+    >
+      <view class="related-list">
+        <flower-card wx:for="{{relatedFlowerList}}" wx:key="id" flower="{{item}}" show-price />
+      </view>
+    </state-section>
+  </state-section>
 </view>

@@ -1,8 +1,8 @@
 .flower-card {
   overflow: hidden;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   background: #ffffff;
-  box-shadow: 0 16rpx 40rpx rgba(46, 125, 50, 0.1);
+  box-shadow: 0 16rpx 40rpx rgba(15, 23, 42, 0.06);
 }
 
 .cover {
@@ -13,7 +13,7 @@
 }
 
 .content {
-  padding: 22rpx;
+  padding: 22rpx 22rpx 24rpx;
 }
 
 .name-row {
@@ -24,9 +24,12 @@
 }
 
 .name {
+  flex: 1;
+  min-width: 0;
+  color: #1f2937;
   font-size: 30rpx;
-  font-weight: 700;
-  color: #333333;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 .price {
@@ -40,7 +43,7 @@
   display: -webkit-box;
   margin-top: 10rpx;
   overflow: hidden;
-  color: #666666;
+  color: #6b7280;
   font-size: 24rpx;
   line-height: 1.6;
   -webkit-box-orient: vertical;

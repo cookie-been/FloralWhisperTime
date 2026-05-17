@@ -1,12 +1,59 @@
 <view class="page">
-  <category-tabs categories="{{categories}}" active-id="{{activeCategoryId}}" bind:change="handleCategoryChange" />
-  <view class="filter-row">
-    <button class="{{sortBy === 'featured' ? 'active' : ''}}" data-sort="featured" bindtap="handleSort">热门</button>
-    <button class="{{sortBy === 'latest' ? 'active' : ''}}" data-sort="latest" bindtap="handleSort">最新</button>
-    <button class="{{sortBy === 'price_asc' ? 'active' : ''}}" data-sort="price_asc" bindtap="handleSort">价格</button>
-  </view>
-  <view wx:if="{{flowers.length}}" class="flower-list">
-    <flower-card wx:for="{{flowers}}" wx:key="id" flower="{{item}}" show-price />
-  </view>
-  <view wx:else class="empty panel">没有找到匹配的花束作品</view>
+  <state-section
+    loading="{{isPageLoading}}"
+    error-text="{{pageErrorText}}"
+    has-data="{{categoryList.length > 0}}"
+    empty-text="当前没有可用分类"
+    bind:retry="handleRetry"
+  >
+    <category-tabs
+      categories="{{categoryList}}"
+      active-id="{{activeCategoryId}}"
+      bind:change="handleCategoryChange"
+    />
+
+    <view class="search-panel panel">
+      <input
+        class="search-input"
+        value="{{searchKeyword}}"
+        placeholder="搜索花束、花材或寓意"
+        confirm-type="search"
+        bindinput="handleKeywordInput"
+        bindconfirm="handleKeywordConfirm"
+      />
+      <button class="search-button" bindtap="handleKeywordConfirm">搜索</button>
+      <button wx:if="{{searchKeyword}}" class="clear-button" bindtap="clearKeyword">清空</button>
+    </view>
+
+    <view class="filter-row">
+      <button
+        wx:for="{{sortOptionList}}"
+        wx:key="value"
+        class="filter-button {{sortBy === item.value ? 'active' : ''}}"
+        data-sort="{{item.value}}"
+        bindtap="handleSort"
+      >
+        {{item.label}}
+      </button>
+    </view>
+
+    <view class="result-head">
+      <text class="result-count">共 {{totalCount}} 件作品</text>
+      <text class="result-tip">支持分类、关键词和排序组合筛选</text>
+    </view>
+
+    <state-section
+      loading="{{false}}"
+      error-text=""
+      has-data="{{flowerList.length > 0}}"
+      empty-text="没有找到匹配的花束作品"
+    >
+      <view class="flower-list">
+        <flower-card wx:for="{{flowerList}}" wx:key="id" flower="{{item}}" show-price />
+      </view>
+      <view wx:if="{{isListLoading}}" class="list-loading">正在加载更多作品...</view>
+      <view wx:elif="{{hasMore}}" class="list-more">上滑继续加载更多</view>
+      <view wx:else class="list-end">已经到底了</view>
+    </state-section>
+  </state-section>
 </view>

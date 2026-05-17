@@ -1,5 +1,18 @@
 import { API_BASE_URL } from "../config/api";
-import type { BrandStory, Category, ContactForm, Flower, FlowerQuery, PaginatedResult, ShopInfo, SiteConfig, TeamMember } from "../types";
+import * as mockApi from "../shared/api";
+import type {
+  BrandStory,
+  Category,
+  ContactForm,
+  Flower,
+  FlowerQuery,
+  PaginatedResult,
+  ShopInfo,
+  SiteConfig,
+  TeamMember,
+} from "../types";
+
+const DEFAULT_REQUEST_TIMEOUT = 12000;
 
 function withQuery(path: string, query: Record<string, unknown> = {}) {
   const queryString = Object.keys(query)
@@ -9,12 +22,20 @@ function withQuery(path: string, query: Record<string, unknown> = {}) {
   return queryString ? `${path}?${queryString}` : path;
 }
 
+function normalizeErrorMessage(error: unknown, fallbackMessage: string) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallbackMessage;
+}
+
 function request<T>(path: string, method: "GET" | "POST" | "PUT" | "DELETE" = "GET", data?: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${API_BASE_URL}${path}`,
       method,
       data,
+      timeout: DEFAULT_REQUEST_TIMEOUT,
       header: {
         "content-type": "application/json",
       },
@@ -26,43 +47,100 @@ function request<T>(path: string, method: "GET" | "POST" | "PUT" | "DELETE" = "G
         const errorData = response.data as { message?: string };
         reject(new Error(errorData?.message ?? "请求失败"));
       },
-      fail: (error) => reject(new Error(error.errMsg)),
+      fail: (error) => reject(new Error(error.errMsg || "网络请求失败")),
     });
   });
 }
 
-export function getFlowers(query: FlowerQuery = {}) {
-  return request<PaginatedResult<Flower>>(withQuery("/api/flowers", query));
+async function withMockFallback<T>(remoteTask: () => Promise<T>, mockTask: () => Promise<T>) {
+  try {
+    return await remoteTask();
+  } catch (error) {
+    console.warn("[mini] remote request failed, fallback to mock:", error);
+    return mockTask();
+  }
 }
 
-export function getFlowerById(id: string) {
-  return request<Flower>(`/api/flowers/${id}`).catch(() => null);
+export function getFlowers(query: FlowerQuery = {}) {
+  return withMockFallback(
+    () => request<PaginatedResult<Flower>>(withQuery("/api/flowers", query)),
+    () => mockApi.getFlowers(query),
+  );
+}
+
+export async function getFlowerById(id: string) {
+  try {
+    const result = await withMockFallback(
+      () => request<Flower>(`/api/flowers/${id}`),
+      () => mockApi.getFlowerById(id),
+    );
+    return result ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function getRelatedFlowers(flower: Flower, limit = 3) {
-  return request<Flower[]>(withQuery(`/api/flowers/${flower.id}/related`, { limit }));
+  return withMockFallback(
+    () => request<Flower[]>(withQuery(`/api/flowers/${flower.id}/related`, { limit })),
+    () => mockApi.getRelatedFlowers(flower, limit),
+  );
 }
 
 export function getSiteConfig() {
-  return request<SiteConfig>("/api/site-config");
+  return withMockFallback(
+    () => request<SiteConfig>("/api/site-config"),
+    async () =>
+      ({
+        brandName: "花语时光",
+        heroEyebrow: "自然温暖",
+        heroTitle: "让花束像一封慢慢抵达的信",
+        heroDescription: "以季节花材和克制表达，为赠礼、婚礼和空间场景提供更耐看的花艺作品。",
+        heroImage: "",
+        primaryCtaText: "浏览作品",
+        secondaryCtaText: "联系门店",
+        stats: [],
+        contactIntro: "预约花束、婚礼花艺、开业花篮与空间花艺。",
+        businessHoursText: "周一至周五 09:30-21:00，周末 10:00-21:30",
+        footerDescription: "花语时光",
+      }) as SiteConfig,
+  );
 }
 
 export function getCategories() {
-  return request<Category[]>("/api/categories");
+  return withMockFallback(
+    () => request<Category[]>("/api/categories"),
+    () => mockApi.getCategories(),
+  );
 }
 
 export function getShopInfo() {
-  return request<ShopInfo>("/api/shop-info");
+  return withMockFallback(
+    () => request<ShopInfo>("/api/shop-info"),
+    () => mockApi.getShopInfo(),
+  );
 }
 
 export function getBrandStory() {
-  return request<BrandStory>("/api/brand-story");
+  return withMockFallback(
+    () => request<BrandStory>("/api/brand-story"),
+    () => mockApi.getBrandStory(),
+  );
 }
 
 export function getTeamMembers() {
-  return request<TeamMember[]>("/api/team");
+  return withMockFallback(
+    () => request<TeamMember[]>("/api/team"),
+    () => mockApi.getTeamMembers(),
+  );
 }
 
-export function submitContact(form: ContactForm) {
-  return request<{ success: boolean }>("/api/contact", "POST", form);
+export async function submitContact(form: ContactForm) {
+  try {
+    return await request<{ success: boolean }>("/api/contact", "POST", form);
+  } catch (error) {
+    return mockApi.submitContact(form).catch((mockError) => {
+      throw new Error(normalizeErrorMessage(mockError ?? error, "提交留言失败"));
+    });
+  }
 }

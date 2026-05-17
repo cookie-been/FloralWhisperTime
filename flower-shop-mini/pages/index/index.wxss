@@ -3,37 +3,56 @@
   padding: 22rpx 26rpx;
   color: #2e7d32;
   font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.section-header {
+  margin-top: 36rpx;
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18rpx;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
 }
 
-.category {
+.category-card {
   display: flex;
-  min-height: 132rpx;
+  min-height: 212rpx;
+  min-width: 0;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   gap: 12rpx;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   background: #ffffff;
-  color: #333333;
-  font-size: 24rpx;
+  padding: 26rpx 24rpx;
+  box-sizing: border-box;
+  box-shadow: 0 14rpx 40rpx rgba(15, 23, 42, 0.05);
 }
 
 .category-icon {
   display: flex;
-  width: 54rpx;
-  height: 54rpx;
+  width: 56rpx;
+  height: 56rpx;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: #e8f5e9;
   color: #2e7d32;
+  font-size: 26rpx;
   font-weight: 700;
+}
+
+.category-name {
+  color: #1f2937;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.category-desc {
+  color: #6b7280;
+  font-size: 22rpx;
+  line-height: 1.7;
 }
 
 .flower-grid {
@@ -42,21 +61,48 @@
   gap: 20rpx;
 }
 
-.story {
+.story-card {
   margin-top: 32rpx;
   padding: 32rpx;
 }
 
+.story-eyebrow {
+  display: block;
+  color: #2e7d32;
+  font-size: 22rpx;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .story-title {
   display: block;
-  color: #333333;
-  font-size: 32rpx;
+  margin-top: 10rpx;
+  color: #1f2937;
+  font-size: 34rpx;
   font-weight: 700;
+  line-height: 1.45;
 }
 
 .story-desc {
   display: block;
   margin-top: 12rpx;
-  color: #666666;
-  font-size: 26rpx;
+  color: #6b7280;
+  font-size: 25rpx;
+  line-height: 1.8;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
+
+.quick-button {
+  margin: 0;
+  min-width: 0;
+}
+
+.quick-button::after {
+  border: 0;
 }

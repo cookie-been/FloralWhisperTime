@@ -1,0 +1,17 @@
+<view wx:if="{{loading}}" class="state-panel state-panel-loading">
+  <view class="state-spinner"></view>
+  <text class="state-title">{{loadingText}}</text>
+</view>
+
+<view wx:elif="{{errorText}}" class="state-panel">
+  <text class="state-title">加载失败</text>
+  <text class="state-desc">{{errorText}}</text>
+  <button class="state-button" bindtap="handleRetry">{{retryText}}</button>
+</view>
+
+<view wx:elif="{{!hasData}}" class="state-panel">
+  <text class="state-title">暂无内容</text>
+  <text class="state-desc">{{emptyText || '当前没有可展示的数据'}}</text>
+</view>
+
+<slot wx:else></slot>

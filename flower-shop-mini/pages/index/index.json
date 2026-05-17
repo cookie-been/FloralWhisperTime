@@ -1,7 +1,9 @@
 {
   "usingComponents": {
     "swiper-banner": "/components/SwiperBanner/index",
-    "flower-card": "/components/FlowerCard/index"
+    "flower-card": "/components/FlowerCard/index",
+    "state-section": "/components/StateSection/index"
   },
-  "navigationBarTitleText": "花语时光"
+  "navigationBarTitleText": "花语时光",
+  "enablePullDownRefresh": true
 }

@@ -14,12 +14,12 @@ page {
   margin: 36rpx 0 20rpx;
   font-size: 36rpx;
   font-weight: 700;
-  color: #333333;
+  color: #1f2937;
 }
 
 .section-subtitle {
-  color: #666666;
-  font-size: 26rpx;
+  color: #6b7280;
+  font-size: 24rpx;
   line-height: 1.7;
 }
 
@@ -28,10 +28,27 @@ page {
   background: #2e7d32;
   color: #ffffff;
   font-size: 28rpx;
+  line-height: 84rpx;
+}
+
+.primary-button::after {
+  border: 0;
+}
+
+.secondary-button {
+  border-radius: 999rpx;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 28rpx;
+  line-height: 84rpx;
+}
+
+.secondary-button::after {
+  border: 0;
 }
 
 .panel {
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   background: #ffffff;
-  box-shadow: 0 18rpx 48rpx rgba(46, 125, 50, 0.1);
+  box-shadow: 0 18rpx 48rpx rgba(15, 23, 42, 0.06);
 }

@@ -10,12 +10,26 @@
   height: 420rpx;
 }
 
+.map-empty {
+  display: flex;
+  height: 420rpx;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7f8;
+  color: #6b7280;
+  font-size: 26rpx;
+}
+
 .nav-button {
   margin: 24rpx;
   border-radius: 999rpx;
   background: #2e7d32;
   color: #ffffff;
   font-size: 28rpx;
+}
+
+.nav-button[disabled] {
+  opacity: 0.48;
 }
 
 .nav-button::after {

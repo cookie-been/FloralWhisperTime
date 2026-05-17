@@ -4,7 +4,7 @@
 
 .title {
   display: block;
-  color: #333333;
+  color: #1f2937;
   font-size: 44rpx;
   font-weight: 700;
 }
@@ -12,7 +12,7 @@
 .desc {
   display: block;
   margin-top: 12rpx;
-  color: #666666;
+  color: #6b7280;
   font-size: 26rpx;
   line-height: 1.7;
 }
@@ -29,6 +29,15 @@
   border: 0;
 }
 
+.action-button {
+  margin: 0;
+  min-width: 0;
+}
+
+.action-button[disabled] {
+  opacity: 0.48;
+}
+
 .wechat-button {
   border-radius: 999rpx;
   background: #e8f5e9;
@@ -41,16 +50,68 @@
   padding: 30rpx;
 }
 
-.info text {
+.info-line {
   display: block;
-  color: #666666;
+  color: #6b7280;
   font-size: 26rpx;
   line-height: 1.8;
 }
 
 .info-title {
+  display: block;
   margin-bottom: 10rpx;
-  color: #333333 !important;
-  font-size: 32rpx !important;
+  color: #1f2937;
+  font-size: 32rpx;
   font-weight: 700;
+}
+
+.section-header {
+  margin-top: 36rpx;
+}
+
+.form-panel {
+  margin-top: 18rpx;
+  padding: 24rpx;
+}
+
+.field-input,
+.field-textarea {
+  width: 100%;
+  border-radius: 18rpx;
+  background: #f5f7f8;
+  padding: 20rpx 22rpx;
+  box-sizing: border-box;
+  color: #1f2937;
+  font-size: 26rpx;
+}
+
+.field-input + .field-input,
+.field-input + .field-textarea,
+.field-textarea + .submit-button {
+  margin-top: 16rpx;
+}
+
+.field-textarea {
+  min-height: 200rpx;
+}
+
+.form-tip {
+  display: block;
+  margin-top: 16rpx;
+  color: #6b7280;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.submit-button {
+  margin: 18rpx 0 0;
+  min-width: 0;
+}
+
+.submit-button::after {
+  border: 0;
+}
+
+.multiline {
+  white-space: pre-line;
 }

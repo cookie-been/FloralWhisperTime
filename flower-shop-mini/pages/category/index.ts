@@ -1,33 +1,177 @@
 import { getCategories, getFlowers } from "../../services/api";
+import type { Category, Flower, FlowerQuery } from "../../types";
+import { showErrorMessage } from "../../utils/message";
+
+const DEFAULT_PAGE_SIZE = 10;
+
+interface SortOptionItem {
+  value: NonNullable<FlowerQuery["sortBy"]>;
+  label: string;
+}
 
 Page({
   data: {
-    categories: [],
-    flowers: [],
+    categoryList: [] as Category[],
+    flowerList: [] as Flower[],
     activeCategoryId: "all",
-    sortBy: "featured",
+    sortBy: "featured" as FlowerQuery["sortBy"],
+    sortOptionList: [
+      { value: "featured", label: "热门" },
+      { value: "latest", label: "最新" },
+      { value: "price_asc", label: "价格升序" },
+      { value: "price_desc", label: "价格降序" },
+    ] as SortOptionItem[],
+    searchKeyword: "",
+    pageNumber: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
+    totalCount: 0,
+    hasMore: true,
+    isPageLoading: true,
+    isListLoading: false,
+    pageErrorText: "",
   },
-  async onShow() {
-    const cached = wx.getStorageSync("activeCategoryId");
-    if (cached) {
-      this.setData({ activeCategoryId: cached });
+
+  currentListRequestId: 0,
+
+  onShow() {
+    const cachedCategoryId = wx.getStorageSync("activeCategoryId");
+    if (cachedCategoryId) {
+      this.setData({ activeCategoryId: cachedCategoryId });
       wx.removeStorageSync("activeCategoryId");
     }
-    await this.loadData();
+    void this.loadPageData(true);
   },
-  async loadData() {
-    const [categories, flowers] = await Promise.all([
-      getCategories(),
-      getFlowers({ categoryId: this.data.activeCategoryId, sortBy: this.data.sortBy as any, limit: 40 }),
-    ]);
-    this.setData({ categories, flowers: flowers.list });
+
+  onPullDownRefresh() {
+    void this.loadPageData(true, true);
   },
-  async handleCategoryChange(event: WechatMiniprogram.CustomEvent) {
+
+  onReachBottom() {
+    if (!this.data.hasMore || this.data.isListLoading || this.data.isPageLoading) {
+      return;
+    }
+    void this.loadFlowerList(false);
+  },
+
+  async loadPageData(reset = true, isRefresh = false) {
+    this.setData({
+      isPageLoading: reset,
+      pageErrorText: "",
+    });
+    try {
+      const categoryList = await getCategories();
+      this.setData({
+        categoryList,
+      });
+      await this.loadFlowerList(true);
+    } catch (error) {
+      this.setData({
+        pageErrorText: error instanceof Error ? error.message : "分类页加载失败，请稍后重试",
+      });
+      if (isRefresh) {
+        showErrorMessage("刷新失败");
+      }
+    } finally {
+      this.setData({
+        isPageLoading: false,
+      });
+      if (isRefresh) {
+        wx.stopPullDownRefresh();
+      }
+    }
+  },
+
+  async loadFlowerList(reset: boolean) {
+    this.currentListRequestId += 1;
+    const requestId = this.currentListRequestId;
+    const nextPageNumber = reset ? 1 : this.data.pageNumber + 1;
+    this.setData({
+      isListLoading: true,
+      ...(reset
+        ? {
+            pageErrorText: "",
+            flowerList: [],
+            totalCount: 0,
+            hasMore: true,
+            pageNumber: 1,
+          }
+        : {}),
+    });
+    try {
+      const flowerResult = await getFlowers({
+        categoryId: this.data.activeCategoryId,
+        keyword: this.data.searchKeyword.trim(),
+        sortBy: this.data.sortBy,
+        page: nextPageNumber,
+        limit: this.data.pageSize,
+      });
+      if (requestId !== this.currentListRequestId) {
+        return;
+      }
+      const nextFlowerList = reset ? flowerResult.list : [...this.data.flowerList, ...flowerResult.list];
+      this.setData({
+        flowerList: nextFlowerList,
+        pageNumber: flowerResult.page,
+        totalCount: flowerResult.total,
+        hasMore: nextFlowerList.length < flowerResult.total,
+      });
+    } catch (error) {
+      if (requestId !== this.currentListRequestId) {
+        return;
+      }
+      if (reset) {
+        this.setData({
+          pageErrorText: error instanceof Error ? error.message : "作品列表加载失败，请稍后重试",
+        });
+      } else {
+        showErrorMessage(error instanceof Error ? error.message : "加载更多失败");
+      }
+    } finally {
+      if (requestId !== this.currentListRequestId) {
+        return;
+      }
+      this.setData({
+        isListLoading: false,
+      });
+    }
+  },
+
+  handleRetry() {
+    void this.loadPageData(true);
+  },
+
+  async handleCategoryChange(event: WechatMiniprogram.CustomEvent<{ id: string }>) {
     this.setData({ activeCategoryId: event.detail.id });
-    await this.loadData();
+    await this.loadFlowerList(true);
   },
+
   async handleSort(event: WechatMiniprogram.TouchEvent) {
-    this.setData({ sortBy: event.currentTarget.dataset.sort });
-    await this.loadData();
+    const nextSortBy = event.currentTarget.dataset.sort as FlowerQuery["sortBy"];
+    this.setData({ sortBy: nextSortBy });
+    await this.loadFlowerList(true);
+  },
+
+  handleKeywordInput(event: WechatMiniprogram.Input) {
+    this.setData({
+      searchKeyword: event.detail.value,
+    });
+  },
+
+  async handleKeywordConfirm() {
+    await this.loadFlowerList(true);
+  },
+
+  async clearKeyword() {
+    this.setData({
+      searchKeyword: "",
+    });
+    await this.loadFlowerList(true);
+  },
+
+  onShareAppMessage() {
+    return {
+      title: "花语时光作品分类",
+      path: "/pages/category/index",
+    };
   },
 });

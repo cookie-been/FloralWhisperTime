@@ -1,6 +1,8 @@
 {
   "usingComponents": {
-    "shop-map": "/components/ShopMap/index"
+    "shop-map": "/components/ShopMap/index",
+    "state-section": "/components/StateSection/index"
   },
-  "navigationBarTitleText": "联系我们"
+  "navigationBarTitleText": "联系我们",
+  "enablePullDownRefresh": true
 }

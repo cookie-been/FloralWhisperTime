@@ -11,8 +11,12 @@
 }
 
 .name {
+  flex: 1;
+  min-width: 0;
+  color: #1f2937;
   font-size: 42rpx;
   font-weight: 700;
+  line-height: 1.45;
 }
 
 .price {
@@ -25,7 +29,7 @@
 .desc,
 .value {
   display: block;
-  color: #666666;
+  color: #6b7280;
   font-size: 26rpx;
   line-height: 1.8;
 }
@@ -40,17 +44,17 @@
 
 .label {
   display: block;
-  margin-bottom: 8rpx;
-  color: #333333;
+  margin-bottom: 10rpx;
+  color: #1f2937;
   font-size: 26rpx;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: 12rpx;
-  margin-top: 24rpx;
+  margin-top: 8rpx;
 }
 
 .tag {
@@ -61,14 +65,28 @@
   font-size: 24rpx;
 }
 
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-top: 24rpx;
+}
+
+.action-button {
+  margin: 0;
+  min-width: 0;
+}
+
+.action-button::after {
+  border: 0;
+}
+
+.section-header {
+  margin-top: 36rpx;
+}
+
 .related-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20rpx;
-}
-
-.empty {
-  padding: 80rpx 24rpx;
-  text-align: center;
-  color: #666666;
 }

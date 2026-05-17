@@ -7,8 +7,15 @@ Component({
   },
   observers: {
     shop(shop) {
-      if (!shop?.latitude) return;
+      if (!shop?.latitude || !shop?.longitude) {
+        this.setData({
+          markers: [],
+          hasLocation: false,
+        });
+        return;
+      }
       this.setData({
+        hasLocation: true,
         markers: [
           {
             id: 1,
@@ -22,10 +29,18 @@ Component({
   },
   data: {
     markers: [],
+    hasLocation: false,
   },
   methods: {
     openLocation() {
       const shop = this.data.shop as { latitude: number; longitude: number; name: string; address: string };
+      if (!shop.latitude || !shop.longitude) {
+        wx.showToast({
+          title: "暂无门店坐标",
+          icon: "none",
+        });
+        return;
+      }
       wx.openLocation({
         latitude: shop.latitude,
         longitude: shop.longitude,

@@ -1,4 +1,7 @@
 const { API_BASE_URL } = require("../config/api");
+const mockApi = require("../shared/api");
+
+const DEFAULT_REQUEST_TIMEOUT = 12000;
 
 function withQuery(path, query = {}) {
   const queryString = Object.keys(query)
@@ -8,12 +11,20 @@ function withQuery(path, query = {}) {
   return queryString ? `${path}?${queryString}` : path;
 }
 
+function normalizeErrorMessage(error, fallbackMessage) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallbackMessage;
+}
+
 function request(path, method = "GET", data) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${API_BASE_URL}${path}`,
       method,
       data,
+      timeout: DEFAULT_REQUEST_TIMEOUT,
       header: {
         "content-type": "application/json",
       },
@@ -24,45 +35,101 @@ function request(path, method = "GET", data) {
         }
         reject(new Error((response.data && response.data.message) || "请求失败"));
       },
-      fail: (error) => reject(new Error(error.errMsg)),
+      fail: (error) => reject(new Error(error.errMsg || "网络请求失败")),
     });
   });
 }
 
-function getFlowers(query = {}) {
-  return request(withQuery("/api/flowers", query));
+async function withMockFallback(remoteTask, mockTask) {
+  try {
+    return await remoteTask();
+  } catch (error) {
+    console.warn("[mini] remote request failed, fallback to mock:", error);
+    return mockTask();
+  }
 }
 
-function getFlowerById(id) {
-  return request(`/api/flowers/${id}`).catch(() => null);
+function getFlowers(query = {}) {
+  return withMockFallback(
+    () => request(withQuery("/api/flowers", query)),
+    () => mockApi.getFlowers(query),
+  );
+}
+
+async function getFlowerById(id) {
+  try {
+    const result = await withMockFallback(
+      () => request(`/api/flowers/${id}`),
+      () => mockApi.getFlowerById(id),
+    );
+    return result || null;
+  } catch (error) {
+    return null;
+  }
 }
 
 function getRelatedFlowers(flower, limit = 3) {
-  return request(withQuery(`/api/flowers/${flower.id}/related`, { limit }));
+  return withMockFallback(
+    () => request(withQuery(`/api/flowers/${flower.id}/related`, { limit })),
+    () => mockApi.getRelatedFlowers(flower, limit),
+  );
 }
 
 function getSiteConfig() {
-  return request("/api/site-config");
+  return withMockFallback(
+    () => request("/api/site-config"),
+    async () => ({
+      brandName: "花语时光",
+      heroEyebrow: "自然温暖",
+      heroTitle: "让花束像一封慢慢抵达的信",
+      heroDescription: "以季节花材和克制表达，为赠礼、婚礼和空间场景提供更耐看的花艺作品。",
+      heroImage: "",
+      primaryCtaText: "浏览作品",
+      secondaryCtaText: "联系门店",
+      stats: [],
+      contactIntro: "预约花束、婚礼花艺、开业花篮与空间花艺。",
+      businessHoursText: "周一至周五 09:30-21:00，周末 10:00-21:30",
+      footerDescription: "花语时光",
+    }),
+  );
 }
 
 function getCategories() {
-  return request("/api/categories");
+  return withMockFallback(
+    () => request("/api/categories"),
+    () => mockApi.getCategories(),
+  );
 }
 
 function getShopInfo() {
-  return request("/api/shop-info");
+  return withMockFallback(
+    () => request("/api/shop-info"),
+    () => mockApi.getShopInfo(),
+  );
 }
 
 function getBrandStory() {
-  return request("/api/brand-story");
+  return withMockFallback(
+    () => request("/api/brand-story"),
+    () => mockApi.getBrandStory(),
+  );
 }
 
 function getTeamMembers() {
-  return request("/api/team");
+  return withMockFallback(
+    () => request("/api/team"),
+    () => mockApi.getTeamMembers(),
+  );
 }
 
-function submitContact(form) {
-  return request("/api/contact", "POST", form);
+async function submitContact(form) {
+  try {
+    return await request("/api/contact", "POST", form);
+  } catch (error) {
+    return mockApi.submitContact(form).catch((mockError) => {
+      throw new Error(normalizeErrorMessage(mockError || error, "提交留言失败"));
+    });
+  }
 }
 
 module.exports = {

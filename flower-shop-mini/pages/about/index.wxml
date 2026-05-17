@@ -1,17 +1,52 @@
 <view class="page">
-  <image class="hero" src="{{story.images[0]}}" mode="aspectFill" />
-  <view class="panel story">
-    <text class="eyebrow">Brand Story</text>
-    <text class="title">{{story.title}}</text>
-    <text class="subtitle">{{story.subtitle}}</text>
-    <text class="content">{{story.content}}</text>
-  </view>
-  <view class="section-title">店铺信息</view>
-  <view class="panel shop">
-    <text class="shop-name">{{shop.name}}</text>
-    <text>地址：{{shop.address}}</text>
-    <text>电话：{{shop.phone}}</text>
-    <text>微信：{{shop.wechat}}</text>
-    <text>营业时间：周一至周五 09:30-21:00，周末 10:00-21:30</text>
-  </view>
+  <state-section
+    loading="{{isPageLoading}}"
+    error-text="{{pageErrorText}}"
+    has-data="{{!!story.title || !!shop.name}}"
+    empty-text="关于我们内容暂不可用"
+    bind:retry="handleRetry"
+  >
+    <image class="hero" src="{{heroImageUrl}}" mode="aspectFill" />
+
+    <view class="panel story-card">
+      <text class="eyebrow">Brand Story</text>
+      <text class="title">{{storyTitleText}}</text>
+      <text class="subtitle">{{storySubtitleText}}</text>
+      <text class="content">{{storyContentText}}</text>
+    </view>
+
+    <view class="section-header">
+      <text class="section-title">团队成员</text>
+      <text class="section-subtitle">花艺表达背后的主理与设计团队</text>
+    </view>
+    <state-section
+      loading="{{false}}"
+      error-text=""
+      has-data="{{teamMemberList.length > 0}}"
+      empty-text="暂时没有团队信息"
+    >
+      <view class="team-list">
+        <view wx:for="{{teamCardList}}" wx:key="id" class="team-card panel">
+          <image class="team-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <view class="team-content">
+            <text class="team-name">{{item.name}}</text>
+            <text class="team-title">{{item.title}}</text>
+            <text class="team-bio">{{item.bioText}}</text>
+          </view>
+        </view>
+      </view>
+    </state-section>
+
+    <view class="section-header">
+      <text class="section-title">门店信息</text>
+      <text class="section-subtitle">线下到店、电话预约和花艺咨询入口</text>
+    </view>
+    <view class="panel shop-card">
+      <text class="shop-name">{{shopNameText}}</text>
+      <text class="shop-line">地址：{{shopAddressText}}</text>
+      <text class="shop-line">电话：{{shopPhoneText}}</text>
+      <text class="shop-line">微信：{{shopWechatText}}</text>
+      <text class="shop-line multiline">营业时间：{{businessHoursText || '请联系门店获取最新营业安排'}}</text>
+    </view>
+  </state-section>
 </view>

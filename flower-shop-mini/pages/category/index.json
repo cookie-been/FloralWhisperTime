@@ -1,7 +1,9 @@
 {
   "usingComponents": {
     "category-tabs": "/components/CategoryTabs/index",
-    "flower-card": "/components/FlowerCard/index"
+    "flower-card": "/components/FlowerCard/index",
+    "state-section": "/components/StateSection/index"
   },
-  "navigationBarTitleText": "花束分类"
+  "navigationBarTitleText": "花束分类",
+  "enablePullDownRefresh": true
 }

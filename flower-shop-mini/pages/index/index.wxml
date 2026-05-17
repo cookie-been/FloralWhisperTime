@@ -1,22 +1,55 @@
 <view class="page">
-  <swiper-banner items="{{banners}}" />
-  <view class="notice panel">今日可预约婚礼手捧花、生日花束和开业花篮。</view>
+  <state-section
+    loading="{{isPageLoading}}"
+    error-text="{{pageErrorText}}"
+    has-data="{{bannerList.length > 0}}"
+    empty-text="首页内容暂不可用"
+    bind:retry="handleRetry"
+  >
+    <swiper-banner items="{{bannerList}}" />
 
-  <view class="section-title">花束分类</view>
-  <view class="category-grid">
-    <view wx:for="{{categories}}" wx:key="id" wx:if="{{item.id !== 'all'}}" class="category" data-id="{{item.id}}" bindtap="goCategory">
-      <text class="category-icon">{{item.name.slice(0, 1)}}</text>
-      <text>{{item.name}}</text>
+    <view class="notice panel">{{noticeText}}</view>
+
+    <view class="section-header">
+      <text class="section-title">花束分类</text>
+      <text class="section-subtitle">按场景和风格快速浏览作品</text>
     </view>
-  </view>
+    <view class="category-grid">
+      <view wx:for="{{categoryList}}" wx:key="id" class="category-card" data-id="{{item.id}}" bindtap="goCategory">
+        <text class="category-icon">{{item.initialText}}</text>
+        <text class="category-name">{{item.name}}</text>
+        <text class="category-desc">{{item.descriptionText}}</text>
+      </view>
+    </view>
 
-  <view class="section-title">热门花束</view>
-  <view class="flower-grid">
-    <flower-card wx:for="{{hotFlowers}}" wx:key="id" flower="{{item}}" show-price />
-  </view>
+    <view class="section-header">
+      <text class="section-title">热门花束</text>
+      <text class="section-subtitle">优先展示门店当前主推和高关注作品</text>
+    </view>
+    <state-section
+      loading="{{false}}"
+      error-text=""
+      has-data="{{featuredFlowerList.length > 0}}"
+      empty-text="暂时没有热门作品"
+    >
+      <view class="flower-grid">
+        <flower-card wx:for="{{featuredFlowerList}}" wx:key="id" flower="{{item}}" show-price />
+      </view>
+    </state-section>
 
-  <view class="story panel" bindtap="goAbout">
-    <text class="story-title">{{siteConfig.heroTitle || '让花束像一封慢慢抵达的信'}}</text>
-    <text class="story-desc">{{siteConfig.heroDescription || '了解花语时光的品牌故事'}}</text>
-  </view>
+    <view class="story-card panel" bindtap="goAbout">
+      <text class="story-eyebrow">{{storyEyebrowText}}</text>
+      <text class="story-title">{{storyTitleText}}</text>
+      <text class="story-desc">{{storyDescriptionText}}</text>
+    </view>
+
+    <view class="quick-actions">
+      <button class="primary-button quick-button" bindtap="goAllCategories">
+        浏览全部作品
+      </button>
+      <button class="secondary-button quick-button" bindtap="goContact">
+        联系门店
+      </button>
+    </view>
+  </state-section>
 </view>

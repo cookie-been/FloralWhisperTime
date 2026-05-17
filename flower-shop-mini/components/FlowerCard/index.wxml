@@ -1,13 +1,13 @@
 <view class="flower-card" bindtap="handleTap">
-  <image class="cover" src="{{flower.images[0]}}" mode="aspectFill" />
+  <image class="cover" src="{{coverImageUrl}}" mode="aspectFill" />
   <view class="content">
     <view class="name-row">
-      <text class="name">{{flower.name}}</text>
+      <text class="name">{{flowerNameText}}</text>
       <text wx:if="{{showPrice}}" class="price">¥{{flower.price}}</text>
     </view>
-    <text class="desc">{{flower.description}}</text>
+    <text class="desc">{{descriptionText}}</text>
     <view class="tags">
-      <text wx:for="{{flower.tags}}" wx:key="*this" wx:for-index="index" wx:if="{{index < 3}}" class="tag">{{item}}</text>
+      <text wx:for="{{tagPreviewList}}" wx:key="*this" class="tag">{{item}}</text>
     </view>
   </view>
 </view>

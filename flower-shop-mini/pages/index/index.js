@@ -1,62 +1,144 @@
 const { getCategories, getFlowers, getSiteConfig } = require("../../services/api");
+const { fallbackText } = require("../../utils/format");
+const { showErrorMessage } = require("../../utils/message");
 
 Page({
   data: {
-    banners: [
-      {
-        id: "b1",
-        image: "https://picsum.photos/seed/mini-banner-1/900/600",
-        title: "花语时光",
-        desc: "清新文艺的鲜花展示窗口",
-      },
-      {
-        id: "b2",
-        image: "https://picsum.photos/seed/mini-banner-2/900/600",
-        title: "春日来信",
-        desc: "把季节花材送到心上",
-      },
-      {
-        id: "b3",
-        image: "https://picsum.photos/seed/mini-banner-3/900/600",
-        title: "婚礼花艺",
-        desc: "自然温暖的仪式感",
-      },
-    ],
-    categories: [],
-    hotFlowers: [],
+    bannerList: [],
+    categoryList: [],
+    featuredFlowerList: [],
     siteConfig: {},
+    storyEyebrowText: "品牌故事",
+    storyTitleText: "让花束像一封慢慢抵达的信",
+    storyDescriptionText: "了解花语时光的品牌故事",
+    isPageLoading: true,
+    pageErrorText: "",
+    noticeText: "今日可预约婚礼手捧花、生日花束和开业花篮。",
   },
-  async onLoad() {
+
+  currentPageRequestId: 0,
+
+  onLoad() {
+    void this.loadPageData();
+  },
+
+  onPullDownRefresh() {
+    void this.loadPageData(true);
+  },
+
+  onShareAppMessage() {
+    const siteConfig = this.data.siteConfig || {};
+    return {
+      title: fallbackText(siteConfig.heroTitle, "花语时光鲜花作品集"),
+      path: "/pages/index/index",
+    };
+  },
+
+  async loadPageData(isRefresh = false) {
+    this.currentPageRequestId += 1;
+    const requestId = this.currentPageRequestId;
+    this.setData({
+      isPageLoading: !isRefresh,
+      pageErrorText: "",
+    });
     try {
-      const [categories, flowers, siteConfig] = await Promise.all([
+      const [categoryList, flowerResult, siteConfig] = await Promise.all([
         getCategories(),
         getFlowers({ sortBy: "featured", limit: 6 }),
         getSiteConfig(),
       ]);
+      if (requestId !== this.currentPageRequestId) {
+        return;
+      }
+      const bannerList = this.buildBannerList(siteConfig);
+      const normalizedCategoryList = this.buildCategoryList(categoryList);
       this.setData({
-        categories,
-        hotFlowers: flowers.list,
+        categoryList: normalizedCategoryList,
+        featuredFlowerList: flowerResult.list,
         siteConfig,
-        banners: [
-          {
-            id: "b1",
-            image: siteConfig.heroImage,
-            title: siteConfig.heroTitle,
-            desc: siteConfig.heroDescription,
-          },
-          ...this.data.banners.slice(1),
-        ],
+        bannerList,
+        storyEyebrowText: fallbackText(siteConfig.heroEyebrow, "品牌故事"),
+        storyTitleText: fallbackText(siteConfig.heroTitle, "让花束像一封慢慢抵达的信"),
+        storyDescriptionText: fallbackText(siteConfig.heroDescription, "了解花语时光的品牌故事"),
       });
     } catch (error) {
-      wx.showToast({ title: "数据加载失败", icon: "none" });
-      console.error(error);
+      if (requestId !== this.currentPageRequestId) {
+        return;
+      }
+      this.setData({
+        pageErrorText: error instanceof Error ? error.message : "首页加载失败，请稍后重试",
+      });
+      if (isRefresh) {
+        showErrorMessage("刷新失败");
+      }
+    } finally {
+      if (requestId !== this.currentPageRequestId) {
+        return;
+      }
+      this.setData({
+        isPageLoading: false,
+      });
+      if (isRefresh) {
+        wx.stopPullDownRefresh();
+      }
     }
   },
+
+  buildBannerList(siteConfig) {
+    const primaryBanner = {
+      id: "hero",
+      image: fallbackText(siteConfig.heroImage, "https://picsum.photos/seed/mini-banner-hero/900/600"),
+      title: fallbackText(siteConfig.heroTitle, "花语时光"),
+      desc: fallbackText(siteConfig.heroDescription, "清新文艺的鲜花展示窗口"),
+    };
+
+    return [
+      primaryBanner,
+      {
+        id: "wedding",
+        image: "https://picsum.photos/seed/mini-banner-wedding/900/600",
+        title: "婚礼花艺",
+        desc: "自然、克制、适合长期回看的仪式花艺",
+      },
+      {
+        id: "gift",
+        image: "https://picsum.photos/seed/mini-banner-gift/900/600",
+        title: "日常花礼",
+        desc: "生日、探望、节日与纪念日的轻盈表达",
+      },
+    ];
+  },
+
+  buildCategoryList(categoryList) {
+    return categoryList
+      .filter((item) => item.id !== "all")
+      .map((item) => ({
+        ...item,
+        initialText: fallbackText(item.name, "花").slice(0, 1),
+        descriptionText: fallbackText(item.description, "花语时光精选分类"),
+      }));
+  },
+
+  handleRetry() {
+    void this.loadPageData();
+  },
+
   goCategory(event) {
-    wx.setStorageSync("activeCategoryId", event.currentTarget.dataset.id);
+    const categoryId = event.currentTarget.dataset.id;
+    wx.setStorageSync("activeCategoryId", categoryId);
     wx.switchTab({ url: "/pages/category/index" });
   },
+
+  goAllCategories() {
+    wx.setStorageSync("activeCategoryId", "all");
+    wx.switchTab({ url: "/pages/category/index" });
+  },
+
   goAbout() {
     wx.switchTab({ url: "/pages/about/index" });
+  },
+
+  goContact() {
+    wx.switchTab({ url: "/pages/contact/index" });
   },
 });
