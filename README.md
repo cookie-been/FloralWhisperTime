@@ -20,9 +20,18 @@
 - `flower-shop-mini/`：微信小程序原生工程
 - `shared/`：Web 共享类型与数据结构
 - `scripts/catalog/`：作品批量生成与导入脚本
-- `ops/`：部署、升级、备份、恢复、回滚脚本主目录
+- `ops/`：部署、升级、备份、恢复、回滚脚本实现目录
 - `logo/`：品牌 Logo 原始文件
 - `docs/`：正式产品、架构、接口与运维文档
+
+## 先看这里
+
+如果你现在觉得文档和脚本有点多，先看这两个入口：
+
+- [docs/start-here.md](/workspace/FloralWhisperTime/docs/start-here.md)
+- [docs/README.md](/workspace/FloralWhisperTime/docs/README.md)
+
+日常只需要记根目录入口脚本，不需要先记 `ops/` 里的实现脚本。
 
 ## 一键部署
 
@@ -72,6 +81,12 @@
 - 部署前后可按 [docs/deployment-checklist.md](/workspace/FloralWhisperTime/docs/deployment-checklist.md) 执行人工巡检
 - 如需接入企业域名与 HTTPS 入口，可参考 [docs/nginx-https-example.md](/workspace/FloralWhisperTime/docs/nginx-https-example.md)
 - 正式文档索引见 [docs/README.md](/workspace/FloralWhisperTime/docs/README.md)
+
+脚本说明：
+
+- 根目录脚本是公开入口
+- `ops/` 目录下同名脚本是实现层
+- 普通部署、备份、升级、回滚优先使用根目录脚本
 
 ## 离线镜像发布部署
 
