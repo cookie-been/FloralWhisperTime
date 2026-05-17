@@ -1,8 +1,9 @@
-import { Form, Input } from "antd";
+import { Form } from "antd";
 import type { FormInstance } from "antd";
 import { ImagePlus } from "lucide-react";
 import type { RcFile } from "antd/es/upload";
 import type { SettingsForm, SettingsImageFieldName } from "../../AdminSettings";
+import { SettingsMediaListField } from "../SettingsMediaListField";
 import { SettingsMediaField } from "../SettingsMediaField";
 import { SettingsPreviewPanel } from "../SettingsPreviewPanel";
 import { SettingsSection } from "../SettingsSection";
@@ -14,6 +15,12 @@ type MediaSettingsTabProps = {
     file: RcFile,
     field: SettingsImageFieldName,
     successMessage: string,
+    mode?: "replace" | "append",
+  ) => boolean | Promise<boolean>;
+  onUploadImages: (
+    files: RcFile[],
+    field: Extract<SettingsImageFieldName, "heroSlidesText" | "adminLoginSlidesText" | "contactImagesText" | "storyImages">,
+    successMessage: string,
   ) => boolean | Promise<boolean>;
 };
 
@@ -23,7 +30,7 @@ const splitText = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-export function MediaSettingsTab({ form, uploading, onUploadImage }: MediaSettingsTabProps) {
+export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImages }: MediaSettingsTabProps) {
   const brandName = Form.useWatch("brandName", form) ?? "";
   const heroEyebrow = Form.useWatch("heroEyebrow", form) ?? "";
   const heroTitle = Form.useWatch("heroTitle", form) ?? "";
@@ -66,18 +73,42 @@ export function MediaSettingsTab({ form, uploading, onUploadImage }: MediaSettin
             buttonLoading={Boolean(uploading.heroImage)}
           />
         </div>
-        <Form.Item name="heroSlidesText" label="首页轮播图 URL">
-          <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
-        </Form.Item>
-        <Form.Item name="adminLoginSlidesText" label="后台登录轮播图 URL">
-          <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
-        </Form.Item>
-        <Form.Item name="contactImagesText" label="联系页展示图 URL">
-          <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
-        </Form.Item>
-        <Form.Item name="storyImages" label="故事图片 URL">
-          <Input.TextArea rows={4} placeholder="多个 URL 用逗号或换行分隔" />
-        </Form.Item>
+        <SettingsMediaListField
+          name="heroSlidesText"
+          label="首页轮播图 URL"
+          placeholder="多个 URL 用逗号或换行分隔"
+          buttonText="多上传并追加到首页轮播"
+          uploadHandler={(files) => onUploadImages(files, "heroSlidesText", `已追加 ${files.length} 张首页轮播图`)}
+          buttonLoading={Boolean(uploading.heroSlidesText)}
+          helperText="支持一次多张上传，上传成功后会自动追加到当前首页轮播图列表。"
+        />
+        <SettingsMediaListField
+          name="adminLoginSlidesText"
+          label="后台登录轮播图 URL"
+          placeholder="多个 URL 用逗号或换行分隔"
+          buttonText="多上传并追加到登录轮播"
+          uploadHandler={(files) => onUploadImages(files, "adminLoginSlidesText", `已追加 ${files.length} 张后台登录轮播图`)}
+          buttonLoading={Boolean(uploading.adminLoginSlidesText)}
+          helperText="支持一次多张上传，适合批量维护后台登录页轮播图。"
+        />
+        <SettingsMediaListField
+          name="contactImagesText"
+          label="联系页展示图 URL"
+          placeholder="多个 URL 用逗号或换行分隔"
+          buttonText="多上传并追加到联系页"
+          uploadHandler={(files) => onUploadImages(files, "contactImagesText", `已追加 ${files.length} 张联系页展示图`)}
+          buttonLoading={Boolean(uploading.contactImagesText)}
+          helperText="支持一次多张上传，上传成功后自动追加到联系页展示图列表。"
+        />
+        <SettingsMediaListField
+          name="storyImages"
+          label="故事图片 URL"
+          placeholder="多个 URL 用逗号或换行分隔"
+          buttonText="多上传并追加到故事图片"
+          uploadHandler={(files) => onUploadImages(files, "storyImages", `已追加 ${files.length} 张故事图片`)}
+          buttonLoading={Boolean(uploading.storyImages)}
+          helperText="支持一次多张上传，上传成功后自动追加到品牌故事图片列表。"
+        />
       </SettingsSection>
 
       <div className="space-y-6">

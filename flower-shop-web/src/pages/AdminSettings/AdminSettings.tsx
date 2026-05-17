@@ -13,7 +13,13 @@ const AdminAboutLazy = lazy(() =>
   import("@/pages/AdminAbout/AdminAbout").then((module) => ({ default: module.AdminAbout })),
 );
 
-export type SettingsImageFieldName = "brandLogo" | "heroImage";
+export type SettingsImageFieldName =
+  | "brandLogo"
+  | "heroImage"
+  | "heroSlidesText"
+  | "adminLoginSlidesText"
+  | "contactImagesText"
+  | "storyImages";
 
 export type SettingsTabKey = "home" | "contact" | "story" | "about" | "admin-copy" | "media";
 
@@ -148,16 +154,47 @@ export function AdminSettings() {
     }
   };
 
+  const appendUrlsToField = (field: keyof SettingsForm, urls: string[]) => {
+    const currentValue = String(form.getFieldValue(field) ?? "").trim();
+    const currentItems = splitText(currentValue);
+    const nextValue = [...currentItems, ...urls].join("，");
+    form.setFieldValue(field, nextValue);
+  };
+
   const uploadImageToField = async (
     file: File,
     field: SettingsImageFieldName,
     successMessage: string,
+    mode: "replace" | "append" = "replace",
   ) => {
     if (uploading[field]) return false;
     setUploading((current) => ({ ...current, [field]: true }));
     try {
       const result = await uploadFlowerImage(file);
-      form.setFieldValue(field, result.url);
+      if (mode === "append") {
+        appendUrlsToField(field, [result.url]);
+      } else {
+        form.setFieldValue(field, result.url);
+      }
+      message.success(successMessage);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "上传失败");
+    } finally {
+      setUploading((current) => ({ ...current, [field]: false }));
+    }
+    return false;
+  };
+
+  const uploadImagesToListField = async (
+    files: File[],
+    field: Extract<SettingsImageFieldName, "heroSlidesText" | "adminLoginSlidesText" | "contactImagesText" | "storyImages">,
+    successMessage: string,
+  ) => {
+    if (!files.length || uploading[field]) return false;
+    setUploading((current) => ({ ...current, [field]: true }));
+    try {
+      const results = await Promise.all(files.map((file) => uploadFlowerImage(file)));
+      appendUrlsToField(field, results.map((item) => item.url));
       message.success(successMessage);
     } catch (error) {
       message.error(error instanceof Error ? error.message : "上传失败");
@@ -271,6 +308,7 @@ export function AdminSettings() {
                     form={form}
                     uploading={uploading}
                     onUploadImage={uploadImageToField}
+                    onUploadImages={uploadImagesToListField}
                   />
                 </div>
               ),
