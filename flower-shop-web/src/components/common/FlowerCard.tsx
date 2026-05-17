@@ -22,6 +22,7 @@ export function FlowerCard({ flower, compact = false }: FlowerCardProps) {
         <div className={compact ? "flex items-start justify-between gap-3" : "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"}>
           <div>
             <h3 className={compact ? "text-base font-semibold text-ink" : "text-lg font-semibold text-ink"}>{flower.name}</h3>
+            <p className={compact ? "mt-1 text-xs font-medium text-forest/80" : "mt-2 text-sm font-medium text-forest/80"}>编号：{flower.code}</p>
             <p className={compact ? "mt-1 line-clamp-2 text-sm leading-6 text-muted" : "mt-2 line-clamp-3 text-sm leading-7 text-muted"}>{flower.description}</p>
           </div>
           <span className={compact ? "shrink-0 text-sm font-semibold text-forest" : "shrink-0 text-base font-semibold text-forest"}>¥{flower.price}</span>
