@@ -25,6 +25,8 @@
 8. [权限与安全说明](./security-and-permissions.md)
 9. [接口调用示例](./api-examples.md)
 10. [客户验收清单](./customer-acceptance-checklist.md)
+11. [素材交付规范](./assets-delivery-spec.md)
+12. [内容填写规范](./branding-content-guide.md)
 
 ## 产品与架构
 
@@ -41,6 +43,8 @@
 - [客户验收清单](./customer-acceptance-checklist.md)
 - [安装手册](./installation-guide.md)
 - [后台操作手册](./admin-operations-manual.md)
+- [素材交付规范](./assets-delivery-spec.md)
+- [内容填写规范](./branding-content-guide.md)
 - [新服务器首次上线操作手册](./first-server-go-live.md)
 - [切换正式部署前检查清单](./pre-production-cutover-checklist.md)
 - [部署前后巡检清单](./deployment-checklist.md)
@@ -83,6 +87,8 @@
 8. [版本发布说明模板](./release-notes-template.md)
 9. [权限与安全说明](./security-and-permissions.md)
 10. [客户验收清单](./customer-acceptance-checklist.md)
+11. [素材交付规范](./assets-delivery-spec.md)
+12. [内容填写规范](./branding-content-guide.md)
 
 ### 面向开发接手
 
