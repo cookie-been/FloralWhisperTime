@@ -60,7 +60,7 @@
 - 创建上传目录
 - 从源码构建前端与 Java 后端镜像
 - 启动 `mysql + backend + web`
-- 自动读取 Docker 实际发布的 Web 端口，并验证 `/api/health`、首页、管理员登录和系统状态接口
+- 自动读取 Docker 实际发布的 Web 端口，并验证 `/api/health`、首页，以及可用时的管理员登录和系统状态接口
 
 常用参数：
 
@@ -84,6 +84,8 @@
 - 仅开发或演示环境可使用 `--allow-insecure-env` 显式跳过这层保护
 - 默认支持在 Debian / Ubuntu / CentOS / RHEL / Rocky / AlmaLinux 新机上自动补齐 Docker 运行环境
 - 自动安装依赖时需要当前用户具备 `root` 或 `sudo` 权限；若不希望脚本安装系统依赖，可显式传 `--skip-runtime-install`
+- 生产环境必须显式配置 `APP_DATA_ENCRYPTION_KEY`，且 `CORS_ALLOWED_ORIGIN_PATTERNS` 不应保留 `*`
+- 如果管理员已经在后台修改过密码，数据库中的管理员密码哈希会优先于 `.env` 中的 `ADMIN_PASSWORD`；此时部署脚本会给出告警，但不会再把健康发布误判为失败
 - 生产环境建议基于 `.env.production.example` 生成正式 `.env`
 - 如果同一台机器需要并行跑测试、预发、正式多套环境，建议显式传 `--project-name`，避免复用默认 compose 容器名、网络名和数据卷
 - 环境变量说明可参考 [docs/reference/env-reference.md](/workspace/FloralWhisperTime/docs/reference/env-reference.md)

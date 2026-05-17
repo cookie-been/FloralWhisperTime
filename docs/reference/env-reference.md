@@ -25,15 +25,17 @@
 | 变量 | 说明 | 建议 |
 |------|------|------|
 | `ADMIN_USERNAME` | 后台管理员账号 | 生产环境可改为非默认账号 |
-| `ADMIN_PASSWORD` | 后台管理员密码 | 使用强密码 |
+| `ADMIN_PASSWORD` | 后台管理员初始密码 / 回退密码 | 使用强密码 |
 | `ADMIN_AUTH_SECRET` | JWT 签名密钥 | 至少 32 位随机字符串 |
 | `JWT_ISSUER` | JWT 签发者标识 | 一般保持默认 |
+| `APP_DATA_ENCRYPTION_KEY` | 敏感配置加密主密钥 | 至少 32 位随机字符串，且与 `ADMIN_AUTH_SECRET` 不同 |
 
 ## 跨域与备份
 
 | 变量 | 说明 | 建议 |
 |------|------|------|
 | `CORS_ALLOWED_ORIGIN_PATTERNS` | 允许访问的来源域名 | 只填正式域名 |
+| `CORS_ALLOWED_HEADERS` | 允许请求头 | 生产环境显式列出需要的请求头 |
 | `BACKUP_DIR` | 容器内备份目录 | 与持久化路径保持一致 |
 
 ## AI 生图
@@ -87,4 +89,6 @@
 1. 正式环境优先基于 `.env.production.example` 生成 `.env`
 2. 每次发布时同步更新 `APP_GIT_REVISION` 与 `APP_DEPLOYED_AT`
 3. 不要把正式 `.env` 提交进仓库
-4. 首次上线后根据后台系统状态页的保护统计，逐步微调并发保护阈值
+4. 在 `production` 环境下，不要保留默认 `APP_DATA_ENCRYPTION_KEY`，也不要把 `CORS_ALLOWED_ORIGIN_PATTERNS` 或 `CORS_ALLOWED_HEADERS` 留成 `*`
+5. 如果后台管理员已经改过密码，数据库中的密码哈希会优先于 `.env` 中的 `ADMIN_PASSWORD`；部署脚本可据此给出告警，但不会自动覆盖数据库中的后台密码
+6. 首次上线后根据后台系统状态页的保护统计，逐步微调并发保护阈值

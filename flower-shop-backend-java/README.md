@@ -103,6 +103,15 @@ mvn spring-boot:run
 - `ADMIN_AUTH_SECRET` 与 `APP_DATA_ENCRYPTION_KEY` 必须使用不同的高强度随机值
 - 生产环境不要保留默认 `ADMIN_PASSWORD`
 - 变更 `APP_DATA_ENCRYPTION_KEY` 前要先做数据迁移或重新录入相关敏感配置
+- 非本地环境如果仍使用默认 `APP_DATA_ENCRYPTION_KEY`，应用会在启动阶段拒绝启动
+- 非本地环境如果 `CORS_ALLOWED_ORIGIN_PATTERNS` 或 `CORS_ALLOWED_HEADERS` 仍为 `*`，应用也会拒绝启动
+
+管理员密码行为：
+
+- 首次初始化时，如果数据库 `admin_security_state.password_hash` 为空，登录会使用环境变量 `ADMIN_PASSWORD`
+- 一旦管理员在后台完成改密，数据库中的密码哈希会优先于 `.env` 中的 `ADMIN_PASSWORD`
+- 这意味着后续部署时，即使替换了 `.env` 中的 `ADMIN_PASSWORD`，也不会直接覆盖数据库里已生效的后台密码
+- 如需回退到 `.env` 密码，需显式重置 `admin_security_state.password_hash`，或走系统提供的改密流程
 
 ## 兼容接口
 
