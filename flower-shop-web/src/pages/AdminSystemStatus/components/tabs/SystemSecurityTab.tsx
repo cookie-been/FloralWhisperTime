@@ -173,6 +173,60 @@ export function SystemSecurityTab({
               />
             </div>
           </div>
+
+          <div className="admin-panel admin-shell-card sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="section-eyebrow">命令边界</p>
+                <h3 className="admin-section-title mt-2 text-xl">部署与升级参考</h3>
+              </div>
+              <Tag color="blue">只读参考</Tag>
+            </div>
+            <div className="mt-5 space-y-4 text-sm">
+              <Alert
+                showIcon
+                type="info"
+                message="部署、升级、回滚仍建议通过命令行执行"
+                description="运维中心主要负责状态查看、低风险动作和结果留档。涉及重建容器、切换版本、回滚备份等高风险链路，当前仍建议通过统一命令入口 ./ops.sh 在 Linux / Docker 环境中执行。"
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="font-semibold text-[#1b281e]">源码模式建议命令</p>
+                  <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] p-3 text-xs text-[#1b281e]">
+{`./ops.sh deploy
+./ops.sh upgrade
+./ops.sh rollback --latest --dry-run`}
+                  </pre>
+                </div>
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="font-semibold text-[#1b281e]">Release 模式建议命令</p>
+                  <pre className="mt-3 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] p-3 text-xs text-[#1b281e]">
+{`./ops.sh release install
+./ops.sh release upgrade
+./ops.sh release rollback --latest-previous
+./ops.sh release inspect`}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="font-semibold text-[#1b281e]">当前版本参考</p>
+                  <p className="mt-2 text-muted">环境：{status.deploymentEnvironment || "未识别环境"}</p>
+                  <p className="mt-2 break-all text-muted">提交：{status.gitRevision || "未写入构建提交号"}</p>
+                  <p className="mt-2 text-muted">构建时间：{formatDateTime(status.buildTime)}</p>
+                  <p className="mt-2 text-muted">部署时间：{formatDateTime(status.deployedAt)}</p>
+                </div>
+                <div className="admin-subpanel px-4 py-4">
+                  <p className="font-semibold text-[#1b281e]">执行边界说明</p>
+                  <p className="mt-2 text-muted">后台适合执行：备份、巡检、归档、配置导入导出。</p>
+                  <p className="mt-2 text-muted">命令行适合执行：部署、升级、回滚、release 切换、镜像构建与环境补齐。</p>
+                  <p className="mt-2 text-muted">如需长期运维留档，建议在执行命令后回到本页确认版本号、部署时间和风险状态。</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
