@@ -33,6 +33,15 @@
 
 日常优先只需要记一个统一入口 `./ops.sh`，不需要先记 `ops/` 里的实现脚本。旧的根目录脚本仍保留兼容。
 
+## 最终推荐使用方式
+
+如果你是最终客户、实施人员、售后同事或日常运维，建议只按下面这套方式使用：
+
+- 部署、升级、回滚、备份、恢复：优先使用 `./ops.sh`
+- 后台管理中的运维中心：只执行低风险动作，如备份、巡检、归档、配置导入导出
+- 高风险链路：如部署、升级、回滚、release 切换，仍在 Linux / Docker 环境通过命令行执行
+- 查文档时：优先从 [docs/start-here.md](/workspace/FloralWhisperTime/docs/start-here.md) 和 [docs/README.md](/workspace/FloralWhisperTime/docs/README.md) 进入
+
 ## 一键部署
 
 推荐直接使用统一入口脚本：
