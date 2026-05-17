@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AiImageProperties;
@@ -21,6 +20,7 @@ import com.floralwhisper.protection.RateLimitInterceptor;
 import com.floralwhisper.protection.ServiceBusyException;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
+import com.floralwhisper.mapper.AdminOpsTaskMapper;
 import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
@@ -54,6 +54,7 @@ import javax.crypto.SecretKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -64,7 +65,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(AdminAiController.class)
+@WebMvcTest(
+    controllers = AdminAiController.class,
+    excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class)
 @Import({
     SecurityConfig.class,
     JwtAuthenticationFilter.class,
@@ -119,6 +122,7 @@ class AdminAiControllerTest {
 
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
+  @MockBean private AdminOpsTaskMapper adminOpsTaskMapper;
   @MockBean private AdminSecurityStateMapper adminSecurityStateMapper;
   @MockBean private AiSettingsMapper aiSettingsMapper;
   @MockBean private BrandStoryImageMapper brandStoryImageMapper;
@@ -133,10 +137,6 @@ class AdminAiControllerTest {
   @MockBean private ShopInfoMapper shopInfoMapper;
   @MockBean private SiteConfigMapper siteConfigMapper;
   @MockBean private TeamMemberMapper teamMemberMapper;
-
-  @SuppressWarnings("unused")
-  @Autowired
-  private ObjectMapper objectMapper;
 
   @BeforeEach
   void setUpInterceptors() throws Exception {

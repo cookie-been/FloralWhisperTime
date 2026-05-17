@@ -1,6 +1,7 @@
 package com.floralwhisper.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.floralwhisper.audit.AuditLogCommand;
@@ -462,7 +463,7 @@ public class OperationLogRecoveryService {
   private <T> T readValue(String raw, Class<T> type) {
     try {
       return objectMapper.readValue(raw, type);
-    } catch (Exception error) {
+    } catch (JsonProcessingException error) {
       throw new ApiException(HttpStatus.BAD_REQUEST, "日志快照格式无效，无法恢复");
     }
   }
@@ -471,7 +472,7 @@ public class OperationLogRecoveryService {
   private <T> T readValue(String raw, TypeReference<T> typeReference) {
     try {
       return objectMapper.readValue(raw, typeReference);
-    } catch (Exception error) {
+    } catch (JsonProcessingException error) {
       throw new ApiException(HttpStatus.BAD_REQUEST, "日志快照格式无效，无法恢复");
     }
   }

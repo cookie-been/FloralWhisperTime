@@ -1,25 +1,36 @@
 package com.floralwhisper.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.OperationLogDetailResponse;
 import com.floralwhisper.dto.OperationLogResponse;
+import com.floralwhisper.protection.HeavyOperationGuard;
+import com.floralwhisper.protection.RateLimitInterceptor;
+import com.floralwhisper.protection.RouteProtectionClassifier;
 import com.floralwhisper.service.OperationLogQueryService;
 import com.floralwhisper.security.JwtService;
 import java.time.LocalDateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(AdminController.class)
+@WebMvcTest(
+    controllers = AdminController.class,
+    excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class)
 @Import({com.floralwhisper.config.SecurityConfig.class, com.floralwhisper.security.JwtAuthenticationFilter.class, JwtService.class, com.floralwhisper.common.GlobalExceptionHandler.class, AdminControllerTest.TestConfig.class})
 @TestPropertySource(properties = {
     "app.admin.username=admin",
@@ -41,7 +52,11 @@ class AdminControllerOperationLogFilterTest {
   @MockBean
   private com.floralwhisper.service.ContactService contactService;
   @MockBean
+  private com.floralwhisper.service.FlowerService flowerService;
+  @MockBean
   private com.floralwhisper.service.SiteService siteService;
+  @MockBean
+  private com.floralwhisper.service.AdminOpsTaskService adminOpsTaskService;
   @MockBean
   private OperationLogQueryService operationLogQueryService;
   @MockBean
@@ -49,7 +64,17 @@ class AdminControllerOperationLogFilterTest {
   @MockBean
   private com.floralwhisper.audit.AuditLogService auditLogService;
   @MockBean
+  private HeavyOperationGuard heavyOperationGuard;
+  @MockBean
+  private RateLimitInterceptor rateLimitInterceptor;
+  @MockBean
+  private RouteProtectionClassifier routeProtectionClassifier;
+  @MockBean
   private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
+  @MockBean
+  private com.floralwhisper.mapper.AdminOpsTaskMapper adminOpsTaskMapper;
+  @MockBean
+  private com.floralwhisper.mapper.AdminSecurityStateMapper adminSecurityStateMapper;
   @MockBean private com.floralwhisper.mapper.AboutPageMapper aboutPageMapper;
   @MockBean private com.floralwhisper.mapper.AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private com.floralwhisper.mapper.AiSettingsMapper aiSettingsMapper;
@@ -65,6 +90,11 @@ class AdminControllerOperationLogFilterTest {
   @MockBean private com.floralwhisper.mapper.ShopInfoMapper shopInfoMapper;
   @MockBean private com.floralwhisper.mapper.SiteConfigMapper siteConfigMapper;
   @MockBean private com.floralwhisper.mapper.TeamMemberMapper teamMemberMapper;
+
+  @BeforeEach
+  void setUpInterceptors() throws Exception {
+    when(rateLimitInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+  }
 
   @Test
   void operationLogsAcceptRestorableFilter() throws Exception {
@@ -117,13 +147,13 @@ class AdminControllerOperationLogFilterTest {
     item.setRestorable(true);
     item.setCreatedAt(LocalDateTime.of(2026, 5, 15, 10, 8));
     when(operationLogQueryService.listForExport(
-        null, null, null, null, null, null, null, null))
+        any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(java.util.List.of(item));
 
     mockMvc.perform(get("/api/admin/operation-logs/export")
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))
         .andExpect(status().isOk())
-        .andExpect(header().string("Content-Type", "text/csv;charset=UTF-8"))
+        .andExpect(content().contentTypeCompatibleWith(MediaType.parseMediaType("text/csv;charset=UTF-8")))
         .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("operation-logs")));
   }
 
@@ -141,7 +171,7 @@ class AdminControllerOperationLogFilterTest {
     detail.setTargetId("flower_001");
     detail.setRestoredFromLogId(12L);
     detail.setRelatedLogs(java.util.List.of(source));
-    when(operationLogQueryService.getDetail(18L)).thenReturn(detail);
+    when(operationLogQueryService.getDetail(eq(18L))).thenReturn(detail);
 
     mockMvc.perform(get("/api/admin/operation-logs/18")
             .header("Authorization", "Bearer " + jwtService.createToken("admin")))

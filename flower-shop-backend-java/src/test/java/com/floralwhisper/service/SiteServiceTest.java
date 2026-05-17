@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import com.floralwhisper.audit.AuditLogCommand;
 import com.floralwhisper.audit.AuditLogService;
+import com.floralwhisper.common.ApiException;
 import com.floralwhisper.config.AppProperties;
 import com.floralwhisper.config.CacheConfig;
 import com.floralwhisper.crypto.SecretCryptoService;
@@ -59,6 +61,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.sql.Connection;
@@ -1202,6 +1205,56 @@ class SiteServiceTest {
     verify(auditLogService, times(1)).record(any(AuditLogCommand.class));
   }
 
+  @Test
+  void importConfigRejectsInvalidJsonPayload() throws Exception {
+    SiteService siteService = createSiteService(
+        mock(SiteConfigMapper.class),
+        mock(ShopInfoMapper.class),
+        mock(ShopHourMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        mock(AiSettingsMapper.class),
+        mock(BrandStoryMapper.class),
+        mock(BrandStoryImageMapper.class),
+        mock(OperationLogMapper.class),
+        mock(TeamMemberMapper.class),
+        mock(AuditLogService.class));
+
+    MockMultipartFile file = new MockMultipartFile(
+        "file",
+        "site-config-export.json",
+        "application/json",
+        "{invalid".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+    ApiException exception = assertThrows(ApiException.class, () -> siteService.importConfig(file));
+
+    assertEquals("配置文件格式无效", exception.getMessage());
+  }
+
+  @Test
+  void importConfigPropagatesFileReadIOException() throws Exception {
+    SiteService siteService = createSiteService(
+        mock(SiteConfigMapper.class),
+        mock(ShopInfoMapper.class),
+        mock(ShopHourMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        mock(AiSettingsMapper.class),
+        mock(BrandStoryMapper.class),
+        mock(BrandStoryImageMapper.class),
+        mock(OperationLogMapper.class),
+        mock(TeamMemberMapper.class),
+        mock(AuditLogService.class));
+
+    MockMultipartFile file = mock(MockMultipartFile.class);
+    when(file.isEmpty()).thenReturn(false);
+    when(file.getInputStream()).thenThrow(new IOException("stream failure"));
+
+    IOException exception = assertThrows(IOException.class, () -> siteService.importConfig(file));
+
+    assertEquals("stream failure", exception.getMessage());
+  }
+
   private AppProperties appProperties(Path uploadsDir, Path backupsDir, String environment, String gitRevision, String deployedAt) {
     AppProperties properties = new AppProperties();
     AppProperties.Upload upload = new AppProperties.Upload();
@@ -1252,6 +1305,11 @@ class SiteServiceTest {
         null,
         new ProtectionMetrics(),
         auditLogService,
+        new com.fasterxml.jackson.databind.ObjectMapper(),
+        new SecretCryptoService(appProperties(tempDir.resolve("uploads"), tempDir.resolve("backups"), "local", "dev", "")),
+        new SiteConfigDefaultsService(),
+        new SiteMediaJsonCodec(new com.fasterxml.jackson.databind.ObjectMapper()),
+        new OperationLogCsvExporter(),
         Instant.parse("2026-05-15T00:45:00Z"),
         ZoneId.of("Asia/Shanghai"),
         Clock.fixed(Instant.parse("2026-05-15T01:00:00Z"), ZoneId.of("Asia/Shanghai")));
@@ -1300,6 +1358,9 @@ class SiteServiceTest {
         "local",
         "dev",
         "")));
+    context.registerBean(SiteConfigDefaultsService.class, SiteConfigDefaultsService::new);
+    context.registerBean(SiteMediaJsonCodec.class, () -> new SiteMediaJsonCodec(new com.fasterxml.jackson.databind.ObjectMapper()));
+    context.registerBean(OperationLogCsvExporter.class, OperationLogCsvExporter::new);
     context.registerBean(SiteService.class);
     context.refresh();
     return context;

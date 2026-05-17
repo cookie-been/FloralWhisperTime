@@ -59,16 +59,19 @@ import java.math.BigDecimal;
 import java.io.File;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.time.Clock;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Comparator;
@@ -95,6 +98,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,6 +133,14 @@ public class SiteService {
   private final ObjectMapper objectMapper;
   private final ProtectionMetrics protectionMetrics;
   private final SecretCryptoService secretCryptoService;
+  private final SiteConfigDefaultsService siteConfigDefaultsService;
+  private final SiteMediaJsonCodec siteMediaJsonCodec;
+  private final OperationLogCsvExporter operationLogCsvExporter;
+  private final StorageDisplayFormatter storageDisplayFormatter;
+  private final DirectorySizeCalculator directorySizeCalculator;
+  private final BackupFileViewFactory backupFileViewFactory;
+  private final BackupFileLocator backupFileLocator;
+  private final SystemStatusFormatter systemStatusFormatter;
 
   @Autowired
   public SiteService(
@@ -150,7 +162,10 @@ public class SiteService {
       ProtectionMetrics protectionMetrics,
       AuditLogService auditLogService,
       ObjectMapper objectMapper,
-      SecretCryptoService secretCryptoService) {
+      SecretCryptoService secretCryptoService,
+      SiteConfigDefaultsService siteConfigDefaultsService,
+      SiteMediaJsonCodec siteMediaJsonCodec,
+      OperationLogCsvExporter operationLogCsvExporter) {
     this(
         siteConfigMapper,
         shopInfoMapper,
@@ -171,6 +186,9 @@ public class SiteService {
         auditLogService,
         objectMapper,
         secretCryptoService,
+        siteConfigDefaultsService,
+        siteMediaJsonCodec,
+        operationLogCsvExporter,
         Instant.now(),
         ZoneId.systemDefault(),
         Clock.systemDefaultZone());
@@ -260,6 +278,9 @@ public class SiteService {
         auditLogService,
         new ObjectMapper(),
         new SecretCryptoService(appProperties),
+        new SiteConfigDefaultsService(),
+        new SiteMediaJsonCodec(new ObjectMapper()),
+        new OperationLogCsvExporter(),
         startedAt,
         zoneId,
         clock);
@@ -285,6 +306,9 @@ public class SiteService {
       AuditLogService auditLogService,
       ObjectMapper objectMapper,
       SecretCryptoService secretCryptoService,
+      SiteConfigDefaultsService siteConfigDefaultsService,
+      SiteMediaJsonCodec siteMediaJsonCodec,
+      OperationLogCsvExporter operationLogCsvExporter,
       @Nullable Instant startedAt,
       ZoneId zoneId,
       Clock clock) {
@@ -307,9 +331,17 @@ public class SiteService {
     this.auditLogService = auditLogService;
     this.objectMapper = (objectMapper == null ? new ObjectMapper() : objectMapper.copy()).findAndRegisterModules();
     this.secretCryptoService = secretCryptoService == null ? new SecretCryptoService(appProperties) : secretCryptoService;
+    this.siteConfigDefaultsService = siteConfigDefaultsService == null ? new SiteConfigDefaultsService() : siteConfigDefaultsService;
+    this.siteMediaJsonCodec = siteMediaJsonCodec == null ? new SiteMediaJsonCodec(this.objectMapper) : siteMediaJsonCodec;
+    this.operationLogCsvExporter = operationLogCsvExporter == null ? new OperationLogCsvExporter() : operationLogCsvExporter;
     this.startedAt = startedAt;
     this.zoneId = zoneId;
     this.clock = clock;
+    this.storageDisplayFormatter = new StorageDisplayFormatter(this.zoneId);
+    this.directorySizeCalculator = new DirectorySizeCalculator();
+    this.backupFileViewFactory = new BackupFileViewFactory(this.storageDisplayFormatter, this.directorySizeCalculator);
+    this.backupFileLocator = new BackupFileLocator();
+    this.systemStatusFormatter = new SystemStatusFormatter(this.storageDisplayFormatter, this.clock);
   }
 
   @Cacheable("siteConfig")
@@ -327,9 +359,9 @@ public class SiteService {
     response.setBusinessHoursText(config.getBusinessHoursText());
     response.setFooterDescription(config.getFooterDescription());
     response.setBrandLogo(nullToEmpty(config.getBrandLogo()));
-    response.setHeroSlides(readJsonStringList(config.getHeroSlidesJson()));
-    response.setAdminLoginSlides(readJsonStringList(config.getAdminLoginSlidesJson()));
-    response.setContactImages(readJsonStringList(config.getContactImagesJson()));
+    response.setHeroSlides(siteMediaJsonCodec.read(config.getHeroSlidesJson()));
+    response.setAdminLoginSlides(siteMediaJsonCodec.read(config.getAdminLoginSlidesJson()));
+    response.setContactImages(siteMediaJsonCodec.read(config.getContactImagesJson()));
     response.setAdminBrandTitle(nullToEmpty(config.getAdminBrandTitle()));
     response.setAdminBrandSubtitle(nullToEmpty(config.getAdminBrandSubtitle()));
     response.setAdminBrandDescription(nullToEmpty(config.getAdminBrandDescription()));
@@ -406,7 +438,7 @@ public class SiteService {
     AdminSecurityState adminSecurityState = adminSecurityStateMapper.selectById(SINGLETON_ID);
     File uploadsDir = resolveDirectory(appProperties.getUpload().getDir(), "uploads");
     File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
-    File latestBackup = resolveLatestBackup(backupsDir);
+    File latestBackup = backupFileLocator.resolveLatestBackup(backupsDir);
     DatabaseStatus databaseStatus = inspectDatabaseStatus();
     ensureSiteConfig();
 
@@ -541,7 +573,7 @@ public class SiteService {
     String filename = "operation-logs-archive-" + DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now(clock)) + ".csv";
     File archiveFile = new File(archiveDir, filename);
     try {
-      java.nio.file.Files.writeString(archiveFile.toPath(), buildOperationLogCsv(logs));
+      java.nio.file.Files.writeString(archiveFile.toPath(), operationLogCsvExporter.export(logs));
     } catch (IOException exception) {
       throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "写入操作日志归档文件失败");
     }
@@ -573,20 +605,7 @@ public class SiteService {
 
   public List<OperationLogArchiveFileResponse> listOperationLogArchiveFiles() {
     File archiveDir = resolveOperationLogArchiveDirectory();
-    if (!archiveDir.exists() || !archiveDir.isDirectory()) {
-      return List.of();
-    }
-
-    File[] files = archiveDir.listFiles(file -> file.isFile() && file.getName().endsWith(".csv"));
-    if (files == null || files.length == 0) {
-      return List.of();
-    }
-
-    return java.util.Arrays.stream(files)
-        .sorted(
-            Comparator.comparingLong(File::lastModified)
-                .reversed()
-                .thenComparing(File::getName, Comparator.reverseOrder()))
+    return backupFileLocator.listOperationLogArchiveFiles(archiveDir).stream()
         .map(this::toOperationLogArchiveFileResponse)
         .toList();
   }
@@ -608,7 +627,7 @@ public class SiteService {
 
   public String writeLatestBackupArchive(OutputStream outputStream) throws IOException {
     File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
-    File latestBackup = resolveLatestBackup(backupsDir);
+    File latestBackup = backupFileLocator.resolveLatestBackup(backupsDir);
     if (latestBackup == null) {
       throw new ApiException(HttpStatus.NOT_FOUND, "暂无可下载备份");
     }
@@ -625,7 +644,7 @@ public class SiteService {
 
   public AdminBackupFileListResponse listBackupFiles() {
     File backupsDir = resolveDirectory(appProperties.getBackup().getDir(), "../backups");
-    File latestBackup = resolveLatestBackup(backupsDir);
+    File latestBackup = backupFileLocator.resolveLatestBackup(backupsDir);
     if (!backupsDir.exists() || !backupsDir.isDirectory()) {
       AdminBackupFileListResponse empty = new AdminBackupFileListResponse();
       empty.setList(List.of());
@@ -633,12 +652,7 @@ public class SiteService {
       return empty;
     }
 
-    File[] files = backupsDir.listFiles(File::isDirectory);
-    List<AdminBackupFileResponse> list = files == null ? List.of() : java.util.Arrays.stream(files)
-        .sorted(
-            Comparator.comparingLong(File::lastModified)
-                .reversed()
-                .thenComparing(File::getName, Comparator.reverseOrder()))
+    List<AdminBackupFileResponse> list = backupFileLocator.sortBackupDirectories(backupsDir).stream()
         .map(file -> safeAdminBackupFileResponse(file, latestBackup != null && file.getName().equals(latestBackup.getName())))
         .filter(java.util.Objects::nonNull)
         .toList();
@@ -765,9 +779,9 @@ public class SiteService {
     }
 
     ConfigTransferPayload payload;
-    try {
-      payload = objectMapper.readValue(file.getInputStream(), ConfigTransferPayload.class);
-    } catch (Exception exception) {
+    try (InputStream inputStream = file.getInputStream()) {
+      payload = objectMapper.readValue(inputStream, ConfigTransferPayload.class);
+    } catch (JsonProcessingException exception) {
       throw new ApiException(HttpStatus.BAD_REQUEST, "配置文件格式无效");
     }
 
@@ -877,13 +891,13 @@ public class SiteService {
     config.setFooterDescription(text(request.getFooterDescription(), config.getFooterDescription()));
     config.setBrandLogo(text(request.getBrandLogo(), config.getBrandLogo()));
     if (request.getHeroSlides() != null) {
-      config.setHeroSlidesJson(writeJsonStringList(request.getHeroSlides()));
+      config.setHeroSlidesJson(siteMediaJsonCodec.write(request.getHeroSlides()));
     }
     if (request.getAdminLoginSlides() != null) {
-      config.setAdminLoginSlidesJson(writeJsonStringList(request.getAdminLoginSlides()));
+      config.setAdminLoginSlidesJson(siteMediaJsonCodec.write(request.getAdminLoginSlides()));
     }
     if (request.getContactImages() != null) {
-      config.setContactImagesJson(writeJsonStringList(request.getContactImages()));
+      config.setContactImagesJson(siteMediaJsonCodec.write(request.getContactImages()));
     }
     config.setAdminBrandTitle(text(request.getAdminBrandTitle(), config.getAdminBrandTitle()));
     config.setAdminBrandSubtitle(text(request.getAdminBrandSubtitle(), config.getAdminBrandSubtitle()));
@@ -1265,9 +1279,9 @@ public class SiteService {
       current.setBusinessHoursText(text(source.getBusinessHoursText(), current.getBusinessHoursText()));
       current.setFooterDescription(text(source.getFooterDescription(), current.getFooterDescription()));
       current.setBrandLogo(text(source.getBrandLogo(), current.getBrandLogo()));
-      current.setHeroSlidesJson(source.getHeroSlides() == null ? current.getHeroSlidesJson() : writeJsonStringList(source.getHeroSlides()));
-      current.setAdminLoginSlidesJson(source.getAdminLoginSlides() == null ? current.getAdminLoginSlidesJson() : writeJsonStringList(source.getAdminLoginSlides()));
-      current.setContactImagesJson(source.getContactImages() == null ? current.getContactImagesJson() : writeJsonStringList(source.getContactImages()));
+      current.setHeroSlidesJson(source.getHeroSlides() == null ? current.getHeroSlidesJson() : siteMediaJsonCodec.write(source.getHeroSlides()));
+      current.setAdminLoginSlidesJson(source.getAdminLoginSlides() == null ? current.getAdminLoginSlidesJson() : siteMediaJsonCodec.write(source.getAdminLoginSlides()));
+      current.setContactImagesJson(source.getContactImages() == null ? current.getContactImagesJson() : siteMediaJsonCodec.write(source.getContactImages()));
       current.setAdminBrandTitle(text(source.getAdminBrandTitle(), current.getAdminBrandTitle()));
       current.setAdminBrandSubtitle(text(source.getAdminBrandSubtitle(), current.getAdminBrandSubtitle()));
       current.setAdminBrandDescription(text(source.getAdminBrandDescription(), current.getAdminBrandDescription()));
@@ -1633,369 +1647,15 @@ public class SiteService {
   private SiteConfig ensureSiteConfig() {
     SiteConfig current = siteConfigMapper.selectById(SINGLETON_ID);
     if (current != null) {
-      boolean dirty = false;
-      if (current.getBrandLogo() == null) {
-        current.setBrandLogo("");
-        dirty = true;
-      }
-      if (current.getAdminBrandTitle() == null) {
-        current.setAdminBrandTitle("");
-        dirty = true;
-      }
-      if (current.getAdminBrandSubtitle() == null) {
-        current.setAdminBrandSubtitle("");
-        dirty = true;
-      }
-      if (current.getAdminBrandDescription() == null) {
-        current.setAdminBrandDescription("");
-        dirty = true;
-      }
-      if (current.getHomeStorySectionTitle() == null) {
-        current.setHomeStorySectionTitle("品牌故事");
-        dirty = true;
-      }
-      if (current.getHomeStorySectionIntro() == null) {
-        current.setHomeStorySectionIntro("把品牌气质、服务方式和到店感受压缩进首页一屏，让访问者在浏览作品之外，也能快速理解这家店的表达方式。");
-        dirty = true;
-      }
-      if (current.getHomeStoryPrimaryLabel() == null) {
-        current.setHomeStoryPrimaryLabel("品牌气质");
-        dirty = true;
-      }
-      if (current.getHomeStoryPrimaryTitle() == null) {
-        current.setHomeStoryPrimaryTitle("自然、克制、适合长期被记住");
-        dirty = true;
-      }
-      if (current.getHomeStoryPrimaryDescription() == null) {
-        current.setHomeStoryPrimaryDescription("以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。");
-        dirty = true;
-      }
-      if (current.getHomeStoryServiceLabel() == null) {
-        current.setHomeStoryServiceLabel("服务方式");
-        dirty = true;
-      }
-      if (current.getHomeStoryServiceDescription() == null) {
-        current.setHomeStoryServiceDescription("门店零售、场景花礼、婚礼与空间陈设同步提供。");
-        dirty = true;
-      }
-      if (current.getHomeStoryExperienceLabel() == null) {
-        current.setHomeStoryExperienceLabel("到店体验");
-        dirty = true;
-      }
-      if (current.getHomeStoryExperienceDescription() == null) {
-        current.setHomeStoryExperienceDescription("更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。");
-        dirty = true;
-      }
-      if (current.getHomeStoryStoreLabel() == null) {
-        current.setHomeStoryStoreLabel("门店信息");
-        dirty = true;
-      }
-      if (current.getHomeStoryDetailLinkText() == null) {
-        current.setHomeStoryDetailLinkText("查看完整介绍");
-        dirty = true;
-      }
-      if (current.getHomeFeaturedSectionEyebrow() == null) {
-        current.setHomeFeaturedSectionEyebrow("精选作品");
-        dirty = true;
-      }
-      if (current.getHomeFeaturedSectionTitle() == null) {
-        current.setHomeFeaturedSectionTitle("精选作品");
-        dirty = true;
-      }
-      if (current.getHomeFeaturedSectionIntro() == null) {
-        current.setHomeFeaturedSectionIntro("首页保留一组更完整的精选作品视图，覆盖礼赠、婚礼、空间陈设等主要场景，方便快速判断整体风格。");
-        dirty = true;
-      }
-      if (current.getHomeFeaturedSectionLinkText() == null) {
-        current.setHomeFeaturedSectionLinkText("查看全部");
-        dirty = true;
-      }
-      if (current.getHomeServiceSectionEyebrow() == null) {
-        current.setHomeServiceSectionEyebrow("服务场景");
-        dirty = true;
-      }
-      if (current.getHomeServiceSectionTitle() == null) {
-        current.setHomeServiceSectionTitle("服务场景");
-        dirty = true;
-      }
-      if (current.getHomeServiceSectionIntro() == null) {
-        current.setHomeServiceSectionIntro("用更明确的分类入口，把婚礼、日常赠礼、开业和空间定制等常用浏览路径提前放到首页，减少访客进入画廊后的筛选成本。");
-        dirty = true;
-      }
-      if (current.getHomeServiceSectionLinkText() == null) {
-        current.setHomeServiceSectionLinkText("浏览全部分类");
-        dirty = true;
-      }
-      if (current.getAboutStorySectionEyebrow() == null) {
-        current.setAboutStorySectionEyebrow("品牌故事");
-        dirty = true;
-      }
-      if (current.getAboutTimelineSectionEyebrow() == null) {
-        current.setAboutTimelineSectionEyebrow("发展历程");
-        dirty = true;
-      }
-      if (current.getAboutTimelineSectionTitle() == null) {
-        current.setAboutTimelineSectionTitle("发展历程");
-        dirty = true;
-      }
-      if (current.getAboutTeamSectionEyebrow() == null) {
-        current.setAboutTeamSectionEyebrow("团队成员");
-        dirty = true;
-      }
-      if (current.getAboutTeamSectionTitle() == null) {
-        current.setAboutTeamSectionTitle("花艺师团队");
-        dirty = true;
-      }
-      if (current.getAboutTeamSectionIntro() == null) {
-        current.setAboutTeamSectionIntro("团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。");
-        dirty = true;
-      }
-      if (current.getGalleryPageEyebrow() == null) {
-        current.setGalleryPageEyebrow("作品浏览");
-        dirty = true;
-      }
-      if (current.getGalleryPageTitle() == null) {
-        current.setGalleryPageTitle("作品画廊");
-        dirty = true;
-      }
-      if (current.getGalleryPageIntro() == null) {
-        current.setGalleryPageIntro("按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。");
-        dirty = true;
-      }
-      if (current.getGallerySearchPlaceholder() == null) {
-        current.setGallerySearchPlaceholder("搜索花束、花材或标签");
-        dirty = true;
-      }
-      if (current.getGalleryEmptyText() == null) {
-        current.setGalleryEmptyText("没有找到匹配的花束作品");
-        dirty = true;
-      }
-      if (current.getGalleryLoadErrorText() == null) {
-        current.setGalleryLoadErrorText("作品列表加载失败，请稍后刷新重试");
-        dirty = true;
-      }
-      if (current.getContactPageTitle() == null) {
-        current.setContactPageTitle("联系我们");
-        dirty = true;
-      }
-      if (current.getContactPageSubmitText() == null) {
-        current.setContactPageSubmitText("提交留言");
-        dirty = true;
-      }
-      if (current.getContactSubmitSuccessText() == null) {
-        current.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
-        dirty = true;
-      }
-      if (current.getConsultButtonText() == null) {
-        current.setConsultButtonText("咨询花艺");
-        dirty = true;
-      }
-      if (current.getAdminDashboardEyebrow() == null) {
-        current.setAdminDashboardEyebrow("后台概览");
-        dirty = true;
-      }
-      if (current.getAdminDashboardTitle() == null) {
-        current.setAdminDashboardTitle("运营总览");
-        dirty = true;
-      }
-      if (current.getAdminDashboardDescription() == null) {
-        current.setAdminDashboardDescription("先看网站状态，再进入作品与内容编辑。");
-        dirty = true;
-      }
-      if (current.getAdminFlowersEyebrow() == null) {
-        current.setAdminFlowersEyebrow("作品目录");
-        dirty = true;
-      }
-      if (current.getAdminFlowersTitle() == null) {
-        current.setAdminFlowersTitle("作品管理");
-        dirty = true;
-      }
-      if (current.getAdminFlowersDescription() == null) {
-        current.setAdminFlowersDescription("筛选、整理与更新作品内容，保持前台展示一致。");
-        dirty = true;
-      }
-      if (current.getAdminSettingsEyebrow() == null) {
-        current.setAdminSettingsEyebrow("动态配置");
-        dirty = true;
-      }
-      if (current.getAdminSettingsTitle() == null) {
-        current.setAdminSettingsTitle("站点配置");
-        dirty = true;
-      }
-      if (current.getAdminSettingsDescription() == null) {
-        current.setAdminSettingsDescription("统一维护站点首页、门店信息、品牌故事与关于我们内容。");
-        dirty = true;
-      }
-      if (current.getAdminAiEyebrow() == null) {
-        current.setAdminAiEyebrow("AI 工作台");
-        dirty = true;
-      }
-      if (current.getAdminAiTitle() == null) {
-        current.setAdminAiTitle("AI 生图配置");
-        dirty = true;
-      }
-      if (current.getAdminAiDescription() == null) {
-        current.setAdminAiDescription("统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。");
-        dirty = true;
-      }
-      if (current.getAdminContactsEyebrow() == null) {
-        current.setAdminContactsEyebrow("访客留言");
-        dirty = true;
-      }
-      if (current.getAdminContactsTitle() == null) {
-        current.setAdminContactsTitle("用户留言");
-        dirty = true;
-      }
-      if (current.getAdminContactsDescription() == null) {
-        current.setAdminContactsDescription("查看访客提交的预约、咨询与定制需求。");
-        dirty = true;
-      }
-      if (current.getAdminSystemEyebrow() == null) {
-        current.setAdminSystemEyebrow("运维状态");
-        dirty = true;
-      }
-      if (current.getAdminSystemTitle() == null) {
-        current.setAdminSystemTitle("运维中心");
-        dirty = true;
-      }
-      if (current.getAdminSystemDescription() == null) {
-        current.setAdminSystemDescription("统一查看系统状态，并执行备份、巡检和配置迁移。");
-        dirty = true;
-      }
-      if (current.getAdminOperationLogsEyebrow() == null) {
-        current.setAdminOperationLogsEyebrow("审计恢复");
-        dirty = true;
-      }
-      if (current.getAdminOperationLogsTitle() == null) {
-        current.setAdminOperationLogsTitle("操作日志");
-        dirty = true;
-      }
-      if (current.getAdminOperationLogsDescription() == null) {
-        current.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
-        dirty = true;
-      }
-      if (!notBlank(current.getHeroSlidesJson())) {
-        current.setHeroSlidesJson("[]");
-        dirty = true;
-      }
-      if (!notBlank(current.getAdminLoginSlidesJson())) {
-        current.setAdminLoginSlidesJson("[]");
-        dirty = true;
-      }
-      if (!notBlank(current.getContactImagesJson())) {
-        current.setContactImagesJson("[]");
-        dirty = true;
-      }
-      if (dirty) {
+      SiteConfig normalized = siteConfigDefaultsService.applyMissingDefaults(current);
+      if (normalized != null) {
         siteConfigMapper.updateById(current);
       }
       return current;
     }
-    SiteConfig created = new SiteConfig();
-    created.setId(SINGLETON_ID);
-    ShopInfo shopInfo = shopInfoMapper.selectById(SINGLETON_ID);
-    created.setBrandName(shopInfo != null && notBlank(shopInfo.getName()) ? shopInfo.getName() : "花语时光");
-    created.setHeroEyebrow("");
-    created.setHeroTitle(created.getBrandName());
-    created.setHeroDescription("");
-    created.setHeroImage("");
-    created.setPrimaryCtaText("浏览作品");
-    created.setSecondaryCtaText("联系门店");
-    created.setContactIntro("");
-    created.setBusinessHoursText("");
-    created.setFooterDescription("");
-    created.setBrandLogo("");
-    created.setHeroSlidesJson("[]");
-    created.setAdminLoginSlidesJson("[]");
-    created.setContactImagesJson("[]");
-    created.setAdminBrandTitle(created.getBrandName() + "后台");
-    created.setAdminBrandSubtitle("Floral Whisper Time");
-    created.setAdminBrandDescription("从作品、站点内容与 AI 能力三个层面维护品牌展示。");
-    created.setHomeStorySectionTitle("品牌故事");
-    created.setHomeStorySectionIntro("把品牌气质、服务方式和到店感受压缩进首页一屏，让访问者在浏览作品之外，也能快速理解这家店的表达方式。");
-    created.setHomeStoryPrimaryLabel("品牌气质");
-    created.setHomeStoryPrimaryTitle("自然、克制、适合长期被记住");
-    created.setHomeStoryPrimaryDescription("以稳定的花材审美、礼赠场景理解和空间氛围组织，呈现更适合现代城市生活的花艺表达。");
-    created.setHomeStoryServiceLabel("服务方式");
-    created.setHomeStoryServiceDescription("门店零售、场景花礼、婚礼与空间陈设同步提供。");
-    created.setHomeStoryExperienceLabel("到店体验");
-    created.setHomeStoryExperienceDescription("更强调现场沟通、花材观察和场景适配，而不是模板式套装推荐。");
-    created.setHomeStoryStoreLabel("门店信息");
-    created.setHomeStoryDetailLinkText("查看完整介绍");
-    created.setHomeFeaturedSectionEyebrow("精选作品");
-    created.setHomeFeaturedSectionTitle("精选作品");
-    created.setHomeFeaturedSectionIntro("首页保留一组更完整的精选作品视图，覆盖礼赠、婚礼、空间陈设等主要场景，方便快速判断整体风格。");
-    created.setHomeFeaturedSectionLinkText("查看全部");
-    created.setHomeServiceSectionEyebrow("服务场景");
-    created.setHomeServiceSectionTitle("服务场景");
-    created.setHomeServiceSectionIntro("用更明确的分类入口，把婚礼、日常赠礼、开业和空间定制等常用浏览路径提前放到首页，减少访客进入画廊后的筛选成本。");
-    created.setHomeServiceSectionLinkText("浏览全部分类");
-    created.setAboutStorySectionEyebrow("品牌故事");
-    created.setAboutTimelineSectionEyebrow("发展历程");
-    created.setAboutTimelineSectionTitle("发展历程");
-    created.setAboutTeamSectionEyebrow("团队成员");
-    created.setAboutTeamSectionTitle("花艺师团队");
-    created.setAboutTeamSectionIntro("团队成员、职务与简介均由后台统一维护，用于表达品牌方法和实际服务能力。");
-    created.setGalleryPageEyebrow("作品浏览");
-    created.setGalleryPageTitle("作品画廊");
-    created.setGalleryPageIntro("按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。");
-    created.setGallerySearchPlaceholder("搜索花束、花材或标签");
-    created.setGalleryEmptyText("没有找到匹配的花束作品");
-    created.setGalleryLoadErrorText("作品列表加载失败，请稍后刷新重试");
-    created.setContactPageTitle("联系我们");
-    created.setContactPageSubmitText("提交留言");
-    created.setContactSubmitSuccessText("留言已提交，我们会尽快联系你");
-    created.setConsultButtonText("咨询花艺");
-    created.setAdminDashboardEyebrow("后台概览");
-    created.setAdminDashboardTitle("运营总览");
-    created.setAdminDashboardDescription("先看网站状态，再进入作品与内容编辑。");
-    created.setAdminFlowersEyebrow("作品目录");
-    created.setAdminFlowersTitle("作品管理");
-    created.setAdminFlowersDescription("筛选、整理与更新作品内容，保持前台展示一致。");
-    created.setAdminSettingsEyebrow("动态配置");
-    created.setAdminSettingsTitle("站点配置");
-    created.setAdminSettingsDescription("统一维护站点首页、门店信息、品牌故事与关于我们内容。");
-    created.setAdminAiEyebrow("AI 工作台");
-    created.setAdminAiTitle("AI 生图配置");
-    created.setAdminAiDescription("统一维护 AI 生图与作品信息建议能力所需的开关、密钥、模型和接口参数。");
-    created.setAdminContactsEyebrow("访客留言");
-    created.setAdminContactsTitle("用户留言");
-    created.setAdminContactsDescription("查看访客提交的预约、咨询与定制需求。");
-    created.setAdminSystemEyebrow("运维状态");
-    created.setAdminSystemTitle("运维中心");
-    created.setAdminSystemDescription("统一查看系统状态，并执行备份、巡检和配置迁移。");
-    created.setAdminOperationLogsEyebrow("审计恢复");
-    created.setAdminOperationLogsTitle("操作日志");
-    created.setAdminOperationLogsDescription("记录后台写操作和登录行为，并支持按历史快照恢复误操作数据。");
+    SiteConfig created = siteConfigDefaultsService.createDefault(SINGLETON_ID, shopInfoMapper.selectById(SINGLETON_ID));
     siteConfigMapper.insert(created);
     return created;
-  }
-
-  private List<String> readJsonStringList(String value) {
-    if (!notBlank(value)) {
-      return List.of();
-    }
-    try {
-      List<String> items = objectMapper.readValue(value, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
-      if (items == null) {
-        return List.of();
-      }
-      return items.stream().filter(this::notBlank).map(String::trim).distinct().toList();
-    } catch (Exception exception) {
-      log.warn("Failed to parse site media json: {}", value, exception);
-      return List.of();
-    }
-  }
-
-  private String writeJsonStringList(List<String> value) {
-    List<String> normalized = value == null
-        ? Collections.emptyList()
-        : value.stream().filter(this::notBlank).map(String::trim).distinct().toList();
-    try {
-      return objectMapper.writeValueAsString(normalized);
-    } catch (Exception exception) {
-      throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "站点媒体配置保存失败");
-    }
   }
 
   private String formatDateTime(LocalDateTime value) {
@@ -2142,21 +1802,12 @@ public class SiteService {
   }
 
   private String resolveBuildTime() {
-    if (buildProperties != null && buildProperties.getTime() != null) {
-      return formatInstant(buildProperties.getTime());
-    }
-    return "";
+    return systemStatusFormatter.formatBuildTime(buildProperties == null ? null : buildProperties.getTime());
   }
 
   private String resolveDeployedAt() {
-    if (appProperties.getRuntime() != null && notBlank(appProperties.getRuntime().getDeployedAt())) {
-      try {
-        return formatInstant(Instant.parse(appProperties.getRuntime().getDeployedAt().trim()));
-      } catch (Exception ignored) {
-        return appProperties.getRuntime().getDeployedAt().trim();
-      }
-    }
-    return "";
+    return systemStatusFormatter.formatDeployedAt(
+        appProperties.getRuntime() == null ? null : appProperties.getRuntime().getDeployedAt());
   }
 
   private DatabaseStatus inspectDatabaseStatus() {
@@ -2169,7 +1820,7 @@ public class SiteService {
         version = connection.getMetaData().getDatabaseProductVersion().trim();
       }
       return new DatabaseStatus(true, version, resolveDatabaseSize(connection));
-    } catch (Exception exception) {
+    } catch (SQLException exception) {
       return new DatabaseStatus(false, "", "");
     }
   }
@@ -2185,7 +1836,7 @@ public class SiteService {
         String value = resultSet.getString(1);
         return value == null ? "" : value.trim();
       }
-    } catch (Exception exception) {
+    } catch (SQLException exception) {
       return "";
     }
     return "";
@@ -2210,92 +1861,23 @@ public class SiteService {
     if (bytes <= 0L) {
       return "";
     }
-    double value = bytes;
-    String unit = "B";
-    if (value >= 1024D) {
-      value /= 1024D;
-      unit = "KB";
-    }
-    if (value >= 1024D && !"B".equals(unit)) {
-      value /= 1024D;
-      unit = "MB";
-    }
-    if (value >= 1024D && "MB".equals(unit)) {
-      value /= 1024D;
-      unit = "GB";
-    }
-    return String.format(java.util.Locale.US, "%.2f %s", value, unit);
+    return storageDisplayFormatter.formatBytes(bytes);
   }
 
   private long calculateDirectorySize(File directory) {
-    return calculateDirectorySize(directory, new HashSet<>());
-  }
-
-  private long calculateDirectorySize(File directory, java.util.Set<Path> visitedPaths) {
-    if (!directory.exists() || !directory.isDirectory()) {
-      return 0L;
-    }
-    Path directoryPath = directory.toPath().toAbsolutePath().normalize();
-    if (!visitedPaths.add(directoryPath)) {
-      return 0L;
-    }
-    File[] files = directory.listFiles();
-    if (files == null) {
-      return 0L;
-    }
-    long total = 0L;
-    for (File file : files) {
-      try {
-        Path filePath = file.toPath();
-        if (Files.isSymbolicLink(filePath)) {
-          continue;
-        }
-        if (Files.isDirectory(filePath, LinkOption.NOFOLLOW_LINKS)) {
-          total += calculateDirectorySize(file, visitedPaths);
-        } else {
-          total += Files.size(filePath);
-        }
-      } catch (IOException | SecurityException exception) {
-        log.warn("Skipping backup file while calculating size: {}", file.getAbsolutePath(), exception);
-      }
-    }
-    return total;
+    return directorySizeCalculator.calculate(directory);
   }
 
   private String formatUptime() {
-    if (startedAt == null) {
-      return "未知";
-    }
-    Duration duration = Duration.between(startedAt, Instant.now(clock));
-    if (duration.isNegative()) {
-      return "未知";
-    }
-    long totalMinutes = duration.toMinutes();
-    if (totalMinutes < 60) {
-      return totalMinutes + "分钟";
-    }
-    long hours = totalMinutes / 60;
-    long minutes = totalMinutes % 60;
-    if (hours < 24) {
-      return minutes == 0 ? hours + "小时" : hours + "小时" + minutes + "分钟";
-    }
-    long days = hours / 24;
-    long remainHours = hours % 24;
-    return remainHours == 0 ? days + "天" : days + "天" + remainHours + "小时";
+    return systemStatusFormatter.formatUptime(startedAt);
   }
 
   private String formatBackupModifiedAt(File backupDirectory) {
-    if (backupDirectory == null || !backupDirectory.exists()) {
-      return "";
-    }
-    return formatInstant(Instant.ofEpochMilli(backupDirectory.lastModified()));
+    return storageDisplayFormatter.formatBackupModifiedAt(backupDirectory);
   }
 
   private String formatInstant(Instant instant) {
-    if (instant == null) {
-      return "";
-    }
-    return DATE_TIME_FORMATTER.format(instant.atZone(zoneId == null ? ZoneId.systemDefault() : zoneId));
+    return storageDisplayFormatter.formatInstant(instant);
   }
 
   private File resolveOperationLogArchiveDirectory() {
@@ -2325,64 +1907,16 @@ public class SiteService {
     return DATE_TIME_FORMATTER.format(earliest.getCreatedAt().minusDays(resolveOperationLogRetentionDays()));
   }
 
-  private String buildOperationLogCsv(List<OperationLog> logs) {
-    StringBuilder builder = new StringBuilder("\uFEFF");
-    builder.append("ID,模块,动作,目标类型,目标ID,操作人,结果,请求摘要,失败原因,IP,恢复来源日志ID,创建时间\n");
-    for (OperationLog item : logs) {
-      builder
-          .append(csv(item.getId()))
-          .append(',').append(csv(item.getModule()))
-          .append(',').append(csv(item.getAction()))
-          .append(',').append(csv(item.getTargetType()))
-          .append(',').append(csv(item.getTargetId()))
-          .append(',').append(csv(item.getOperatorName()))
-          .append(',').append(csv(Boolean.TRUE.equals(item.getSuccess()) ? "SUCCESS" : "FAILED"))
-          .append(',').append(csv(item.getRequestSummary()))
-          .append(',').append(csv(item.getErrorMessage()))
-          .append(',').append(csv(item.getIpAddress()))
-          .append(',').append(csv(item.getRestoredFromLogId()))
-          .append(',').append(csv(item.getCreatedAt()))
-          .append('\n');
-    }
-    return builder.toString();
-  }
-
   private OperationLogArchiveFileResponse toOperationLogArchiveFileResponse(File file) {
-    OperationLogArchiveFileResponse response = new OperationLogArchiveFileResponse();
-    response.setFilename(file.getName());
-    response.setPath(file.getAbsolutePath());
-    response.setModifiedAt(formatBackupModifiedAt(file));
-    response.setSize(formatBytes(file.length()));
-    response.setDownloadUrl("/api/admin/system/operation-logs/archive-files/" + file.getName() + "/download");
-    return response;
+    return backupFileViewFactory.createOperationLogArchiveFileResponse(file);
   }
 
   private AdminBackupFileResponse toAdminBackupFileResponse(File backupDir, boolean latest) {
-    AdminBackupFileResponse response = new AdminBackupFileResponse();
-    response.setBackupName(backupDir.getName());
-    response.setPath(backupDir.getAbsolutePath());
-    response.setModifiedAt(formatBackupModifiedAt(backupDir));
-    response.setSize(formatBytes(calculateDirectorySize(backupDir)));
-    response.setDownloadUrl("/api/admin/system/backups/" + backupDir.getName() + "/download");
-    response.setLatest(latest);
-    return response;
+    return backupFileViewFactory.createAdminBackupFileResponse(backupDir, latest);
   }
 
   private AdminBackupFileResponse safeAdminBackupFileResponse(File backupDir, boolean latest) {
-    try {
-      return toAdminBackupFileResponse(backupDir, latest);
-    } catch (Exception exception) {
-      log.warn("Skipping unreadable backup directory: {}", backupDir.getAbsolutePath(), exception);
-      return null;
-    }
-  }
-
-  private String csv(Object value) {
-    if (value == null) {
-      return "\"\"";
-    }
-    String raw = String.valueOf(value).replace("\"", "\"\"");
-    return "\"" + raw + "\"";
+    return toAdminBackupFileResponse(backupDir, latest);
   }
 
   private long countFiles(File directory) {
@@ -2402,23 +1936,6 @@ public class SiteService {
       }
     }
     return total;
-  }
-
-  private File resolveLatestBackup(File backupsDir) {
-    if (!backupsDir.exists() || !backupsDir.isDirectory()) {
-      return null;
-    }
-    File[] files = backupsDir.listFiles(File::isDirectory);
-    if (files == null || files.length == 0) {
-      return null;
-    }
-    File latest = files[0];
-    for (File file : files) {
-      if (file.getName().compareTo(latest.getName()) > 0) {
-        latest = file;
-      }
-    }
-    return latest;
   }
 
   private void writeDirectoryToTar(File source, String entryName, TarArchiveOutputStream outputStream) throws IOException {

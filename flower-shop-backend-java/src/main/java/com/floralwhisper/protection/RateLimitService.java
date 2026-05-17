@@ -5,7 +5,6 @@ import com.floralwhisper.config.ConcurrencyProtectionProperties;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
-import io.github.bucket4j.Refill;
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Map;
@@ -83,9 +82,10 @@ public class RateLimitService {
   }
 
   private static Bucket newBucket(ConcurrencyProtectionProperties.RateLimit rateLimit) {
-    Bandwidth limit = Bandwidth.classic(
-        rateLimit.getCapacity(),
-        Refill.intervally(rateLimit.getCapacity(), Duration.ofSeconds(rateLimit.getRefillSeconds())));
+    Bandwidth limit = Bandwidth.builder()
+        .capacity(rateLimit.getCapacity())
+        .refillIntervally(rateLimit.getCapacity(), Duration.ofSeconds(rateLimit.getRefillSeconds()))
+        .build();
     return Bucket.builder().addLimit(limit).build();
   }
 }

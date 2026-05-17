@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,6 +23,8 @@ public class AuditPayloadSanitizer {
       "authorization",
       "adminPassword",
       "adminAuthSecret");
+  private static final Pattern SENSITIVE_JSON_LIKE_PATTERN = Pattern.compile(
+      "(?i)(\"(?:password|apiKey|api_key|secret|token|authorization|adminPassword|adminAuthSecret)\"\\s*:\\s*\")([^\"]*)(\")");
 
   private final ObjectMapper objectMapper;
 
@@ -36,8 +40,8 @@ public class AuditPayloadSanitizer {
       JsonNode root = objectMapper.readTree(rawJson);
       sanitizeNode(root);
       return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(root);
-    } catch (Exception ignored) {
-      return rawJson;
+    } catch (JsonProcessingException ignored) {
+      return sanitizeRawText(rawJson);
     }
   }
 
@@ -97,5 +101,22 @@ public class AuditPayloadSanitizer {
       return "****";
     }
     return trimmed.substring(0, Math.min(4, trimmed.length())) + "****" + trimmed.substring(trimmed.length() - 2);
+  }
+
+  private String sanitizeRawText(String rawText) {
+    Matcher matcher = SENSITIVE_JSON_LIKE_PATTERN.matcher(rawText);
+    StringBuffer sanitized = new StringBuffer();
+    boolean replaced = false;
+    while (matcher.find()) {
+      replaced = true;
+      matcher.appendReplacement(
+          sanitized,
+          Matcher.quoteReplacement(matcher.group(1) + "****" + matcher.group(3)));
+    }
+    if (!replaced) {
+      return rawText;
+    }
+    matcher.appendTail(sanitized);
+    return sanitized.toString();
   }
 }

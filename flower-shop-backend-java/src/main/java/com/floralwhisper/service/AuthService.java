@@ -14,6 +14,7 @@ import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.security.JwtService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -203,7 +204,7 @@ public class AuthService {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hashed = digest.digest(rawPassword.getBytes(StandardCharsets.UTF_8));
       return HexFormat.of().formatHex(hashed);
-    } catch (Exception error) {
+    } catch (NoSuchAlgorithmException error) {
       throw new IllegalStateException("密码摘要计算失败", error);
     }
   }

@@ -3,7 +3,9 @@ package com.floralwhisper.crypto;
 import com.floralwhisper.config.AppProperties;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import javax.crypto.Cipher;
@@ -45,7 +47,7 @@ public class SecretCryptoService {
       buffer.put(iv);
       buffer.put(encrypted);
       return PREFIX + Base64.getEncoder().encodeToString(buffer.array());
-    } catch (Exception error) {
+    } catch (GeneralSecurityException error) {
       throw new IllegalStateException("敏感数据加密失败", error);
     }
   }
@@ -71,7 +73,7 @@ public class SecretCryptoService {
       Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
       cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, new GCMParameterSpec(GCM_TAG_BITS, iv));
       return new String(cipher.doFinal(encrypted), StandardCharsets.UTF_8);
-    } catch (Exception error) {
+    } catch (IllegalArgumentException | GeneralSecurityException error) {
       throw new IllegalStateException("敏感数据解密失败", error);
     }
   }
@@ -84,7 +86,7 @@ public class SecretCryptoService {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       return digest.digest((rawKey == null ? "" : rawKey).getBytes(StandardCharsets.UTF_8));
-    } catch (Exception error) {
+    } catch (NoSuchAlgorithmException error) {
       throw new IllegalStateException("加密主密钥派生失败", error);
     }
   }

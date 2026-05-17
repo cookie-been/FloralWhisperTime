@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
@@ -40,9 +39,8 @@ import com.floralwhisper.dto.OperationLogResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
-import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.entity.Contact;
-import com.floralwhisper.dto.AboutTimelineEntryResponse;
+import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AdminOpsTaskMapper;
@@ -83,6 +81,7 @@ import javax.crypto.SecretKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -93,7 +92,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@WebMvcTest(AdminController.class)
+@WebMvcTest(
+    controllers = AdminController.class,
+    excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, AdminPasswordChangeEnforcementFilter.class, JwtService.class, GlobalExceptionHandler.class, AdminControllerTest.TestConfig.class})
 @TestPropertySource(properties = {
     "app.admin.username=admin",
@@ -105,9 +106,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 class AdminControllerTest {
   @Autowired
   private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
 
   @Autowired
   private JwtService jwtService;
