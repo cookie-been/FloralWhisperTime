@@ -37,6 +37,18 @@ export function SystemArchivesTab({
             description: "适合在交付前、月度清理或后台写操作较多后执行。归档前请确认截止日期，并保留最新下载文件。",
             icon: Archive,
             badge: "需确认",
+            resultTitle: "最近一次归档",
+            resultStatus: latestArchiveResult ? "success" : archiveFiles.length ? "warning" : "default",
+            resultSummary: latestArchiveResult
+              ? `已归档 ${latestArchiveResult.archivedCount} 条日志，输出文件 ${latestArchiveResult.archiveFilename}。`
+              : archiveFiles.length
+                ? "当前已有历史归档文件，但本次会话还未执行新的归档操作。"
+                : "当前还没有操作日志归档记录。",
+            resultMeta: latestArchiveResult
+              ? `归档截止：${latestArchiveResult.archiveBefore}`
+              : operationLogArchiveBefore
+                ? `建议截止：${operationLogArchiveBefore}`
+                : undefined,
             action: (
               <Button type="primary" icon={<Archive size={16} />} onClick={openArchiveModal}>
                 手动归档

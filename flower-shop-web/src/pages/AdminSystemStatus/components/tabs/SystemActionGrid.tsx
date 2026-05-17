@@ -9,6 +9,10 @@ export type SystemActionCardItem = {
   icon: LucideIcon;
   badge?: string;
   command?: string;
+  resultTitle?: string;
+  resultStatus?: "success" | "warning" | "error" | "default";
+  resultSummary?: string;
+  resultMeta?: string;
   action: ReactNode;
 };
 
@@ -54,6 +58,36 @@ export function SystemActionGrid({ eyebrow, title, description, items }: Props) 
                 <pre className="mt-4 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[#f7f8f5] p-3 text-xs text-[#1b281e]">
                   {item.command}
                 </pre>
+              ) : null}
+              {item.resultTitle || item.resultSummary ? (
+                <div className="mt-4 rounded-lg border border-[rgba(41,57,46,0.08)] bg-white/80 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-semibold text-[#1b281e]">{item.resultTitle || "最近结果"}</p>
+                    {item.resultStatus ? (
+                      <Tag
+                        color={
+                          item.resultStatus === "success"
+                            ? "green"
+                            : item.resultStatus === "warning"
+                              ? "gold"
+                              : item.resultStatus === "error"
+                                ? "red"
+                                : "default"
+                        }
+                      >
+                        {item.resultStatus === "success"
+                          ? "成功"
+                          : item.resultStatus === "warning"
+                            ? "待关注"
+                            : item.resultStatus === "error"
+                              ? "异常"
+                              : "暂无"}
+                      </Tag>
+                    ) : null}
+                  </div>
+                  {item.resultSummary ? <p className="mt-2 text-xs leading-6 text-muted">{item.resultSummary}</p> : null}
+                  {item.resultMeta ? <p className="mt-2 text-[11px] leading-5 text-muted">{item.resultMeta}</p> : null}
+                </div>
               ) : null}
             </div>
           );

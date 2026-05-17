@@ -1,6 +1,6 @@
 import { Alert, Button, Tag } from "antd";
 import { Download, HardDriveDownload, SearchCheck } from "lucide-react";
-import type { AdminBackupFile } from "@/types";
+import type { AdminBackupFile, AdminOpsTask } from "@/types";
 import type { BackupOverviewItem, OpsCommandItem } from "./types";
 import { SystemActionGrid } from "./SystemActionGrid";
 
@@ -15,6 +15,9 @@ type Props = {
   latestBackupPresent: boolean;
   latestBackupDownloadUrl?: string;
   latestBackupPath?: string;
+  latestBackupTask: AdminOpsTask | null;
+  latestInspectionTask: AdminOpsTask | null;
+  formatDateTime: (value?: string) => string;
   onDownloadLatestBackup: () => void;
   onDownloadBackupFile: (downloadUrl: string, filename: string) => void;
   recommendedCommands: OpsCommandItem[];
@@ -31,6 +34,9 @@ export function SystemBackupsTab({
   latestBackupPresent,
   latestBackupDownloadUrl,
   latestBackupPath,
+  latestBackupTask,
+  latestInspectionTask,
+  formatDateTime,
   onDownloadLatestBackup,
   onDownloadBackupFile,
   recommendedCommands,
@@ -49,6 +55,14 @@ export function SystemBackupsTab({
             icon: HardDriveDownload,
             badge: "后台执行",
             command: recommendedCommands[0]?.command,
+            resultTitle: "最近一次备份",
+            resultStatus: latestBackupTask?.status === "failed" ? "error" : latestBackupTask ? "success" : "default",
+            resultSummary: latestBackupTask
+              ? latestBackupTask.errorMessage || latestBackupTask.resultData?.backupName?.toString() || "已生成一份手动备份"
+              : "当前还没有后台触发的手动备份记录。",
+            resultMeta: latestBackupTask
+              ? `完成时间：${formatDateTime(latestBackupTask.finishedAt || latestBackupTask.startedAt)}`
+              : undefined,
             action: (
               <Button
                 type="primary"
@@ -67,6 +81,14 @@ export function SystemBackupsTab({
             icon: SearchCheck,
             badge: "后台执行",
             command: recommendedCommands[1]?.command,
+            resultTitle: "最近一次巡检",
+            resultStatus: latestInspectionTask?.status === "failed" ? "error" : latestInspectionTask ? "success" : "default",
+            resultSummary: latestInspectionTask
+              ? latestInspectionTask.errorMessage || latestInspectionTask.resultData?.securitySummary?.toString() || "最近一次巡检已完成。"
+              : "当前还没有后台触发的系统巡检记录。",
+            resultMeta: latestInspectionTask
+              ? `完成时间：${formatDateTime(latestInspectionTask.finishedAt || latestInspectionTask.startedAt)}`
+              : undefined,
             action: (
               <Button icon={<SearchCheck size={16} />} loading={runningInspection} onClick={onCreateInspectionTask}>
                 执行巡检
@@ -80,6 +102,12 @@ export function SystemBackupsTab({
             icon: Download,
             badge: latestBackupPresent ? "可下载" : "暂无备份",
             command: "./ops.sh backup",
+            resultTitle: "当前下载源",
+            resultStatus: latestBackupPresent ? "success" : "warning",
+            resultSummary: latestBackupPresent
+              ? `当前最近备份为 ${backupFiles[0]?.backupName || "最新备份"}，可直接下载留档。`
+              : "当前未发现可下载的最近备份，建议先执行一次手动备份。",
+            resultMeta: latestBackupPresent ? latestBackupPath || undefined : undefined,
             action: (
               <Button
                 type="primary"

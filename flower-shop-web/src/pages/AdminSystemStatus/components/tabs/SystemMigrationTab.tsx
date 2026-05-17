@@ -5,11 +5,13 @@ import { SystemActionGrid } from "./SystemActionGrid";
 
 type Props = {
   importingConfig: boolean;
+  latestConfigExportAt?: string;
+  latestConfigImportAt?: string;
   onConfigImport: (file: RcFile) => Promise<boolean> | boolean;
   onConfigExport: () => void;
 };
 
-export function SystemMigrationTab({ importingConfig, onConfigImport, onConfigExport }: Props) {
+export function SystemMigrationTab({ importingConfig, latestConfigExportAt, latestConfigImportAt, onConfigImport, onConfigExport }: Props) {
   return (
     <div className="space-y-6 pt-2">
       <SystemActionGrid
@@ -23,6 +25,10 @@ export function SystemMigrationTab({ importingConfig, onConfigImport, onConfigEx
             description: "适用于新客户交付、测试环境回填、同品牌多实例复制，以及售后排障前的配置快照留存。",
             icon: Download,
             badge: "低风险",
+            resultTitle: "最近一次导出",
+            resultStatus: latestConfigExportAt ? "success" : "default",
+            resultSummary: latestConfigExportAt ? "当前会话已执行过配置导出，可直接使用下载的配置包做交付留档。" : "当前会话还没有执行配置导出。",
+            resultMeta: latestConfigExportAt ? `执行时间：${latestConfigExportAt}` : undefined,
             action: (
               <Button type="primary" icon={<Download size={16} />} onClick={onConfigExport}>
                 导出配置
@@ -35,6 +41,10 @@ export function SystemMigrationTab({ importingConfig, onConfigImport, onConfigEx
             description: "会覆盖当前动态配置内容，建议导入前先下载最近备份并导出一份当前配置包，作为回退基线。",
             icon: UploadCloud,
             badge: "需确认",
+            resultTitle: "最近一次导入",
+            resultStatus: latestConfigImportAt ? "warning" : "default",
+            resultSummary: latestConfigImportAt ? "当前会话已执行过配置导入，请刷新前台首页、关于页和后台设置页确认结果。" : "当前会话还没有执行配置导入。",
+            resultMeta: latestConfigImportAt ? `执行时间：${latestConfigImportAt}` : undefined,
             action: (
               <Upload beforeUpload={onConfigImport} showUploadList={false} accept=".json,application/json">
                 <Button loading={importingConfig} icon={<UploadCloud size={16} />}>

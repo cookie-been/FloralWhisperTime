@@ -250,6 +250,8 @@ export function AdminSystemStatus() {
   const [runningBackup, setRunningBackup] = useState(false);
   const [runningInspection, setRunningInspection] = useState(false);
   const [importingConfig, setImportingConfig] = useState(false);
+  const [latestConfigExportAt, setLatestConfigExportAt] = useState("");
+  const [latestConfigImportAt, setLatestConfigImportAt] = useState("");
   const [latestArchiveResult, setLatestArchiveResult] = useState<OperationLogArchiveResult | null>(null);
   const [archiveFiles, setArchiveFiles] = useState<OperationLogArchiveFile[]>([]);
   const [backupFiles, setBackupFiles] = useState<AdminBackupFile[]>([]);
@@ -532,6 +534,7 @@ export function AdminSystemStatus() {
     try {
       const result = await importAdminConfig(file);
       message.success(`配置已导入：时间轴 ${result.timelineCount} 条，团队 ${result.teamCount} 人`);
+      setLatestConfigImportAt(new Date().toLocaleString("zh-CN", { hour12: false }));
       await loadStatus("refresh");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "配置导入失败");
@@ -622,7 +625,10 @@ export function AdminSystemStatus() {
 
   const handleConfigExport = useCallback(() => {
     downloadAdminConfigExport()
-      .then(() => message.success("已开始下载配置导出包"))
+      .then(() => {
+        setLatestConfigExportAt(new Date().toLocaleString("zh-CN", { hour12: false }));
+        message.success("已开始下载配置导出包");
+      })
       .catch((error) => message.error(error instanceof Error ? error.message : "配置导出失败"));
   }, []);
 
@@ -712,6 +718,9 @@ export function AdminSystemStatus() {
                 latestBackupPresent={status.latestBackupPresent}
                 latestBackupDownloadUrl={status.latestBackupDownloadUrl}
                 latestBackupPath={status.latestBackupPath}
+                latestBackupTask={latestBackupTask}
+                latestInspectionTask={latestInspectionTask}
+                formatDateTime={formatDateTime}
                 onDownloadLatestBackup={handleDownloadLatestBackup}
                 onDownloadBackupFile={handleDownloadFile}
                 recommendedCommands={recommendedCommands}
@@ -778,6 +787,8 @@ export function AdminSystemStatus() {
             children: (
               <SystemMigrationTab
                 importingConfig={importingConfig}
+                latestConfigExportAt={latestConfigExportAt}
+                latestConfigImportAt={latestConfigImportAt}
                 onConfigImport={handleConfigImport}
                 onConfigExport={handleConfigExport}
               />
