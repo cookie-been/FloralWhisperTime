@@ -1,15 +1,16 @@
 import { Button, Form, Input, Upload } from "antd";
 import type { RcFile } from "antd/es/upload";
+import type { ReactNode } from "react";
 import type { SettingsImageFieldName } from "../AdminSettings";
 
 type SettingsMediaFieldProps = {
   name: SettingsImageFieldName;
-  label: string;
+  label: ReactNode;
   placeholder: string;
   buttonText: string;
   accept?: string;
   uploadHandler: (file: RcFile) => boolean | Promise<boolean>;
-  helperText?: string;
+  helperText?: ReactNode;
   buttonLoading?: boolean;
 };
 

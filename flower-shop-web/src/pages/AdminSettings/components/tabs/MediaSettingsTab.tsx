@@ -30,6 +30,20 @@ const splitText = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const scopeBadgeClassName = "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold";
+const miniSyncBadgeClassName = `${scopeBadgeClassName} bg-[#e8f5e9] text-[#2e7d32]`;
+const webOnlyBadgeClassName = `${scopeBadgeClassName} bg-[#eef2f7] text-[#52606d]`;
+const miniFallbackBadgeClassName = `${scopeBadgeClassName} bg-[#fff4e5] text-[#b26a00]`;
+
+function buildScopedLabel(title: string, badgeText: string, badgeClassName: string) {
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <span>{title}</span>
+      <span className={badgeClassName}>{badgeText}</span>
+    </span>
+  );
+}
+
 export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImages }: MediaSettingsTabProps) {
   const brandName = Form.useWatch("brandName", form) ?? "";
   const heroEyebrow = Form.useWatch("heroEyebrow", form) ?? "";
@@ -57,57 +71,58 @@ export function MediaSettingsTab({ form, uploading, onUploadImage, onUploadImage
         <div className="grid gap-x-4 md:grid-cols-2">
           <SettingsMediaField
             name="brandLogo"
-            label="网站 Logo"
+            label={buildScopedLabel("网站 Logo", "Web 前台", webOnlyBadgeClassName)}
             placeholder="可直接粘贴 Logo 图片 URL，或使用上传按钮"
             buttonText="上传 Logo"
-            helperText="该字段只支持明确的图片 URL 字段，避免上传结果误写到其他配置键。"
+            helperText="该资源仅影响 Web 前台站点标识，不会同步到微信小程序。"
             uploadHandler={(file) => onUploadImage(file, "brandLogo", "Logo 已上传")}
             buttonLoading={Boolean(uploading.brandLogo)}
           />
           <SettingsMediaField
             name="heroImage"
-            label="首屏背景图（Web 与小程序首页）"
+            label={buildScopedLabel("首屏背景图", "小程序同步", miniSyncBadgeClassName)}
             placeholder="可直接粘贴图片 URL，或使用上传按钮"
             buttonText="上传图片并回填"
+            helperText="当首页轮播图为空时，Web 首页与小程序首页都会回退使用这张主图。"
             uploadHandler={(file) => onUploadImage(file, "heroImage", "首屏背景图已上传")}
             buttonLoading={Boolean(uploading.heroImage)}
           />
         </div>
         <SettingsMediaListField
           name="heroSlidesText"
-          label="首页轮播图 URL（Web 与小程序首页）"
+          label={buildScopedLabel("首页轮播图 URL", "小程序同步", miniSyncBadgeClassName)}
           placeholder="多个 URL 用逗号或换行分隔"
           buttonText="多上传并追加到首页轮播"
           uploadHandler={(files) => onUploadImages(files, "heroSlidesText", `已追加 ${files.length} 张首页轮播图`)}
           buttonLoading={Boolean(uploading.heroSlidesText)}
-          helperText="支持一次多张上传，上传成功后会自动追加到当前首页轮播图列表。"
+          helperText="支持一次多张上传，上传成功后会自动追加到当前首页轮播图列表，Web 首页与小程序首页都会优先使用它。"
         />
         <SettingsMediaListField
           name="adminLoginSlidesText"
-          label="后台登录轮播图 URL"
+          label={buildScopedLabel("后台登录轮播图 URL", "仅 Web 后台", webOnlyBadgeClassName)}
           placeholder="多个 URL 用逗号或换行分隔"
           buttonText="多上传并追加到登录轮播"
           uploadHandler={(files) => onUploadImages(files, "adminLoginSlidesText", `已追加 ${files.length} 张后台登录轮播图`)}
           buttonLoading={Boolean(uploading.adminLoginSlidesText)}
-          helperText="支持一次多张上传，适合批量维护后台登录页轮播图。"
+          helperText="支持一次多张上传，适合批量维护后台登录页轮播图；该项不会同步到微信小程序。"
         />
         <SettingsMediaListField
           name="contactImagesText"
-          label="联系页展示图 URL（Web 与小程序联系页）"
+          label={buildScopedLabel("联系页展示图 URL", "小程序同步", miniSyncBadgeClassName)}
           placeholder="多个 URL 用逗号或换行分隔"
           buttonText="多上传并追加到联系页"
           uploadHandler={(files) => onUploadImages(files, "contactImagesText", `已追加 ${files.length} 张联系页展示图`)}
           buttonLoading={Boolean(uploading.contactImagesText)}
-          helperText="支持一次多张上传，上传成功后自动追加到联系页展示图列表。"
+          helperText="支持一次多张上传，上传成功后自动追加到联系页展示图列表，Web 联系页与小程序联系页都会使用。"
         />
         <SettingsMediaListField
           name="storyImages"
-          label="故事图片 URL（小程序关于页兜底图）"
+          label={buildScopedLabel("故事图片 URL", "仅小程序兜底", miniFallbackBadgeClassName)}
           placeholder="多个 URL 用逗号或换行分隔"
           buttonText="多上传并追加到故事图片"
           uploadHandler={(files) => onUploadImages(files, "storyImages", `已追加 ${files.length} 张故事图片`)}
           buttonLoading={Boolean(uploading.storyImages)}
-          helperText="支持一次多张上传，上传成功后自动追加到品牌故事图片列表。"
+          helperText="支持一次多张上传，上传成功后自动追加到品牌故事图片列表；当关于页独立主图为空时，小程序关于页会回退使用。"
         />
       </SettingsSection>
 
