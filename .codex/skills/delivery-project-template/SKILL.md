@@ -68,6 +68,9 @@ Use these references as needed:
 - [data-ops-safety.md](references/data-ops-safety.md)
 - [delivery-docs.md](references/delivery-docs.md)
 - [frontend-backend-mini-guidelines.md](references/frontend-backend-mini-guidelines.md)
+- [delivery-checklist.md](references/delivery-checklist.md)
+- [example-prompts.md](references/example-prompts.md)
+- [adaptation-guide.md](references/adaptation-guide.md)
 
 ## Escalation Rules
 

@@ -25,6 +25,9 @@ This template is intended for delivery-oriented software projects where implemen
   - data and operations safety
   - delivery documentation
   - multi-client frontend/backend/mobile coordination
+  - reusable delivery checklist
+  - example prompts
+  - stack and project adaptation guide
 
 ## How To Reuse In Another Repository
 
@@ -42,6 +45,12 @@ cp -R .codex/skills/delivery-project-template /path/to/target/.codex/skills/<new
 3. Edit the reference files to match the target stack and workflow.
 
 4. Align the copied skill with the target repository's `AGENTS.md`, `README.md`, and deployment model.
+
+5. Review these optional support references and keep only what helps the target repo:
+
+- `references/delivery-checklist.md`
+- `references/example-prompts.md`
+- `references/adaptation-guide.md`
 
 ## Recommended Adaptation Style
 
