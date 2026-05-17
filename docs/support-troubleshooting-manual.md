@@ -213,17 +213,17 @@ docker compose ps
 docker compose logs --tail=200 web
 docker compose logs --tail=200 backend
 docker compose logs --tail=200 mysql
-./backup.sh
-./rollback.sh --latest --dry-run
-./restore.sh --latest --dry-run
+./ops.sh backup
+./ops.sh rollback --latest --dry-run
+./ops.sh restore --latest --dry-run
 ```
 
 如果是 release 模式部署，还常用：
 
 ```bash
-./release-status.sh
-./release-inspect.sh
-./release-rollback.sh --latest-previous
+./ops.sh release status
+./ops.sh release inspect
+./ops.sh release rollback --latest-previous
 ```
 
 ## 8. 建议配合阅读

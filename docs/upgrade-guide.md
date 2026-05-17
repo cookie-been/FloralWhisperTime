@@ -5,13 +5,13 @@
 推荐使用：
 
 ```bash
-./upgrade.sh
+./ops.sh upgrade
 ```
 
 默认流程：
 
 1. 拉取当前分支最新代码
-2. 执行 `backup.sh`
+2. 执行 `ops.sh backup`
 3. 重建前后端运行镜像
 4. 重建并重启 `backend + web`
 5. 自动识别 Docker 实际发布的 Web 端口
@@ -26,10 +26,10 @@
 ## 常用参数
 
 ```bash
-./upgrade.sh --skip-git-pull
-./upgrade.sh --branch main
-./upgrade.sh --skip-backup
-./upgrade.sh --skip-build
+./ops.sh upgrade --skip-git-pull
+./ops.sh upgrade --branch main
+./ops.sh upgrade --skip-backup
+./ops.sh upgrade --skip-build
 ```
 
 ## 注意事项

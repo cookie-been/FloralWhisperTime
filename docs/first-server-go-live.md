@@ -34,7 +34,7 @@ docker compose version
 在项目根目录执行：
 
 ```bash
-./release-check.sh
+./ops.sh release check
 ./ops/build-release.sh
 ```
 
@@ -69,8 +69,8 @@ cd /tmp
 sha256sum -c floralwhispertime-release-<release-id>.tar.gz.sha256
 tar -xzf floralwhispertime-release-<release-id>.tar.gz
 cd floralwhispertime-release-<release-id>
-./release-verify.sh
-./release-install.sh
+./ops.sh release verify
+./ops.sh release install
 ```
 
 默认安装目录：
@@ -127,7 +127,7 @@ VOLCENGINE_IMAGE_MODEL=doubao-seedream-5-0-260128
 
 ```bash
 cd /tmp/floralwhispertime-release-<release-id>
-./release-upgrade.sh
+./ops.sh release upgrade
 ```
 
 ## 8. 首次上线后检查
@@ -135,8 +135,8 @@ cd /tmp/floralwhispertime-release-<release-id>
 执行：
 
 ```bash
-./release-status.sh
-./release-inspect.sh
+./ops.sh release status
+./ops.sh release inspect
 ```
 
 然后人工检查：
@@ -167,25 +167,25 @@ cd /tmp/floralwhispertime-release-<release-id>
 查看状态：
 
 ```bash
-./release-status.sh
+./ops.sh release status
 ```
 
 升级：
 
 ```bash
-./release-upgrade.sh
+./ops.sh release upgrade
 ```
 
 回滚到上一版：
 
 ```bash
-./release-rollback.sh --latest-previous
+./ops.sh release rollback --latest-previous
 ```
 
 巡检：
 
 ```bash
-./release-inspect.sh
+./ops.sh release inspect
 ```
 
 ## 11. 推荐阅读

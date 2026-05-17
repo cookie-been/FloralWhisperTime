@@ -2,23 +2,30 @@
 
 如果你觉得现在文档和脚本太多，看不过来，就先只看这一页。
 
-## 1. 先记住这 6 个根目录命令
+## 1. 先记住这 1 个统一入口
 
-日常只需要记住根目录这些入口：
+日常优先只需要记住这个命令：
 
 ```bash
-./deploy.sh
-./backup.sh
-./upgrade.sh
-./rollback.sh
-./release-install.sh
-./release-upgrade.sh
+./ops.sh
 ```
 
 说明：
 
-- 这些是对外公开入口
+- `./ops.sh` 是对外统一入口
+- 旧的 `./deploy.sh`、`./backup.sh`、`./upgrade.sh` 等根脚本仍可继续使用
 - `ops/` 目录下是实现层脚本，日常不用先记
+
+最常用的写法：
+
+```bash
+./ops.sh deploy
+./ops.sh backup
+./ops.sh upgrade
+./ops.sh rollback --latest --dry-run
+./ops.sh release install
+./ops.sh release upgrade
+```
 
 ## 2. 你现在属于哪种场景
 
@@ -70,7 +77,7 @@
 - 源码部署
 - release 离线包部署
 
-所以脚本看起来会多一些，但实际对外只要记根目录入口即可。
+所以脚本看起来会多一些，但实际对外优先只要记 `./ops.sh` 即可。
 
 ## 5. 为什么会看到很多文档
 

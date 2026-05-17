@@ -19,24 +19,24 @@
   - `PROTECTION_CONCURRENCY_UPLOAD_MAX_CONCURRENT`
   - `PROTECTION_CONCURRENCY_CONFIG_IMPORT_MAX_CONCURRENT`
 - 当前代码分支正确，且工作区干净
-- 已提前执行一次 `./backup.sh`
+- 已提前执行一次 `./ops.sh backup`
 
 ## 二、推荐部署命令
 
 生产环境推荐：
 
 ```bash
-./deploy.sh --env-file .env --branch main --remote origin
+./ops.sh deploy --env-file .env --branch main --remote origin
 ```
 
 说明：
 
-- `deploy.sh` 默认会拦截默认弱密码
+- `ops.sh deploy` 默认会拦截默认弱密码
 - 部署后会自动识别 Docker 实际发布的 Web 端口，并执行健康检查与管理员登录自检
 - 开发或演示环境如确需跳过弱密码拦截，可显式加：
 
 ```bash
-./deploy.sh --skip-build --no-git-pull --allow-insecure-env
+./ops.sh deploy --skip-build --no-git-pull --allow-insecure-env
 ```
 
 ## 三、部署后巡检
@@ -100,7 +100,7 @@
 ## 五、上线后建议
 
 - 首次上线当天执行一次完整备份
-- 每次升级前执行 `./backup.sh`
+- 每次升级前执行 `./ops.sh backup`
 - 每次升级后打开 `/admin/system` 做人工复核
 - 每次重大配置调整后导出一份配置包留档
 - 业务高峰期关注保护状态面板，必要时再调高阈值或增加实例

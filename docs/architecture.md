@@ -374,8 +374,8 @@ Docker Compose 默认包含：
 
 当前支持两条部署主链：
 
-- 源码一键部署：`./deploy.sh`
-- 离线发布包部署：`./release-install.sh`
+- 源码一键部署：`./ops.sh deploy`
+- 离线发布包部署：`./ops.sh release install`
 
 两条链路都支持在新服务器自动补齐 Docker / Compose 基础运行环境。
 

@@ -52,7 +52,7 @@
 本地建议先执行：
 
 ```bash
-./release-check.sh
+./ops.sh release check
 ./ops/build-release.sh
 ```
 

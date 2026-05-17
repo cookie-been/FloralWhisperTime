@@ -27,7 +27,7 @@
 执行入口：
 
 ```bash
-./deploy.sh --env-file .env --branch main --remote origin
+./ops.sh deploy --env-file .env --branch main --remote origin
 ```
 
 ### 方式 B：离线发布包部署
@@ -41,7 +41,7 @@
 执行入口：
 
 ```bash
-./release-install.sh
+./ops.sh release install
 ```
 
 ## 3. 上线前必须确认的配置

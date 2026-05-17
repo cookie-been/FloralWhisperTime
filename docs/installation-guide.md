@@ -82,14 +82,14 @@ cp .env.production.example .env
 执行：
 
 ```bash
-./deploy.sh --env-file .env --branch main --remote origin
+./ops.sh deploy --env-file .env --branch main --remote origin
 ```
 
 如果同机需要并行部署多套环境，建议显式指定项目名：
 
 ```bash
-./deploy.sh --project-name floralwhispertime-prod --env-file .env --branch main --remote origin
-./deploy.sh --project-name floralwhispertime-staging --env-file .env.staging --web-port 18080 --no-git-pull
+./ops.sh deploy --project-name floralwhispertime-prod --env-file .env --branch main --remote origin
+./ops.sh deploy --project-name floralwhispertime-staging --env-file .env.staging --web-port 18080 --no-git-pull
 ```
 
 脚本会自动：
@@ -120,7 +120,7 @@ cp .env.production.example .env
 在 release 解压目录执行：
 
 ```bash
-./release-install.sh
+./ops.sh release install
 ```
 
 脚本会自动：
@@ -137,25 +137,25 @@ cp .env.production.example .env
 后续升级执行：
 
 ```bash
-./release-upgrade.sh
+./ops.sh release upgrade
 ```
 
 默认会保留最近 `5` 个 release，可用 `--retain` 调整：
 
 ```bash
-./release-upgrade.sh --retain 5
+./ops.sh release upgrade --retain 5
 ```
 
 回滚执行：
 
 ```bash
-./release-rollback.sh --latest-previous
+./ops.sh release rollback --latest-previous
 ```
 
 状态查看：
 
 ```bash
-./release-status.sh
+./ops.sh release status
 ```
 
 ## 5. 安装后确认
@@ -174,28 +174,28 @@ cp .env.production.example .env
 ## 6. 常见运维命令
 
 ```bash
-./backup.sh
-./upgrade.sh
-./rollback.sh --latest --dry-run
-./restore.sh --latest --dry-run
+./ops.sh backup
+./ops.sh upgrade
+./ops.sh rollback --latest --dry-run
+./ops.sh restore --latest --dry-run
 ```
 
-实际脚本主目录为 `ops/`，根目录命令为兼容入口。
+实际脚本实现主目录为 `ops/`，`./ops.sh` 为统一入口，根目录命令为兼容入口。
 
 离线发布包模式额外运维命令：
 
 ```bash
 ./ops/build-release.sh
-./release-install.sh
-./release-upgrade.sh
-./release-rollback.sh --latest-previous
-./release-status.sh
+./ops.sh release install
+./ops.sh release upgrade
+./ops.sh release rollback --latest-previous
+./ops.sh release status
 ```
 
 ## 7. 升级建议
 
-- 升级前先执行 `./backup.sh`
-- 正式升级使用 `./upgrade.sh`
+- 升级前先执行 `./ops.sh backup`
+- 正式升级使用 `./ops.sh upgrade`
 - 升级后查看后台系统状态页
 - 升级后抽查作品管理、站点配置、操作日志页面
 - 如本次业务量明显提升，复核并发保护阈值是否仍合适

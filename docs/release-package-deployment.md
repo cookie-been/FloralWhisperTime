@@ -29,7 +29,7 @@
 在当前项目根目录执行：
 
 ```bash
-./release-check.sh
+./ops.sh release check
 ./ops/build-release.sh
 ```
 
@@ -45,7 +45,7 @@
 
 说明：
 
-- `./release-check.sh` 用于在正式打包前自检发布链路依赖、关键文件、脚本语法与 release compose 配置
+- `./ops.sh release check` 用于在正式打包前自检发布链路依赖、关键文件、脚本语法与 release compose 配置
 - `./ops/build-release.sh` 默认会自动执行一次同样的 preflight 检查
 - `RELEASE_NOTES.md` 会自动写入当前 release 元信息和最近若干条 git 提交摘要
 - 只有在你明确知道当前状态时，才建议使用 `--skip-preflight`
@@ -130,19 +130,19 @@ cd floralwhispertime-release-<release-id>
 解压后建议先校验包内文件：
 
 ```bash
-./release-verify.sh
+./ops.sh release verify
 ```
 
 ### 5.2 安装
 
 ```bash
-./release-install.sh
+./ops.sh release install
 ```
 
 也可以显式指定保留版本数：
 
 ```bash
-./release-install.sh --retain 5
+./ops.sh release install --retain 5
 ```
 
 脚本默认会使用以下目录：
@@ -186,13 +186,13 @@ cd floralwhispertime-release-<release-id>
 如果首次安装时仍保留默认占位值，建议修改后再执行一次：
 
 ```bash
-./release-upgrade.sh
+./ops.sh release upgrade
 ```
 
 也可以在升级时指定保留最近几个 release：
 
 ```bash
-./release-upgrade.sh --retain 5
+./ops.sh release upgrade --retain 5
 ```
 
 ## 6. 后续升级
@@ -200,7 +200,7 @@ cd floralwhispertime-release-<release-id>
 将新的 release 包上传并解压后，在新 release 目录执行：
 
 ```bash
-./release-upgrade.sh
+./ops.sh release upgrade
 ```
 
 升级流程：
@@ -217,13 +217,13 @@ cd floralwhispertime-release-<release-id>
 回滚到上一个 release：
 
 ```bash
-./release-rollback.sh --latest-previous
+./ops.sh release rollback --latest-previous
 ```
 
 回滚到指定 release：
 
 ```bash
-./release-rollback.sh --release-id <release-id>
+./ops.sh release rollback --release-id <release-id>
 ```
 
 回滚不会删除：
@@ -242,7 +242,7 @@ cd floralwhispertime-release-<release-id>
 ## 8. 查看状态
 
 ```bash
-./release-status.sh
+./ops.sh release status
 ```
 
 会输出：
@@ -258,7 +258,7 @@ cd floralwhispertime-release-<release-id>
 部署完成后可单独执行：
 
 ```bash
-./release-inspect.sh
+./ops.sh release inspect
 ```
 
 会检查：

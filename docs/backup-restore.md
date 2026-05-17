@@ -2,10 +2,10 @@
 
 ## 备份
 
-推荐使用仓库根目录脚本：
+推荐使用统一入口脚本：
 
 ```bash
-./backup.sh
+./ops.sh backup
 ```
 
 脚本默认会：
@@ -21,9 +21,9 @@
 常用参数：
 
 ```bash
-./backup.sh --retain 14
-./backup.sh --output-dir /data/floral-backups
-./backup.sh --env-file .env.production
+./ops.sh backup --retain 14
+./ops.sh backup --output-dir /data/floral-backups
+./ops.sh backup --env-file .env.production
 ```
 
 ## 备份产物
@@ -39,7 +39,7 @@
 恢复脚本：
 
 ```bash
-./restore.sh --latest --dry-run
+./ops.sh restore --latest --dry-run
 ```
 
 建议先用 `--dry-run` 校验备份包结构和恢复目标，再执行正式恢复。
@@ -47,9 +47,9 @@
 常用命令：
 
 ```bash
-./restore.sh --latest --dry-run
-./restore.sh --backup-dir ./backups/20260515-002808 --dry-run
-./restore.sh --backup-dir ./backups/20260515-002808 --yes
+./ops.sh restore --latest --dry-run
+./ops.sh restore --backup-dir ./backups/20260515-002808 --dry-run
+./ops.sh restore --backup-dir ./backups/20260515-002808 --yes
 ```
 
 说明：
@@ -57,4 +57,4 @@
 - 正式恢复会覆盖当前数据库和 `uploads`
 - 恢复完成后会自动做一次 `/api/health` 检查
 - 恢复后如 Web 端口不是默认值，请以部署脚本输出的 `Site URL` 为准重新验收前台和后台
-- 建议恢复前先确认当前数据已不再需要，或先额外执行一次 `./backup.sh`
+- 建议恢复前先确认当前数据已不再需要，或先额外执行一次 `./ops.sh backup`

@@ -61,7 +61,7 @@ http://localhost:5173
 如果你想整站直接跑起来，也可以：
 
 ```bash
-./deploy.sh
+./ops.sh deploy
 ```
 
 或：

@@ -24,7 +24,7 @@
 1. 先用一键部署脚本启动业务服务：
 
 ```bash
-./deploy.sh --env-file .env.production --env-template .env.production.example
+./ops.sh deploy --env-file .env.production --env-template .env.production.example
 ```
 
 2. 确认站点仅绑定在本机或内网地址。

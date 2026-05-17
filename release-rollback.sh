@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "$SCRIPT_DIR/ops/release-rollback.sh" "$@"
+exec "$SCRIPT_DIR/ops.sh" release-rollback "$@"

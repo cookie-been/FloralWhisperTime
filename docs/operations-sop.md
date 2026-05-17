@@ -51,7 +51,7 @@
 1. 执行：
 
 ```bash
-./backup.sh
+./ops.sh backup
 ```
 
 2. 记录当前版本与提交号
@@ -63,13 +63,13 @@
 源码模式：
 
 ```bash
-./upgrade.sh
+./ops.sh upgrade
 ```
 
 release 模式：
 
 ```bash
-./release-upgrade.sh
+./ops.sh release upgrade
 ```
 
 ### 3.4 升级后复核
@@ -138,7 +138,7 @@ release 模式：
 ### 5.1 手动备份
 
 ```bash
-./backup.sh
+./ops.sh backup
 ```
 
 或在后台运维中心创建备份任务。
@@ -164,14 +164,14 @@ release 模式：
 源码模式：
 
 ```bash
-./rollback.sh --latest --dry-run
-./rollback.sh --latest
+./ops.sh rollback --latest --dry-run
+./ops.sh rollback --latest
 ```
 
 release 模式：
 
 ```bash
-./release-rollback.sh --latest-previous
+./ops.sh release rollback --latest-previous
 ```
 
 ### 6.3 回滚后
