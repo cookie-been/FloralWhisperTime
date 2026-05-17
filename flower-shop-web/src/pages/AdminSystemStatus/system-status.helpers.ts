@@ -1,6 +1,7 @@
 import type { AdminOpsTask } from "@/types";
 import type { KeyValueEntry } from "./components/tabs/types";
 import type { AdminBackupFile, OperationLogArchiveFile } from "@/types";
+import type { TaskStatusFilter, TaskTypeFilter } from "./components/tabs/types";
 
 export function formatServiceName(value?: string) {
   const mapping: Record<string, string> = {
@@ -143,4 +144,23 @@ export function enrichOpsTasksWithCommands(tasks: AdminOpsTask[]) {
 export function buildArchiveDownloadHint(archiveFiles: OperationLogArchiveFile[], latestArchiveFilename?: string | null) {
   if (!latestArchiveFilename) return "";
   return archiveFiles.find((item) => item.filename === latestArchiveFilename)?.downloadUrl ?? "";
+}
+
+export function filterOpsTasks(
+  tasks: AdminOpsTask[],
+  taskTypeFilter: TaskTypeFilter,
+  taskStatusFilter: TaskStatusFilter,
+) {
+  return tasks.filter((item) => {
+    const typeMatched = taskTypeFilter === "all" || item.taskType === taskTypeFilter;
+    const statusMatched = taskStatusFilter === "all" || item.status === taskStatusFilter;
+    return typeMatched && statusMatched;
+  });
+}
+
+export function buildTaskListWithResolvedCommand(tasks: AdminOpsTask[]) {
+  return tasks.map((item) => ({
+    ...item,
+    ...resolveOpsCommand(item.taskType),
+  }));
 }

@@ -47,6 +47,18 @@ import {
   type FlowerForm,
   type GeneratedAiImageResult,
 } from "./AdminFlowerTypes";
+import {
+  buildFlowerBatchMutationSummary,
+  buildFlowerCategoryMap,
+  buildFlowerCategoryOptions,
+  buildFlowerFilterSummary,
+  buildFlowerMetrics,
+  buildSelectedFlowers,
+  filterFlowers,
+  hasFlowerActiveFilters,
+  sortFlowers,
+} from "./flower-list.helpers";
+import { omitSelectedRowKeys } from "@/utils/admin-table";
 
 const AdminFlowerAiDrawerLazy = lazy(() =>
   import("./AdminFlowerAiDrawer").then((module) => ({ default: module.AdminFlowerAiDrawer })),
@@ -86,62 +98,30 @@ export function AdminFlowers() {
 
   const watchedImages = Form.useWatch("images", form) ?? "";
 
-  const categoryMap = useMemo(
-    () => new Map(categories.filter((item) => item.id !== "all").map((item) => [item.id, item.name])),
-    [categories],
-  );
+  const categoryMap = useMemo(() => buildFlowerCategoryMap(categories), [categories]);
 
-  const categoryOptions = useMemo(
-    () => categories.filter((item) => item.id !== "all").map((item) => ({ label: item.name, value: item.id })),
-    [categories],
-  );
+  const categoryOptions = useMemo(() => buildFlowerCategoryOptions(categories), [categories]);
 
   const imagePreviewList = useMemo(() => splitText(watchedImages), [watchedImages]);
-  const hasActiveFilters = Boolean(search.trim()) || selectedCategory !== "all" || featuredFilter !== "all" || deletedFilter !== "active";
+  const hasActiveFilters = hasFlowerActiveFilters({ search, selectedCategory, featuredFilter, deletedFilter });
 
-  const filteredFlowers = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-
-    return flowers.filter((flower) => {
-      const matchesKeyword =
-        !keyword ||
-        [flower.name, flower.description, flower.meaning, flower.tags.join(" "), flower.materials.join(" ")]
-          .join(" ")
-          .toLowerCase()
-          .includes(keyword);
-      const matchesCategory = selectedCategory === "all" || flower.categoryId === selectedCategory;
-      const matchesFeatured =
-        featuredFilter === "all" || (featuredFilter === "featured" ? flower.featured : !flower.featured);
-
-      return matchesKeyword && matchesCategory && matchesFeatured;
-    });
-  }, [featuredFilter, flowers, search, selectedCategory]);
+  const filteredFlowers = useMemo(
+    () => filterFlowers(flowers, { search, selectedCategory, featuredFilter }),
+    [featuredFilter, flowers, search, selectedCategory],
+  );
 
   const metrics = useMemo(
-    () => [
-      { label: deletedFilter === "deleted" ? "已删除作品" : "全部作品", value: flowers.length, note: deletedFilter === "deleted" ? "当前回收站中的作品数量" : "当前后端数据中的总作品数" },
-      { label: "当前筛选结果", value: filteredFlowers.length, note: "列表中此刻可见的作品数量" },
-      { label: "精选作品", value: flowers.filter((item) => item.featured).length, note: "会更容易在前台重点区域出现" },
-      { label: "分类数量", value: categoryOptions.length, note: "用于前台筛选与后台内容组织" },
-    ],
-    [categoryOptions.length, deletedFilter, filteredFlowers.length, flowers],
+    () => buildFlowerMetrics(flowers, filteredFlowers, deletedFilter, categoryOptions.length),
+    [categoryOptions.length, deletedFilter, filteredFlowers, flowers],
   );
 
-  const filterSummary = useMemo(() => {
-    const parts = [];
-    if (deletedFilter === "deleted") parts.push("已删除数据");
-    if (search.trim()) parts.push(`关键词“${search.trim()}”`);
-    if (selectedCategory !== "all") parts.push(`分类“${categoryMap.get(selectedCategory) ?? selectedCategory}”`);
-    if (featuredFilter === "featured") parts.push("仅看精选");
-    if (featuredFilter === "normal") parts.push("仅看普通");
-    return parts;
-  }, [categoryMap, deletedFilter, featuredFilter, search, selectedCategory]);
+  const filterSummary = useMemo(
+    () => buildFlowerFilterSummary({ search, selectedCategory, featuredFilter, deletedFilter, categoryMap }),
+    [categoryMap, deletedFilter, featuredFilter, search, selectedCategory],
+  );
 
   const featuredCount = useMemo(() => filteredFlowers.filter((item) => item.featured).length, [filteredFlowers]);
-  const sortedFlowers = useMemo(
-    () => [...filteredFlowers].sort((left, right) => right.sort - left.sort || left.name.localeCompare(right.name, "zh-CN")),
-    [filteredFlowers],
-  );
+  const sortedFlowers = useMemo(() => sortFlowers(filteredFlowers), [filteredFlowers]);
 
   const load = async () => {
     requestControllerRef.current?.abort();
@@ -222,7 +202,7 @@ export function AdminFlowers() {
   };
 
   const selectedFlowers = useMemo(
-    () => filteredFlowers.filter((flower) => selectedRowKeys.includes(flower.id)),
+    () => buildSelectedFlowers(filteredFlowers, selectedRowKeys),
     [filteredFlowers, selectedRowKeys],
   );
 
@@ -355,7 +335,7 @@ export function AdminFlowers() {
     try {
       await deleteFlower(id);
       message.success("作品已删除");
-      setSelectedRowKeys((current) => current.filter((item) => item !== id));
+      setSelectedRowKeys((current) => omitSelectedRowKeys(current, [id]));
       if (editing?.id === id) closeDrawer();
       await load();
     } catch (error) {
@@ -371,7 +351,7 @@ export function AdminFlowers() {
     try {
       await restoreFlower(id);
       message.success("作品已恢复");
-      setSelectedRowKeys((current) => current.filter((item) => item !== id));
+      setSelectedRowKeys((current) => omitSelectedRowKeys(current, [id]));
       if (editing?.id === id) closeDrawer();
       await load();
     } catch (error) {
@@ -410,13 +390,10 @@ export function AdminFlowers() {
     setSaving(true);
     try {
       const results = await Promise.allSettled(selectedFlowers.map((flower) => deleteFlower(flower.id)));
-      const succeededIds = selectedFlowers
-        .filter((_, index) => results[index]?.status === "fulfilled")
-        .map((flower) => flower.id);
-      const failedCount = results.length - succeededIds.length;
+      const { succeededIds, failedCount } = buildFlowerBatchMutationSummary(selectedFlowers, results);
 
       if (succeededIds.length) {
-        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+        setSelectedRowKeys((current) => omitSelectedRowKeys(current, succeededIds));
       }
       if (editing?.id && deletingIds.has(editing.id) && succeededIds.includes(editing.id)) {
         closeDrawer();
@@ -449,13 +426,10 @@ export function AdminFlowers() {
     setSaving(true);
     try {
       const results = await Promise.allSettled(selectedFlowers.map((flower) => restoreFlower(flower.id)));
-      const succeededIds = selectedFlowers
-        .filter((_, index) => results[index]?.status === "fulfilled")
-        .map((flower) => flower.id);
-      const failedCount = results.length - succeededIds.length;
+      const { succeededIds, failedCount } = buildFlowerBatchMutationSummary(selectedFlowers, results);
 
       if (succeededIds.length) {
-        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+        setSelectedRowKeys((current) => omitSelectedRowKeys(current, succeededIds));
       }
       if (editing?.id && restoringIds.has(editing.id) && succeededIds.includes(editing.id)) {
         closeDrawer();

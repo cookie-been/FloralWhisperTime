@@ -99,7 +99,7 @@ tsc -b && vite build
 - `src/utils/admin-status.tsx`
   - 后台常用状态 Tag
 - `src/utils/admin-table.ts`
-  - 后台表格分页等公共常量
+  - 后台表格分页、批量选择、批量结果汇总等公共工具
 - `src/utils/dom.ts`
   - 表格行点击忽略规则
 - `src/utils/list-text.ts`
@@ -112,8 +112,17 @@ tsc -b && vite build
 后台大页面内部也已开始按页面局部 helper 拆分：
 
 - `src/pages/AdminOperationLogs/operation-log.helpers.ts`
+- `src/pages/AdminContacts/contact.helpers.ts`
+- `src/pages/AdminFlowers/flower-list.helpers.ts`
+- `src/pages/AdminSystemStatus/system-status.actions.ts`
 - `src/pages/AdminSystemStatus/system-status.helpers.ts`
 - `src/pages/AdminSystemStatus/system-status.constants.ts`
+
+拆分原则：
+
+- 页面本体优先只保留状态、生命周期、事件绑定和最终渲染结构
+- 纯筛选、纯统计、纯映射、批量处理结果汇总优先下沉到 helper 或 `src/utils/`
+- 后台表格类页面尽量复用同一套批量选择和批量反馈模式
 
 ## 数据
 

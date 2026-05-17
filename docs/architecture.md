@@ -155,6 +155,22 @@ Browser / WeChat Mini Program
 - `text.ts`
 - `clipboard.ts`
 
+页面局部 helper 也已逐步固定下来，当前重点包括：
+
+- `AdminOperationLogs/operation-log.helpers.ts`
+- `AdminContacts/contact.helpers.ts`
+- `AdminFlowers/flower-list.helpers.ts`
+- `AdminSystemStatus/system-status.constants.ts`
+- `AdminSystemStatus/system-status.helpers.ts`
+- `AdminSystemStatus/system-status.actions.ts`
+
+其中：
+
+- `admin-table.ts` 目前除分页常量外，也承担后台表格批量选择、批量结果汇总等通用逻辑
+- `contact.helpers.ts` 负责留言筛选、统计、选中项与批量处理派生逻辑
+- `flower-list.helpers.ts` 负责作品筛选、分类选项、排序、批量处理派生逻辑
+- `system-status.actions.ts` 负责运维中心内的风险动作分流、归档默认值与下载定位
+
 ### 5.4 Web 构建策略
 
 Web 构建固定为：

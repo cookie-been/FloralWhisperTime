@@ -10,6 +10,17 @@ import { formatDateTime } from "@/utils/datetime";
 import { shouldIgnoreTableRowClick } from "@/utils/dom";
 import { renderAdminPendingTag, renderAdminReadStatusTag } from "@/utils/admin-status";
 import { truncateText } from "@/utils/text";
+import {
+  buildContactBatchMutationSummary,
+  buildContactFilterSummary,
+  buildContactMetricsSource,
+  buildContactPageStats,
+  buildSelectedContacts,
+  hasContactActiveFilters,
+  type ContactDeletedFilter,
+  type ContactStatusFilter,
+} from "./contact.helpers";
+import { omitSelectedRowKeys } from "@/utils/admin-table";
 
 export function AdminContacts() {
   const screens = Grid.useBreakpoint();
@@ -22,13 +33,13 @@ export function AdminContacts() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState(searchParams.get("keyword") ?? "");
   const initialStatus = searchParams.get("status");
-  const [status, setStatus] = useState<"all" | "read" | "unread">(
+  const [status, setStatus] = useState<ContactStatusFilter>(
     initialStatus === "read" || initialStatus === "unread" ? initialStatus : "all",
   );
-  const [deletedFilter, setDeletedFilter] = useState<"active" | "deleted">(searchParams.get("deleted") === "deleted" ? "deleted" : "active");
+  const [deletedFilter, setDeletedFilter] = useState<ContactDeletedFilter>(searchParams.get("deleted") === "deleted" ? "deleted" : "active");
   const [activeContact, setActiveContact] = useState<ContactMessage | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const hasActiveFilters = Boolean(keyword.trim()) || status !== "all" || deletedFilter !== "active";
+  const hasActiveFilters = hasContactActiveFilters({ keyword, status, deletedFilter });
   const requestControllerRef = useRef<AbortController | null>(null);
 
   const load = async (
@@ -80,12 +91,9 @@ export function AdminContacts() {
   }, [deletedFilter, keyword, setSearchParams, status]);
 
   const metrics = useMemo(() => {
-    const list = data?.list ?? [];
-    const latest = list[0];
-    const readCount = list.filter((item) => Boolean(item.readAt)).length;
-    const unreadCount = list.length - readCount;
+    const { total, latest, unreadCount, readCount } = buildContactMetricsSource(data);
     return [
-      { label: "留言总数", value: data?.total ?? 0, note: "当前已收录的全部用户留言", icon: Inbox },
+      { label: "留言总数", value: total, note: "当前已收录的全部用户留言", icon: Inbox },
       { label: "当前页未读", value: unreadCount, note: "这一页仍需处理的留言数量", icon: MessageSquareMore },
       { label: "当前页已读", value: readCount, note: "这一页已经确认过的留言数量", icon: MailCheck },
       { label: "最近留言", value: latest?.name ?? "暂无", note: latest ? formatDateTime(latest.createdAt) : "还没有访客提交留言", icon: UserRound },
@@ -93,24 +101,17 @@ export function AdminContacts() {
     ];
   }, [data]);
 
-  const filterSummary = useMemo(() => {
-    const parts = [];
-    if (deletedFilter === "deleted") parts.push("已删除数据");
-    if (keyword.trim()) parts.push(`关键词“${keyword.trim()}”`);
-    if (status === "read") parts.push("仅看已读");
-    if (status === "unread") parts.push("仅看未读");
-    return parts;
-  }, [deletedFilter, keyword, status]);
+  const filterSummary = useMemo(
+    () => buildContactFilterSummary({ keyword, status, deletedFilter }),
+    [deletedFilter, keyword, status],
+  );
 
   const pageStats = useMemo(() => {
-    const list = data?.list ?? [];
-    const unreadCount = list.filter((item) => !item.readAt).length;
-    const readCount = list.length - unreadCount;
-    return { unreadCount, readCount };
+    return buildContactPageStats(data?.list ?? []);
   }, [data]);
 
   const selectedContacts = useMemo(
-    () => (data?.list ?? []).filter((item) => selectedRowKeys.includes(item.id)),
+    () => buildSelectedContacts(data?.list ?? [], selectedRowKeys),
     [data, selectedRowKeys],
   );
 
@@ -145,7 +146,7 @@ export function AdminContacts() {
     try {
       await deleteAdminContact(id);
       message.success("留言已删除");
-      setSelectedRowKeys((current) => current.filter((item) => item !== id));
+      setSelectedRowKeys((current) => omitSelectedRowKeys(current, [id]));
       setActiveContact((current) => (current?.id === id ? null : current));
       if (activeContact?.id === id) {
         setDrawerOpen(false);
@@ -164,7 +165,7 @@ export function AdminContacts() {
     try {
       await restoreAdminContact(id);
       message.success("留言已恢复");
-      setSelectedRowKeys((current) => current.filter((item) => item !== id));
+      setSelectedRowKeys((current) => omitSelectedRowKeys(current, [id]));
       setActiveContact((current) => (current?.id === id ? null : current));
       if (activeContact?.id === id) {
         setDrawerOpen(false);
@@ -183,13 +184,10 @@ export function AdminContacts() {
     setDeletingId("__batch__");
     try {
       const results = await Promise.allSettled(selectedContacts.map((item) => deleteAdminContact(item.id)));
-      const succeededIds = selectedContacts
-        .filter((_, index) => results[index]?.status === "fulfilled")
-        .map((item) => item.id);
-      const failedCount = results.length - succeededIds.length;
+      const { succeededIds, failedCount } = buildContactBatchMutationSummary(selectedContacts, results);
 
       if (succeededIds.length) {
-        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+        setSelectedRowKeys((current) => omitSelectedRowKeys(current, succeededIds));
       }
       if (activeContact?.id && deletingIds.has(activeContact.id) && succeededIds.includes(activeContact.id)) {
         setActiveContact(null);
@@ -220,13 +218,10 @@ export function AdminContacts() {
     setDeletingId("__batch__");
     try {
       const results = await Promise.allSettled(selectedContacts.map((item) => restoreAdminContact(item.id)));
-      const succeededIds = selectedContacts
-        .filter((_, index) => results[index]?.status === "fulfilled")
-        .map((item) => item.id);
-      const failedCount = results.length - succeededIds.length;
+      const { succeededIds, failedCount } = buildContactBatchMutationSummary(selectedContacts, results);
 
       if (succeededIds.length) {
-        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+        setSelectedRowKeys((current) => omitSelectedRowKeys(current, succeededIds));
       }
       if (activeContact?.id && restoringIds.has(activeContact.id) && succeededIds.includes(activeContact.id)) {
         setActiveContact(null);

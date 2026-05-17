@@ -29,6 +29,15 @@ import {
   SYSTEM_TAB_LABELS,
   type SystemTabKey,
 } from "./system-status.constants";
+import {
+  findLatestArchiveFile,
+  resolveArchiveBeforeValue,
+  resolveRiskActionRoute,
+  resolveRiskActionTab,
+  shouldOpenPasswordModal,
+  shouldScrollToSecuritySection,
+  shouldScrollToUploadSection,
+} from "./system-status.actions";
 import { SystemArchivesTab } from "./components/tabs/SystemArchivesTab";
 import { SystemBackupsTab } from "./components/tabs/SystemBackupsTab";
 import { SystemMigrationTab } from "./components/tabs/SystemMigrationTab";
@@ -37,12 +46,14 @@ import { SystemSecurityTab } from "./components/tabs/SystemSecurityTab";
 import { SystemTasksTab } from "./components/tabs/SystemTasksTab";
 import { formatCurrentDateTime, formatDateTimeWithSeconds } from "@/utils/datetime";
 import {
+  buildTaskListWithResolvedCommand,
   formatServiceName,
   formatTaskTypeLabel,
   buildBackupOverview,
   buildRecommendedCommands,
   buildTaskStats,
   enrichOpsTasksWithCommands,
+  filterOpsTasks,
   getTaskResultEntries,
   getTaskStatusMeta,
   resolveOpsCommand,
@@ -270,13 +281,10 @@ export function AdminSystemStatus() {
   const latestInspectionTask = useMemo(() => opsTasks.find((item) => item.taskType === "inspection") ?? null, [opsTasks]);
   const latestBackupTask = useMemo(() => opsTasks.find((item) => item.taskType === "backup") ?? null, [opsTasks]);
 
-  const filteredOpsTasks = useMemo(() => {
-    return opsTasks.filter((item) => {
-      const typeMatched = taskTypeFilter === "all" || item.taskType === taskTypeFilter;
-      const statusMatched = taskStatusFilter === "all" || item.status === taskStatusFilter;
-      return typeMatched && statusMatched;
-    });
-  }, [opsTasks, taskStatusFilter, taskTypeFilter]);
+  const filteredOpsTasks = useMemo(
+    () => filterOpsTasks(opsTasks, taskTypeFilter, taskStatusFilter),
+    [opsTasks, taskStatusFilter, taskTypeFilter],
+  );
 
   const taskStats = useMemo(() => buildTaskStats(opsTasks), [opsTasks]);
 
@@ -293,7 +301,7 @@ export function AdminSystemStatus() {
   const opsTasksWithCommands = useMemo(() => enrichOpsTasksWithCommands(opsTasks), [opsTasks]);
 
   const openArchiveModal = useCallback(() => {
-    const suggested = status?.operationLogArchiveBefore ? status.operationLogArchiveBefore.slice(0, 10) : "";
+    const suggested = resolveArchiveBeforeValue(status?.operationLogArchiveBefore);
     setArchiveBefore(suggested);
     setArchiveModalOpen(true);
   }, [status?.operationLogArchiveBefore]);
@@ -368,33 +376,30 @@ export function AdminSystemStatus() {
   const handleRiskAction = useCallback((actionKey?: RiskActionKey) => {
     if (!actionKey) return;
 
-    if (actionKey === "failed-logs") {
-      navigate("/admin/operation-logs?success=false");
+    const targetRoute = resolveRiskActionRoute(actionKey);
+    if (targetRoute) {
+      navigate(targetRoute);
       return;
     }
-    if (actionKey === "ai-settings") {
-      navigate("/admin/ai-settings");
-      return;
+
+    const targetTab = resolveRiskActionTab(actionKey);
+    if (targetTab) {
+      setTab(targetTab);
     }
-    if (actionKey === "upload") {
-      setTab("security");
+
+    if (shouldScrollToUploadSection(actionKey)) {
       window.setTimeout(() => {
         uploadSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
       return;
     }
-    if (actionKey === "backup") {
-      setTab("backups");
-      return;
-    }
-    if (actionKey === "security") {
-      setTab("security");
+    if (shouldScrollToSecuritySection(actionKey)) {
       window.setTimeout(() => {
         securitySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 80);
       return;
     }
-    if (actionKey === "change-password") {
+    if (shouldOpenPasswordModal(actionKey)) {
       adminShell?.openPasswordModal();
     }
   }, [adminShell, navigate, setTab]);
@@ -414,7 +419,7 @@ export function AdminSystemStatus() {
 
   const handleDownloadLatestArchive = useCallback(() => {
     if (!latestArchiveResult) return;
-    const matchedFile = archiveFiles.find((item) => item.filename === latestArchiveResult.archiveFilename);
+    const matchedFile = findLatestArchiveFile(archiveFiles, latestArchiveResult.archiveFilename);
     if (!matchedFile) {
       message.warning("本次归档文件尚未出现在列表中，请稍后刷新后再下载");
       return;
@@ -531,10 +536,7 @@ export function AdminSystemStatus() {
             label: "巡检与任务",
             children: (
               <SystemTasksTab
-                filteredOpsTasks={filteredOpsTasks.map((item) => ({
-                  ...item,
-                  ...resolveOpsCommand(item.taskType),
-                }))}
+                filteredOpsTasks={buildTaskListWithResolvedCommand(filteredOpsTasks)}
                 opsTasks={opsTasksWithCommands}
                 opsTasksError={opsTasksError}
                 taskStats={taskStats}
