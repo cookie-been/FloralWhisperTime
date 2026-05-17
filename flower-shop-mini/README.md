@@ -57,6 +57,11 @@ http://localhost:3001
 - `flower-shop-mini/utils/navigation.ts`
 - `flower-shop-mini/utils/navigation.js`
 
+通用提示建议复用：
+
+- `flower-shop-mini/utils/message.ts`
+- `flower-shop-mini/utils/message.js`
+
 小程序使用自己的本地共享副本：
 
 - `flower-shop-mini/shared/types.ts`

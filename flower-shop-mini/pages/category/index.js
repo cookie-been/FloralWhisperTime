@@ -1,5 +1,5 @@
 const { getCategories, getFlowers, getSiteConfig } = require("../../services/api");
-const { showErrorMessage } = require("../../utils/message");
+const { showErrorMessage, showLoadMoreErrorMessage, showRefreshErrorMessage } = require("../../utils/message");
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -75,7 +75,7 @@ Page({
         pageErrorText: error instanceof Error ? error.message : "分类页加载失败，请稍后重试",
       });
       if (isRefresh) {
-        showErrorMessage("刷新失败");
+        showRefreshErrorMessage();
       }
     } finally {
       this.setData({
@@ -130,7 +130,11 @@ Page({
           pageErrorText: error instanceof Error ? error.message : this.data.loadErrorText,
         });
       } else {
-        showErrorMessage(error instanceof Error ? error.message : "加载更多失败");
+        if (error instanceof Error && error.message) {
+          showErrorMessage(error.message);
+          return;
+        }
+        showLoadMoreErrorMessage();
       }
     } finally {
       if (requestId !== this.currentListRequestId) {
