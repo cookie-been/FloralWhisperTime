@@ -21,12 +21,17 @@
 4. [生产环境变量说明](./env-reference.md)
 5. [后台操作手册](./admin-operations-manual.md)
 6. [售后排障手册](./support-troubleshooting-manual.md)
+7. [运维 SOP 手册](./operations-sop.md)
+8. [权限与安全说明](./security-and-permissions.md)
+9. [接口调用示例](./api-examples.md)
 
 ## 产品与架构
 
 - [功能说明](./features.md)
 - [系统架构](./architecture.md)
 - [接口文档](./api.md)
+- [接口调用示例](./api-examples.md)
+- [权限与安全说明](./security-and-permissions.md)
 - [商业交付说明](./commercial-delivery.md)
 
 ## 交付与上线
@@ -42,6 +47,7 @@
 ## 运维与恢复
 
 - [售后排障手册](./support-troubleshooting-manual.md)
+- [运维 SOP 手册](./operations-sop.md)
 - [版本发布说明模板](./release-notes-template.md)
 - [数据字典](./database-dictionary.md)
 - [备份与恢复说明](./backup-restore.md)
@@ -72,6 +78,7 @@
 6. [生产环境变量说明](./env-reference.md)
 7. [商业交付说明](./commercial-delivery.md)
 8. [版本发布说明模板](./release-notes-template.md)
+9. [权限与安全说明](./security-and-permissions.md)
 
 ### 面向开发接手
 
@@ -79,4 +86,7 @@
 2. [功能说明](./features.md)
 3. [系统架构](./architecture.md)
 4. [接口文档](./api.md)
-5. [本地开发环境说明](./local-development-guide.md)
+5. [接口调用示例](./api-examples.md)
+6. [权限与安全说明](./security-and-permissions.md)
+7. [数据字典](./database-dictionary.md)
+8. [本地开发环境说明](./local-development-guide.md)
