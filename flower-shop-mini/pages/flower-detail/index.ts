@@ -16,6 +16,23 @@ Page({
 
   currentDetailRequestId: 0,
 
+  buildFlowerViewData(flower: Flower, relatedFlowerList: Flower[]) {
+    return {
+      flower,
+      relatedFlowerList,
+      galleryImageList: Array.isArray(flower.images) ? flower.images : [],
+      tagList: Array.isArray(flower.tags) ? flower.tags : [],
+      materialsText: flower.materials.join(" / "),
+    };
+  },
+
+  resolveFlowerId() {
+    const flower = this.data.flower;
+    const currentPages = getCurrentPages();
+    const currentPage = currentPages[currentPages.length - 1] as { options?: { id?: string } };
+    return flower?.id || currentPage?.options?.id || "";
+  },
+
   onLoad(options: { id?: string }) {
     if (!options.id) {
       this.setData({
@@ -62,13 +79,7 @@ Page({
       if (requestId !== this.currentDetailRequestId) {
         return;
       }
-      this.setData({
-        flower,
-        relatedFlowerList,
-        galleryImageList: Array.isArray(flower.images) ? flower.images : [],
-        tagList: Array.isArray(flower.tags) ? flower.tags : [],
-        materialsText: flower.materials.join(" / "),
-      });
+      this.setData(this.buildFlowerViewData(flower, relatedFlowerList));
     } catch (error) {
       if (requestId !== this.currentDetailRequestId) {
         return;
@@ -87,10 +98,7 @@ Page({
   },
 
   handleRetry() {
-    const flower = this.data.flower;
-    const currentPages = getCurrentPages();
-    const currentPage = currentPages[currentPages.length - 1] as { options?: { id?: string } };
-    const flowerId = flower?.id || currentPage?.options?.id;
+    const flowerId = this.resolveFlowerId();
     if (!flowerId) {
       showErrorMessage("缺少作品信息");
       return;

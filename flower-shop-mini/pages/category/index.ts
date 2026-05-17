@@ -1,5 +1,6 @@
 import { getCategories, getFlowers, getSiteConfig } from "../../services/api";
 import type { Category, Flower, FlowerQuery, SiteConfig } from "../../types";
+import { fallbackText } from "../../utils/format";
 import { showErrorMessage, showLoadMoreErrorMessage, showRefreshErrorMessage } from "../../utils/message";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -59,6 +60,26 @@ Page({
     void this.loadFlowerList(false);
   },
 
+  buildFlowerQuery(pageNumber: number): FlowerQuery {
+    return {
+      categoryId: this.data.activeCategoryId,
+      keyword: this.data.searchKeyword.trim(),
+      sortBy: this.data.sortBy,
+      page: pageNumber,
+      limit: this.data.pageSize,
+    };
+  },
+
+  buildSiteTextData(siteConfig: Partial<SiteConfig>) {
+    return {
+      pageTitleText: fallbackText(siteConfig.galleryPageTitle, "花束分类"),
+      pageIntroText: fallbackText(siteConfig.galleryPageIntro, "按场景、风格和价格快速浏览作品。"),
+      searchPlaceholderText: fallbackText(siteConfig.gallerySearchPlaceholder, "搜索花束、花材或寓意"),
+      emptyStateText: fallbackText(siteConfig.galleryEmptyText, "没有找到匹配的花束作品"),
+      loadErrorText: fallbackText(siteConfig.galleryLoadErrorText, "作品列表加载失败，请稍后重试"),
+    };
+  },
+
   async loadPageData(reset = true, isRefresh = false) {
     this.setData({
       isPageLoading: reset,
@@ -69,11 +90,7 @@ Page({
       this.setData({
         categoryList,
         siteConfig,
-        pageTitleText: siteConfig.galleryPageTitle || "花束分类",
-        pageIntroText: siteConfig.galleryPageIntro || "按场景、风格和价格快速浏览作品。",
-        searchPlaceholderText: siteConfig.gallerySearchPlaceholder || "搜索花束、花材或寓意",
-        emptyStateText: siteConfig.galleryEmptyText || "没有找到匹配的花束作品",
-        loadErrorText: siteConfig.galleryLoadErrorText || "作品列表加载失败，请稍后重试",
+        ...this.buildSiteTextData(siteConfig),
       });
       await this.loadFlowerList(true);
     } catch (error) {
@@ -110,13 +127,7 @@ Page({
         : {}),
     });
     try {
-      const flowerResult = await getFlowers({
-        categoryId: this.data.activeCategoryId,
-        keyword: this.data.searchKeyword.trim(),
-        sortBy: this.data.sortBy,
-        page: nextPageNumber,
-        limit: this.data.pageSize,
-      });
+      const flowerResult = await getFlowers(this.buildFlowerQuery(nextPageNumber));
       if (requestId !== this.currentListRequestId) {
         return;
       }
@@ -186,7 +197,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: "花语时光作品分类",
+      title: fallbackText(this.data.pageTitleText, "花语时光作品分类"),
       path: "/pages/category/index",
     };
   },
