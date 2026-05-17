@@ -9,14 +9,8 @@ import {
   HomeServiceScenesSection,
   HomeStatsSection,
 } from "@/pages/Home/HomeSections";
-import type { BrandStory, Category, Flower, ShopInfo, SiteConfig, SiteStat } from "@/types";
-
-const fallbackHeroSlides = [
-  { image: "/home-hero/hero-1.jpg", label: "花艺陈列", note: "适合礼赠与门店展示的花束陈列空间" },
-  { image: "/home-hero/hero-2.jpg", label: "门店氛围", note: "更贴近日常选购与预约咨询的现场环境" },
-  { image: "/home-hero/hero-3.jpg", label: "工作台面", note: "体现花材处理、组合与细节把控的制作状态" },
-  { image: "/home-hero/hero-4.jpg", label: "空间花艺", note: "适合品牌陈设、活动与空间布置的整体表达" },
-];
+import type { BrandStory, Category, Flower, ShopInfo, SiteConfig } from "@/types";
+import { buildHeroSlides, buildHomeStats } from "./home.helpers";
 
 export function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -30,44 +24,8 @@ export function Home() {
 
   const featuredPrimary = featured[0] ?? null;
   const featuredSecondary = featured.slice(1, 5);
-  const stats = useMemo<SiteStat[]>(
-    () => [
-      { value: String(categories.filter((category) => category.id !== "all").length), label: "主题分类" },
-      { value: String(allFlowers.filter((item) => item.featured).length), label: "精选作品" },
-      { value: String(allFlowers.length), label: "全部作品" },
-    ],
-    [allFlowers, categories],
-  );
-
-  const heroSlides = useMemo(
-    () => {
-      const configuredSlides = (siteConfig?.heroSlides ?? [])
-        .filter(Boolean)
-        .map((image, index) => ({
-          image,
-          label: index === 0 ? siteConfig?.heroEyebrow || "品牌主视觉" : "首页轮播",
-          note: index === 0 ? siteConfig?.heroDescription || "以花艺空间、礼赠氛围和门店陈列表达品牌第一印象。" : "由后台维护的首页轮播画面。",
-        }));
-
-      const sourceSlides = configuredSlides.length
-        ? configuredSlides
-        : [
-            siteConfig?.heroImage
-              ? {
-                  image: siteConfig.heroImage,
-                  label: siteConfig.heroEyebrow || "品牌主视觉",
-                  note: siteConfig.heroDescription || "以花艺空间、礼赠氛围和门店陈列表达品牌第一印象。",
-                }
-              : null,
-            ...fallbackHeroSlides,
-          ];
-
-      return sourceSlides.filter((value, index, array): value is { image: string; label: string; note: string } =>
-        Boolean(value) && array.findIndex((item) => item?.image === value?.image) === index,
-      );
-    },
-    [siteConfig?.heroDescription, siteConfig?.heroEyebrow, siteConfig?.heroImage, siteConfig?.heroSlides],
-  );
+  const stats = useMemo(() => buildHomeStats(categories, allFlowers), [allFlowers, categories]);
+  const heroSlides = useMemo(() => buildHeroSlides(siteConfig), [siteConfig]);
 
   useEffect(() => {
     let active = true;

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Drawer, Empty, Grid, Input, Popconfirm, Select, Space, Spin, Table, Tag, message } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Button, Drawer, Empty, Grid, Input, Popconfirm, Select, Space, Spin, Table, message } from "antd";
 import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { deleteAdminContact, getAdminContacts, isAbortError, markAdminContactRead, restoreAdminContact } from "@/services/api";
@@ -21,6 +20,7 @@ import {
   type ContactStatusFilter,
 } from "./contact.helpers";
 import { omitSelectedRowKeys } from "@/utils/admin-table";
+import { buildContactColumns } from "./contact.view";
 
 export function AdminContacts() {
   const screens = Grid.useBreakpoint();
@@ -263,114 +263,18 @@ export function AdminContacts() {
     load(1, pageSize, "", "all", "active").catch(() => undefined);
   };
 
-  const columns: ColumnsType<ContactMessage> = [
-    {
-      title: "访客",
-      dataIndex: "name",
-      width: 180,
-      render: (name: string, record) => (
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-[#1b281e]">{name}</p>
-            {!record.readAt ? renderAdminPendingTag() : null}
-          </div>
-          <p className="mt-1 text-xs text-muted">提交于 {formatDateTime(record.createdAt)}</p>
-        </div>
-      ),
-    },
-    {
-      title: "电话",
-      dataIndex: "phone",
-      width: 160,
-      render: (phone: string) => <Tag color="green">{phone}</Tag>,
-    },
-    {
-      title: "状态",
-      dataIndex: "readAt",
-      width: 120,
-      render: (readAt?: string | null) => renderAdminReadStatusTag(readAt),
-    },
-    {
-      title: "留言内容",
-      dataIndex: "message",
-      render: (content: string) => (
-        <div>
-          <p className="leading-7 text-[#33463a]">{truncateText(content, 86)}</p>
-          {content.length > 86 ? <p className="admin-cell-note">完整留言请结合行内容继续查看。</p> : null}
-        </div>
-      ),
-    },
-    {
-      title: "提交时间",
-      dataIndex: "createdAt",
-      width: 190,
-      render: (value: string) => <span className="text-sm text-muted">{formatDateTime(value)}</span>,
-    },
-    {
-      title: "操作",
-      key: "actions",
-      width: 220,
-      render: (_: unknown, record) =>
-        (
-          <Space>
-            <Button
-              size="small"
-              className="admin-action-button"
-              onClick={(event) => {
-                event.stopPropagation();
-                openDetail(record);
-              }}
-            >
-              查看详情
-            </Button>
-            {deletedFilter === "active" ? (
-              <>
-                {record.readAt ? (
-                  <span className="text-sm text-muted">已处理</span>
-                ) : (
-                  <Button
-                    size="small"
-                    className="admin-action-button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleMarkRead(record.id);
-                    }}
-                  >
-                    标记已读
-                  </Button>
-                )}
-                <Popconfirm title="确认删除该留言？" okText="删除" cancelText="取消" onConfirm={() => void handleDelete(record.id)}>
-                  <Button
-                    size="small"
-                    danger
-                    className="admin-action-button"
-                    loading={deletingId === record.id}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                    }}
-                  >
-                    删除
-                  </Button>
-                </Popconfirm>
-              </>
-            ) : (
-              <Button
-                size="small"
-                type="primary"
-                className="admin-action-button"
-                loading={deletingId === record.id}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleRestore(record.id);
-                }}
-              >
-                恢复
-              </Button>
-            )}
-          </Space>
-        ),
-    },
-  ];
+  const columns = useMemo(
+    () =>
+      buildContactColumns({
+        deletedFilter,
+        deletingId,
+        onOpenDetail: openDetail,
+        onMarkRead: (id) => void handleMarkRead(id),
+        onDelete: (id) => void handleDelete(id),
+        onRestore: (id) => void handleRestore(id),
+      }),
+    [deletedFilter, deletingId],
+  );
 
   if (loading && !data) {
     return (

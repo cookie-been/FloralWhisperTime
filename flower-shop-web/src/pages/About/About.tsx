@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Empty, Spin, Timeline, message } from "antd";
 import { getAboutPage, getAboutTimeline, getShopInfo, getSiteConfig, getTeamMembers } from "@/services/api";
 import type { AboutPageContent, AboutTimelineEntry, ShopInfo, SiteConfig, TeamMember } from "@/types";
+import { buildAboutContent, buildAboutTimelineItems, shouldShowAboutLoadError } from "./about.helpers";
 
 export function About() {
   const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth < 768 : false));
@@ -25,13 +26,7 @@ export function About() {
         if (shopResult.status === "fulfilled") setShop(shopResult.value);
         if (siteConfigResult.status === "fulfilled") setSiteConfig(siteConfigResult.value);
 
-        if (
-          pageResult.status === "rejected" &&
-          timelineResult.status === "rejected" &&
-          teamResult.status === "rejected" &&
-          shopResult.status === "rejected" &&
-          siteConfigResult.status === "rejected"
-        ) {
+        if (shouldShowAboutLoadError([pageResult, timelineResult, teamResult, shopResult, siteConfigResult])) {
           message.error("关于页加载失败");
         }
       })
@@ -52,22 +47,11 @@ export function About() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  const timelineItems = useMemo(
-    () =>
-      [...timeline]
-        .sort((left, right) => left.sort - right.sort || left.yearLabel.localeCompare(right.yearLabel, "zh-CN"))
-        .map((item) => ({
-          label: item.yearLabel,
-          children: item.content,
-        })),
-    [timeline],
+  const timelineItems = useMemo(() => buildAboutTimelineItems(timeline), [timeline]);
+  const { heroImage, heroEyebrow, heroTitle, heroSubtitle, storyTitle, storyContent } = useMemo(
+    () => buildAboutContent(aboutPage),
+    [aboutPage],
   );
-  const heroImage = aboutPage?.heroImage || "/home-hero/hero-2.jpg";
-  const heroEyebrow = aboutPage?.heroEyebrow || "关于我们";
-  const heroTitle = aboutPage?.heroTitle || "关于我们";
-  const heroSubtitle = aboutPage?.heroSubtitle || "品牌信息与服务内容由后台统一维护。";
-  const storyTitle = aboutPage?.storyTitle || "品牌故事";
-  const storyContent = aboutPage?.storyContent || "当前暂无品牌故事内容。";
 
   if (loading) {
     return (

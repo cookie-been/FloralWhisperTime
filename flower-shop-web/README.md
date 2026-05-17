@@ -112,16 +112,30 @@ tsc -b && vite build
 后台大页面内部也已开始按页面局部 helper 拆分：
 
 - `src/pages/AdminOperationLogs/operation-log.helpers.ts`
+- `src/pages/AdminOperationLogs/operation-log.view.tsx`
 - `src/pages/AdminContacts/contact.helpers.ts`
+- `src/pages/AdminContacts/contact.view.tsx`
 - `src/pages/AdminFlowers/flower-list.helpers.ts`
+- `src/pages/AdminFlowers/flower-list.view.tsx`
 - `src/pages/AdminSystemStatus/system-status.actions.ts`
 - `src/pages/AdminSystemStatus/system-status.helpers.ts`
 - `src/pages/AdminSystemStatus/system-status.constants.ts`
+- `src/pages/AdminSettings/settings.helpers.ts`
+- `src/pages/AdminAbout/admin-about.helpers.tsx`
+- `src/pages/AdminDashboard/admin-dashboard.helpers.ts`
+- `src/pages/AdminLogin/admin-login.helpers.ts`
+- `src/pages/AdminAiSettings/admin-ai-settings.helpers.ts`
+- `src/pages/Home/home.helpers.ts`
+- `src/pages/About/about.helpers.ts`
+- `src/pages/Gallery/gallery.helpers.ts`
+- `src/pages/Contact/contact.helpers.ts`
 
 拆分原则：
 
 - 页面本体优先只保留状态、生命周期、事件绑定和最终渲染结构
 - 纯筛选、纯统计、纯映射、批量处理结果汇总优先下沉到 helper 或 `src/utils/`
+- 表格列定义、行内动作与恢复确认态优先下沉到页面本地 `view helper`
+- 前台页面的默认文案、轮播来源、查询参数拼装优先收敛到页面局部 helper
 - 后台表格类页面尽量复用同一套批量选择和批量反馈模式
 
 ## 数据

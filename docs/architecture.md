@@ -158,18 +158,33 @@ Browser / WeChat Mini Program
 页面局部 helper 也已逐步固定下来，当前重点包括：
 
 - `AdminOperationLogs/operation-log.helpers.ts`
+- `AdminOperationLogs/operation-log.view.tsx`
 - `AdminContacts/contact.helpers.ts`
+- `AdminContacts/contact.view.tsx`
 - `AdminFlowers/flower-list.helpers.ts`
+- `AdminFlowers/flower-list.view.tsx`
 - `AdminSystemStatus/system-status.constants.ts`
 - `AdminSystemStatus/system-status.helpers.ts`
 - `AdminSystemStatus/system-status.actions.ts`
+- `AdminSettings/settings.helpers.ts`
+- `AdminAbout/admin-about.helpers.tsx`
+- `AdminDashboard/admin-dashboard.helpers.ts`
+- `AdminLogin/admin-login.helpers.ts`
+- `AdminAiSettings/admin-ai-settings.helpers.ts`
+- `Home/home.helpers.ts`
+- `About/about.helpers.ts`
+- `Gallery/gallery.helpers.ts`
+- `Contact/contact.helpers.ts`
 
 其中：
 
 - `admin-table.ts` 目前除分页常量外，也承担后台表格批量选择、批量结果汇总等通用逻辑
 - `contact.helpers.ts` 负责留言筛选、统计、选中项与批量处理派生逻辑
+- `contact.view.tsx` 负责留言管理表格列、行内动作与删除/恢复按钮渲染
 - `flower-list.helpers.ts` 负责作品筛选、分类选项、排序、批量处理派生逻辑
+- `flower-list.view.tsx` 负责作品管理表格列、排序按钮与行内操作渲染
 - `system-status.actions.ts` 负责运维中心内的风险动作分流、归档默认值与下载定位
+- 前台页面 helper 主要承担默认文案、轮播图来源、URL 查询参数拼装与轻量派生数据整理
 
 ### 5.4 Web 构建策略
 

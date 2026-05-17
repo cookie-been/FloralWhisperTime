@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import { FlowerCard } from "@/components/common/FlowerCard";
 import { getCategories, getFlowers, getSiteConfig, isAbortError } from "@/services/api";
 import type { Category, Flower, FlowerQuery, SiteConfig } from "@/types";
+import { buildGalleryCategoryOptions, buildGalleryPageCopy, buildGallerySearchParams, buildGallerySortLabel } from "./gallery.helpers";
 
 export function Gallery() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -68,24 +69,18 @@ export function Gallery() {
     };
   }, [query]);
 
-  const categoryOptions = useMemo(
-    () => (categories.length ? categories.map((item) => ({ label: item.name, value: item.id })) : [{ label: "全部分类", value: "all" }]),
-    [categories],
-  );
+  const categoryOptions = useMemo(() => buildGalleryCategoryOptions(categories), [categories]);
+  const pageCopy = useMemo(() => buildGalleryPageCopy(siteConfig), [siteConfig]);
   const updateCategory = (value: string) => {
     setQuery((prev) => ({ ...prev, categoryId: value, page: 1 }));
-    const next = new URLSearchParams(searchParams);
-    if (value === "all") next.delete("category");
-    else next.set("category", value);
+    const next = buildGallerySearchParams(searchParams, { category: value });
     setSearchParams(next, { replace: true });
   };
 
   const submitKeyword = () => {
     const trimmed = keywordInput.trim();
     setQuery((prev) => ({ ...prev, keyword: trimmed || undefined, page: 1 }));
-    const next = new URLSearchParams(searchParams);
-    if (trimmed) next.set("keyword", trimmed);
-    else next.delete("keyword");
+    const next = buildGallerySearchParams(searchParams, { keyword: trimmed });
     setSearchParams(next, { replace: true });
   };
 
@@ -96,9 +91,9 @@ export function Gallery() {
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr] xl:items-end">
             <div>
               <p className="section-eyebrow">作品浏览</p>
-              <p className="section-eyebrow">{siteConfig?.galleryPageEyebrow || "作品浏览"}</p>
-              <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">{siteConfig?.galleryPageTitle || "作品画廊"}</h1>
-              <p className="site-shell-copy mt-3 max-w-2xl">{siteConfig?.galleryPageIntro || "按分类、关键词和排序浏览花语时光的花束与空间花艺作品，直接查看更完整的作品面貌与氛围。"}</p>
+              <p className="section-eyebrow">{pageCopy.eyebrow}</p>
+              <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">{pageCopy.title}</h1>
+              <p className="site-shell-copy mt-3 max-w-2xl">{pageCopy.intro}</p>
             </div>
             <div className="site-shell-panel grid gap-3 p-3.5 backdrop-blur sm:gap-4 sm:p-4 md:grid-cols-[minmax(0,1fr)_220px]">
               <Select
@@ -129,7 +124,7 @@ export function Gallery() {
                 <Input
                   allowClear
                   value={keywordInput}
-                  placeholder={siteConfig?.gallerySearchPlaceholder || "搜索花束、花材或标签"}
+                  placeholder={pageCopy.searchPlaceholder}
                   onChange={(event) => setKeywordInput(event.target.value)}
                   onPressEnter={submitKeyword}
                 />
@@ -149,14 +144,14 @@ export function Gallery() {
       <div className="site-shell-section py-7 sm:py-8">
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
           <p className="text-sm font-medium text-muted">共展示 {total} 件作品，当前第 {currentPage} / {totalPages} 页</p>
-          <p className="text-sm text-muted">当前排序：{query.sortBy === "featured" ? "精选优先" : query.sortBy === "latest" ? "最新作品" : query.sortBy === "price_asc" ? "价格从低到高" : "价格从高到低"}</p>
+          <p className="text-sm text-muted">当前排序：{buildGallerySortLabel(query.sortBy)}</p>
         </div>
 
         {loading ? (
           <div className="rounded-lg border border-black/6 bg-white/72 py-20 text-center text-muted">正在加载作品...</div>
         ) : loadError ? (
           <div className="rounded-lg border border-black/6 bg-white/72 py-20">
-            <Empty description={siteConfig?.galleryLoadErrorText || "作品列表加载失败，请稍后刷新重试"} />
+            <Empty description={pageCopy.loadErrorText} />
           </div>
         ) : flowers.length > 0 ? (
           <>
@@ -181,7 +176,7 @@ export function Gallery() {
           </>
         ) : (
           <div className="rounded-lg border border-black/6 bg-white/72 py-20">
-            <Empty description={siteConfig?.galleryEmptyText || "没有找到匹配的花束作品"} />
+            <Empty description={pageCopy.emptyText} />
           </div>
         )}
       </div>

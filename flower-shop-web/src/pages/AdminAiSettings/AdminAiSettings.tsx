@@ -3,6 +3,7 @@ import { KeyRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getAdminAiSettings, updateAdminAiSettings } from "@/services/api";
 import type { AiSettings } from "@/types";
+import { buildAdminAiAdviceList, buildAdminAiSummaryText } from "./admin-ai-settings.helpers";
 
 type AiSettingsForm = AiSettings;
 
@@ -27,9 +28,10 @@ export function AdminAiSettings() {
   }, [form]);
 
   const summaryText = useMemo(
-    () => `当前提供商：${aiProvider || "未配置"}；生图模型：${aiModel || "未配置"}；文本模型：${aiTextModel || "未配置"}；当前尺寸：${aiSize || "未配置"}。`,
+    () => buildAdminAiSummaryText({ provider: aiProvider, model: aiModel, size: aiSize, textModel: aiTextModel }),
     [aiModel, aiProvider, aiSize, aiTextModel],
   );
+  const adviceList = useMemo(() => buildAdminAiAdviceList(), []);
 
   const save = async () => {
     if (saving) return;
@@ -121,8 +123,9 @@ export function AdminAiSettings() {
           <div className="admin-panel admin-shell-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-forest/70">维护建议</p>
             <div className="mt-4 space-y-3 text-sm leading-6 text-muted">
-              <p>建议正式环境和测试环境使用不同 API Key，避免调试内容混入生产资产。</p>
-              <p>修改模型、接口地址、尺寸与文本模型后会立即生效，适合后续接入新模型或切换不同的生成策略。</p>
+              {adviceList.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
             </div>
           </div>
         </div>

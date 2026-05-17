@@ -1,24 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Button,
-  Drawer,
-  Empty,
-  Form,
-  Grid,
-  Image,
-  Input,
-  InputNumber,
-  Popconfirm,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Upload,
-  message,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Button, Drawer, Empty, Form, Grid, Image, Input, InputNumber, Space, Spin, Table, Upload, message } from "antd";
 import type { RcFile } from "antd/es/upload";
 import { BookOpenText, ImagePlus, Plus, Sparkles } from "lucide-react";
+import {
+  buildAdminAboutMetrics,
+  buildMemberColumns,
+  buildTimelineColumns,
+  emptyAboutPage,
+  emptyMember,
+  emptyTimeline,
+  sortTeamMembers,
+  sortTimelineEntries,
+} from "./admin-about.helpers";
 import {
   createAdminAboutTimeline,
   createAdminTeamMember,
@@ -45,31 +38,6 @@ interface AdminAboutProps {
 
 type TeamMemberForm = TeamMember;
 type TimelineForm = AboutTimelineEntry;
-
-const emptyAboutPage: AboutPageContent = {
-  heroImage: "",
-  heroEyebrow: "",
-  heroTitle: "",
-  heroSubtitle: "",
-  storyTitle: "",
-  storyContent: "",
-};
-
-const emptyTimeline: TimelineForm = {
-  id: "",
-  yearLabel: "",
-  content: "",
-  sort: 0,
-};
-
-const emptyMember: TeamMemberForm = {
-  id: "",
-  name: "",
-  title: "",
-  avatar: "",
-  bio: "",
-  sort: 0,
-};
 
 export function AdminAbout({
   embedded = false,
@@ -105,22 +73,11 @@ export function AdminAbout({
   const storyContent = Form.useWatch("storyContent", aboutForm) ?? "";
   const memberAvatar = Form.useWatch("avatar", memberForm) ?? "";
 
-  const sortedTimeline = useMemo(
-    () => [...timeline].sort((left, right) => left.sort - right.sort || left.yearLabel.localeCompare(right.yearLabel, "zh-CN")),
-    [timeline],
-  );
-  const sortedMembers = useMemo(
-    () => [...teamMembers].sort((left, right) => right.sort - left.sort || left.name.localeCompare(right.name, "zh-CN")),
-    [teamMembers],
-  );
+  const sortedTimeline = useMemo(() => sortTimelineEntries(timeline), [timeline]);
+  const sortedMembers = useMemo(() => sortTeamMembers(teamMembers), [teamMembers]);
 
   const metrics = useMemo(
-    () => [
-      { label: "时间轴条目", value: timeline.length, note: "建议维持 3-6 条，表达清晰的品牌发展节点" },
-      { label: "团队成员", value: teamMembers.length, note: "支持头像、职务与简介维护" },
-      { label: "首屏状态", value: heroImage ? "已配置" : "待配置", note: "关于页首图会直接影响第一屏质感" },
-      { label: "故事长度", value: `${storyContent.trim().length} 字`, note: "建议控制在 120-300 字之间，方便前台阅读" },
-    ],
+    () => buildAdminAboutMetrics(timeline.length, teamMembers.length, heroImage, storyContent),
     [heroImage, storyContent, teamMembers.length, timeline.length],
   );
 
@@ -360,104 +317,27 @@ export function AdminAbout({
     }
   };
 
-  const timelineColumns: ColumnsType<AboutTimelineEntry> = [
-    {
-      title: "年份",
-      dataIndex: "yearLabel",
-      width: 120,
-      render: (value: string) => <Tag color="green">{value}</Tag>,
-    },
-    {
-      title: "内容",
-      dataIndex: "content",
-      render: (value: string) => <p className="m-0 leading-7 text-[#33463a]">{value}</p>,
-    },
-    {
-      title: "排序",
-      dataIndex: "sort",
-      width: 100,
-    },
-    {
-      title: "操作",
-      key: "actions",
-      width: 180,
-      render: (_value, record) => (
-        <Space>
-          {timelineDeletedFilter === "active" ? (
-            <>
-              <Button className="admin-action-button" size="small" onClick={() => openEditTimeline(record)}>
-                编辑
-              </Button>
-              <Popconfirm title="确认删除这条时间轴记录？" okText="删除" cancelText="取消" onConfirm={() => void removeTimeline(record.id)}>
-                <Button className="admin-action-button" size="small" danger>
-                  删除
-                </Button>
-              </Popconfirm>
-            </>
-          ) : (
-            <Button className="admin-action-button" size="small" type="primary" onClick={() => void restoreTimeline(record.id)}>
-              恢复
-            </Button>
-          )}
-        </Space>
-      ),
-    },
-  ];
+  const timelineColumns = useMemo(
+    () =>
+      buildTimelineColumns({
+        deletedFilter: timelineDeletedFilter,
+        onEdit: openEditTimeline,
+        onDelete: (id) => void removeTimeline(id),
+        onRestore: (id) => void restoreTimeline(id),
+      }),
+    [timelineDeletedFilter],
+  );
 
-  const memberColumns: ColumnsType<TeamMember> = [
-    {
-      title: "头像",
-      dataIndex: "avatar",
-      width: 92,
-      render: (avatar: string, record) =>
-        avatar ? (
-          <img src={avatar} alt={record.name} className="h-14 w-14 rounded-lg object-cover" />
-        ) : (
-          <div className="h-14 w-14 rounded-lg bg-[#f1ede8]" />
-        ),
-    },
-    {
-      title: "成员信息",
-      key: "member",
-      render: (_value, record) => (
-        <div>
-          <p className="m-0 font-semibold text-[#1b281e]">{record.name}</p>
-          <p className="mt-1 text-sm text-muted">{record.title}</p>
-          <p className="admin-cell-note line-clamp-3">{record.bio || "暂无成员简介"}</p>
-        </div>
-      ),
-    },
-    {
-      title: "排序",
-      dataIndex: "sort",
-      width: 100,
-    },
-    {
-      title: "操作",
-      key: "actions",
-      width: 190,
-      render: (_value, record) => (
-        <Space>
-          {memberDeletedFilter === "active" ? (
-            <>
-              <Button className="admin-action-button" size="small" onClick={() => openEditMember(record)}>
-                编辑
-              </Button>
-              <Popconfirm title="确认删除这位团队成员？" okText="删除" cancelText="取消" onConfirm={() => void removeMember(record.id)}>
-                <Button className="admin-action-button" size="small" danger>
-                  删除
-                </Button>
-              </Popconfirm>
-            </>
-          ) : (
-            <Button className="admin-action-button" size="small" type="primary" onClick={() => void restoreMember(record.id)}>
-              恢复
-            </Button>
-          )}
-        </Space>
-      ),
-    },
-  ];
+  const memberColumns = useMemo(
+    () =>
+      buildMemberColumns({
+        deletedFilter: memberDeletedFilter,
+        onEdit: openEditMember,
+        onDelete: (id) => void removeMember(id),
+        onRestore: (id) => void restoreMember(id),
+      }),
+    [memberDeletedFilter],
+  );
 
   if (loading) {
     return (
