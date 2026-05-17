@@ -1,5 +1,6 @@
 const { getFlowerById, getRelatedFlowers } = require("../../services/api");
 const { showErrorMessage } = require("../../utils/message");
+const { switchToContactTab } = require("../../utils/navigation");
 
 Page({
   data: {
@@ -97,6 +98,6 @@ Page({
   },
 
   contactShop() {
-    wx.switchTab({ url: "/pages/contact/index" });
+    switchToContactTab();
   },
 });

@@ -1,6 +1,7 @@
 const { getCategories, getFlowers, getSiteConfig } = require("../../services/api");
 const { fallbackText } = require("../../utils/format");
 const { showErrorMessage } = require("../../utils/message");
+const { switchToAboutTab, switchToCategoryTab, switchToContactTab } = require("../../utils/navigation");
 
 Page({
   data: {
@@ -155,20 +156,18 @@ Page({
 
   goCategory(event) {
     const categoryId = event.currentTarget.dataset.id;
-    wx.setStorageSync("activeCategoryId", categoryId);
-    wx.switchTab({ url: "/pages/category/index" });
+    switchToCategoryTab(categoryId);
   },
 
   goAllCategories() {
-    wx.setStorageSync("activeCategoryId", "all");
-    wx.switchTab({ url: "/pages/category/index" });
+    switchToCategoryTab("all");
   },
 
   goAbout() {
-    wx.switchTab({ url: "/pages/about/index" });
+    switchToAboutTab();
   },
 
   goContact() {
-    wx.switchTab({ url: "/pages/contact/index" });
+    switchToContactTab();
   },
 });

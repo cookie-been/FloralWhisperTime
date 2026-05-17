@@ -1,6 +1,7 @@
 import { getFlowerById, getRelatedFlowers } from "../../services/api";
 import type { Flower } from "../../types";
 import { showErrorMessage } from "../../utils/message";
+import { switchToContactTab } from "../../utils/navigation";
 
 Page({
   data: {
@@ -98,6 +99,6 @@ Page({
   },
 
   contactShop() {
-    wx.switchTab({ url: "/pages/contact/index" });
+    switchToContactTab();
   },
 });

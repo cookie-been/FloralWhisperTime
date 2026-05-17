@@ -1,3 +1,5 @@
+import { showErrorMessage } from "../../utils/message";
+
 Component({
   properties: {
     shop: {
@@ -35,10 +37,7 @@ Component({
     openLocation() {
       const shop = this.data.shop as { latitude: number; longitude: number; name: string; address: string };
       if (!shop.latitude || !shop.longitude) {
-        wx.showToast({
-          title: "暂无门店坐标",
-          icon: "none",
-        });
+        showErrorMessage("暂无门店坐标");
         return;
       }
       wx.openLocation({

@@ -1,3 +1,5 @@
+const { openFlowerDetail } = require("../../utils/navigation");
+
 Component({
   properties: {
     flower: {
@@ -30,10 +32,7 @@ Component({
   methods: {
     handleTap() {
       const flower = this.data.flower || {};
-      if (!flower.id) return;
-      wx.navigateTo({
-        url: `/pages/flower-detail/index?id=${flower.id}`,
-      });
+      openFlowerDetail(flower.id || "");
     },
   },
 });

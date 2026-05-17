@@ -2,6 +2,7 @@ import { getCategories, getFlowers, getSiteConfig } from "../../services/api";
 import type { Category, Flower, SiteConfig } from "../../types";
 import { fallbackText } from "../../utils/format";
 import { showErrorMessage } from "../../utils/message";
+import { switchToAboutTab, switchToCategoryTab, switchToContactTab } from "../../utils/navigation";
 
 interface BannerItem {
   id: string;
@@ -168,20 +169,18 @@ Page({
 
   goCategory(event: WechatMiniprogram.TouchEvent) {
     const categoryId = event.currentTarget.dataset.id as string;
-    wx.setStorageSync("activeCategoryId", categoryId);
-    wx.switchTab({ url: "/pages/category/index" });
+    switchToCategoryTab(categoryId);
   },
 
   goAllCategories() {
-    wx.setStorageSync("activeCategoryId", "all");
-    wx.switchTab({ url: "/pages/category/index" });
+    switchToCategoryTab("all");
   },
 
   goAbout() {
-    wx.switchTab({ url: "/pages/about/index" });
+    switchToAboutTab();
   },
 
   goContact() {
-    wx.switchTab({ url: "/pages/contact/index" });
+    switchToContactTab();
   },
 });

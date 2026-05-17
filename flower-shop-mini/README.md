@@ -52,6 +52,11 @@ http://localhost:3001
 
 修改页面、组件、`services/`、`utils/` 后，必须保持 `.ts` 与 `.js` 同步。
 
+公共跳转建议复用：
+
+- `flower-shop-mini/utils/navigation.ts`
+- `flower-shop-mini/utils/navigation.js`
+
 小程序使用自己的本地共享副本：
 
 - `flower-shop-mini/shared/types.ts`
