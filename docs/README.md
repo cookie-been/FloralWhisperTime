@@ -42,6 +42,8 @@
 ## 运维与恢复
 
 - [售后排障手册](./support-troubleshooting-manual.md)
+- [版本发布说明模板](./release-notes-template.md)
+- [数据字典](./database-dictionary.md)
 - [备份与恢复说明](./backup-restore.md)
 - [升级说明](./upgrade-guide.md)
 - [回滚说明](./rollback-guide.md)
@@ -69,6 +71,7 @@
 5. [部署前后巡检清单](./deployment-checklist.md)
 6. [生产环境变量说明](./env-reference.md)
 7. [商业交付说明](./commercial-delivery.md)
+8. [版本发布说明模板](./release-notes-template.md)
 
 ### 面向开发接手
 
