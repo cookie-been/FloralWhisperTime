@@ -90,7 +90,6 @@ export function Gallery() {
         <div className="site-shell-section py-7 sm:py-10">
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr] xl:items-end">
             <div>
-              <p className="section-eyebrow">作品浏览</p>
               <p className="section-eyebrow">{pageCopy.eyebrow}</p>
               <h1 className="section-title section-title-accent mt-2 text-3xl text-ink sm:text-4xl lg:text-5xl">{pageCopy.title}</h1>
               <p className="site-shell-copy mt-3 max-w-2xl">{pageCopy.intro}</p>
