@@ -1,6 +1,7 @@
 package com.floralwhisper.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -14,5 +15,6 @@ public class TeamMember {
   private String avatar;
   private String bio;
   private Integer sort;
+  @TableLogic
+  private Integer deleted;
 }
-

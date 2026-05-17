@@ -1,6 +1,7 @@
 package com.floralwhisper.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -12,4 +13,6 @@ public class AboutTimelineEntry {
   private String yearLabel;
   private String content;
   private Integer sort;
+  @TableLogic
+  private Integer deleted;
 }

@@ -1,6 +1,7 @@
 package com.floralwhisper.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,4 +20,6 @@ public class Flower {
   private Boolean featured;
   private Integer sort;
   private LocalDateTime createdAt;
+  @TableLogic
+  private Integer deleted;
 }

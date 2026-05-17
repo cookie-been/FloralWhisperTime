@@ -16,6 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ContactService {
+  private static final String ACTIVE_FILTER = "active";
+  private static final String DELETED_FILTER = "deleted";
+  private static final String ALL_FILTER = "all";
+
   private final ContactMapper contactMapper;
   private final AuditLogService auditLogService;
 
@@ -31,15 +35,21 @@ public class ContactService {
     contact.setPhone(request.getPhone().trim());
     contact.setMessage(request.getMessage().trim());
     contact.setCreatedAt(LocalDateTime.now());
+    contact.setDeleted(0);
     contactMapper.insert(contact);
     return Map.of("success", true);
   }
 
   public PaginatedResult<Contact> listContacts(Integer page, Integer limit, String keyword, String status) {
+    return listContacts(page, limit, keyword, status, ACTIVE_FILTER);
+  }
+
+  public PaginatedResult<Contact> listContacts(Integer page, Integer limit, String keyword, String status, String deleted) {
     int currentPage = page == null || page < 1 ? 1 : page;
     int pageSize = limit == null || limit < 1 ? 20 : limit;
     String normalizedKeyword = keyword == null ? "" : keyword.trim();
     String normalizedStatus = status == null || status.isBlank() ? "all" : status.trim().toLowerCase();
+    String deletedFilter = normalizeDeletedFilter(deleted);
 
     LambdaQueryWrapper<Contact> query = new LambdaQueryWrapper<Contact>()
         .and(!normalizedKeyword.isBlank(), wrapper -> wrapper
@@ -52,6 +62,7 @@ public class ContactService {
         .isNull("unread".equals(normalizedStatus), Contact::getReadAt)
         .orderByDesc(Contact::getCreatedAt)
         .orderByDesc(Contact::getId);
+    applyDeletedFilter(query, deletedFilter);
 
     java.util.List<Contact> contacts = contactMapper.selectList(query);
     int from = Math.min((currentPage - 1) * pageSize, contacts.size());
@@ -128,6 +139,50 @@ public class ContactService {
     }
   }
 
+  @Transactional
+  public Contact restore(String id) {
+    Contact current = contactMapper.selectByIdIncludingDeleted(id);
+    if (current == null) {
+      throw new ApiException(HttpStatus.NOT_FOUND, "留言不存在");
+    }
+    Contact before = copyContact(current);
+    if (Integer.valueOf(1).equals(current.getDeleted())) {
+      contactMapper.restoreDeletedById(id);
+    }
+    Contact restored = contactMapper.selectById(id);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("CONTACT")
+        .action("RESTORE")
+        .targetType("CONTACT")
+        .targetId(id)
+        .beforeSnapshot(before)
+        .afterSnapshot(copyContact(restored))
+        .requestSummary(Map.of("contactId", id))
+        .success(true)
+        .build());
+    return restored;
+  }
+
+  private String normalizeDeletedFilter(String deleted) {
+    if (deleted == null || deleted.isBlank()) {
+      return ACTIVE_FILTER;
+    }
+    String normalized = deleted.trim().toLowerCase();
+    return switch (normalized) {
+      case ACTIVE_FILTER, DELETED_FILTER, ALL_FILTER -> normalized;
+      default -> ACTIVE_FILTER;
+    };
+  }
+
+  private void applyDeletedFilter(LambdaQueryWrapper<Contact> query, String deletedFilter) {
+    switch (deletedFilter) {
+      case DELETED_FILTER -> query.eq(Contact::getDeleted, 1);
+      case ALL_FILTER -> {
+      }
+      default -> query.eq(Contact::getDeleted, 0);
+    }
+  }
+
   private Contact copyContact(Contact source) {
     Contact copy = new Contact();
     copy.setId(source.getId());
@@ -136,6 +191,7 @@ public class ContactService {
     copy.setMessage(source.getMessage());
     copy.setCreatedAt(source.getCreatedAt());
     copy.setReadAt(source.getReadAt());
+    copy.setDeleted(source.getDeleted());
     return copy;
   }
 }

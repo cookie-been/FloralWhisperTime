@@ -42,6 +42,7 @@ import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.entity.Contact;
+import com.floralwhisper.dto.AboutTimelineEntryResponse;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
 import com.floralwhisper.mapper.AdminOpsTaskMapper;
@@ -65,6 +66,7 @@ import com.floralwhisper.security.JwtService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
 import com.floralwhisper.service.AdminOpsTaskService;
+import com.floralwhisper.service.FlowerService;
 import com.floralwhisper.service.OperationLogQueryService;
 import com.floralwhisper.service.OperationLogRecoveryService;
 import com.floralwhisper.service.SiteService;
@@ -121,6 +123,8 @@ class AdminControllerTest {
   private AdminOpsTaskMapper adminOpsTaskMapper;
   @MockBean
   private ContactService contactService;
+  @MockBean
+  private FlowerService flowerService;
   @MockBean
   private SiteService siteService;
   @MockBean
@@ -343,6 +347,99 @@ class AdminControllerTest {
         .andExpect(jsonPath("$.adminPasswordChangedAt").value("2026-05-15 12:30:00"))
         .andExpect(jsonPath("$.requirePasswordChange").value(false))
         .andExpect(jsonPath("$.deliveryInitialized").value(true));
+  }
+
+  @Test
+  void contactsSupportsDeletedFilter() throws Exception {
+    PaginatedResult<Contact> response = new PaginatedResult<>(List.of(), 0, 1, 10);
+    when(contactService.listContacts(eq(1), eq(10), eq("rose"), eq("all"), eq("deleted"))).thenReturn(response);
+
+    mockMvc.perform(get("/api/admin/contacts")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin"))
+            .param("page", "1")
+            .param("limit", "10")
+            .param("keyword", "rose")
+            .param("status", "all")
+            .param("deleted", "deleted"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0));
+  }
+
+  @Test
+  void restoreDeletedContactReturnsUpdatedContact() throws Exception {
+    Contact contact = new Contact();
+    contact.setId("contact_001");
+    contact.setName("张三");
+    contact.setPhone("13800000000");
+    contact.setMessage("测试留言");
+    contact.setDeleted(0);
+    when(contactService.restore("contact_001")).thenReturn(contact);
+
+    mockMvc.perform(post("/api/admin/contacts/contact_001/restore")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value("contact_001"))
+        .andExpect(jsonPath("$.name").value("张三"));
+  }
+
+  @Test
+  void aboutTimelineSupportsDeletedFilter() throws Exception {
+    AboutTimelineEntryResponse item = new AboutTimelineEntryResponse();
+    item.setId("timeline_001");
+    item.setYearLabel("2024");
+    item.setContent("deleted item");
+    item.setSort(1);
+    when(siteService.getAdminAboutTimeline("deleted")).thenReturn(List.of(item));
+
+    mockMvc.perform(get("/api/admin/about-timeline")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin"))
+            .param("deleted", "deleted"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value("timeline_001"));
+  }
+
+  @Test
+  void restoreDeletedTimelineReturnsUpdatedEntry() throws Exception {
+    AboutTimelineEntryResponse item = new AboutTimelineEntryResponse();
+    item.setId("timeline_001");
+    item.setYearLabel("2024");
+    item.setContent("restored");
+    item.setSort(1);
+    when(siteService.restoreAboutTimelineEntry("timeline_001")).thenReturn(item);
+
+    mockMvc.perform(post("/api/admin/about-timeline/timeline_001/restore")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value("timeline_001"));
+  }
+
+  @Test
+  void teamSupportsDeletedFilter() throws Exception {
+    TeamMember member = new TeamMember();
+    member.setId("team_001");
+    member.setName("李四");
+    member.setTitle("主理人");
+    when(siteService.getAdminTeamMembers("deleted")).thenReturn(List.of(member));
+
+    mockMvc.perform(get("/api/admin/team")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin"))
+            .param("deleted", "deleted"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value("team_001"));
+  }
+
+  @Test
+  void restoreDeletedTeamMemberReturnsUpdatedMember() throws Exception {
+    TeamMember member = new TeamMember();
+    member.setId("team_001");
+    member.setName("李四");
+    member.setTitle("主理人");
+    when(siteService.restoreTeamMember("team_001")).thenReturn(member);
+
+    mockMvc.perform(post("/api/admin/team/team_001/restore")
+            .header("Authorization", "Bearer " + jwtService.createToken("admin")))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value("team_001"));
   }
 
   @Test

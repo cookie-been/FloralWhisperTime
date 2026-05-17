@@ -101,6 +101,9 @@ import org.slf4j.LoggerFactory;
 @Service
 public class SiteService {
   private static final long SINGLETON_ID = 1L;
+  private static final String ACTIVE_FILTER = "active";
+  private static final String DELETED_FILTER = "deleted";
+  private static final String ALL_FILTER = "all";
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   private static final Logger log = LoggerFactory.getLogger(SiteService.class);
 
@@ -842,7 +845,19 @@ public class SiteService {
 
   @Cacheable("team")
   public List<TeamMember> getAdminTeamMembers() {
-    return teamMemberMapper.selectList(new LambdaQueryWrapper<TeamMember>().orderByDesc(TeamMember::getSort));
+    return getAdminTeamMembers(ACTIVE_FILTER);
+  }
+
+  public List<AboutTimelineEntryResponse> getAdminAboutTimeline(String deleted) {
+    LambdaQueryWrapper<AboutTimelineEntry> query = new LambdaQueryWrapper<AboutTimelineEntry>().orderByAsc(AboutTimelineEntry::getSort);
+    applyTimelineDeletedFilter(query, normalizeDeletedFilter(deleted));
+    return aboutTimelineEntryMapper.selectList(query).stream().map(this::toAboutTimelineEntryResponse).toList();
+  }
+
+  public List<TeamMember> getAdminTeamMembers(String deleted) {
+    LambdaQueryWrapper<TeamMember> query = new LambdaQueryWrapper<TeamMember>().orderByDesc(TeamMember::getSort);
+    applyTeamDeletedFilter(query, normalizeDeletedFilter(deleted));
+    return teamMemberMapper.selectList(query);
   }
 
   @Transactional
@@ -1016,6 +1031,7 @@ public class SiteService {
     entity.setYearLabel(requiredText(request.getYearLabel(), "请输入时间轴年份"));
     entity.setContent(requiredText(request.getContent(), "请输入时间轴内容"));
     entity.setSort(request.getSort() == null ? nextTimelineSort() : request.getSort());
+    entity.setDeleted(0);
     aboutTimelineEntryMapper.insert(entity);
     AboutTimelineEntryResponse created = toAboutTimelineEntryResponse(entity);
     auditLogService.record(AuditLogCommand.builder()
@@ -1074,6 +1090,31 @@ public class SiteService {
   }
 
   @Transactional
+  @CacheEvict(cacheNames = "aboutTimeline", allEntries = true)
+  public AboutTimelineEntryResponse restoreAboutTimelineEntry(String id) {
+    AboutTimelineEntry current = aboutTimelineEntryMapper.selectByIdIncludingDeleted(id);
+    if (current == null) {
+      throw new ApiException(HttpStatus.NOT_FOUND, "时间轴条目不存在");
+    }
+    if (Integer.valueOf(1).equals(current.getDeleted())) {
+      aboutTimelineEntryMapper.restoreDeletedById(id);
+    }
+    AboutTimelineEntry restored = requireTimelineEntry(id);
+    AboutTimelineEntryResponse response = toAboutTimelineEntryResponse(restored);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("ABOUT")
+        .action("RESTORE")
+        .targetType("ABOUT_TIMELINE")
+        .targetId(id)
+        .beforeSnapshot(toAboutTimelineEntryResponse(current))
+        .afterSnapshot(response)
+        .requestSummary(java.util.Map.of("id", id))
+        .success(true)
+        .build());
+    return response;
+  }
+
+  @Transactional
   @CacheEvict(cacheNames = "team", allEntries = true)
   public TeamMember createTeamMember(TeamMemberRequest request) {
     TeamMember entity = new TeamMember();
@@ -1083,6 +1124,7 @@ public class SiteService {
     entity.setAvatar(requiredText(request.getAvatar(), "请上传团队成员头像"));
     entity.setBio(optionalText(request.getBio()));
     entity.setSort(request.getSort() == null ? nextTeamSort() : request.getSort());
+    entity.setDeleted(0);
     teamMemberMapper.insert(entity);
     auditLogService.record(AuditLogCommand.builder()
         .module("TEAM")
@@ -1140,6 +1182,31 @@ public class SiteService {
         .build());
   }
 
+  @Transactional
+  @CacheEvict(cacheNames = "team", allEntries = true)
+  public TeamMember restoreTeamMember(String id) {
+    TeamMember current = teamMemberMapper.selectByIdIncludingDeleted(id);
+    if (current == null) {
+      throw new ApiException(HttpStatus.NOT_FOUND, "团队成员不存在");
+    }
+    TeamMember before = cloneTeamMember(current);
+    if (Integer.valueOf(1).equals(current.getDeleted())) {
+      teamMemberMapper.restoreDeletedById(id);
+    }
+    TeamMember restored = requireTeamMember(id);
+    auditLogService.record(AuditLogCommand.builder()
+        .module("TEAM")
+        .action("RESTORE")
+        .targetType("TEAM_MEMBER")
+        .targetId(id)
+        .beforeSnapshot(before)
+        .afterSnapshot(cloneTeamMember(restored))
+        .requestSummary(java.util.Map.of("id", id))
+        .success(true)
+        .build());
+    return restored;
+  }
+
   private TeamMember cloneTeamMember(TeamMember source) {
     TeamMember copy = new TeamMember();
     copy.setId(source.getId());
@@ -1148,6 +1215,7 @@ public class SiteService {
     copy.setAvatar(source.getAvatar());
     copy.setBio(source.getBio());
     copy.setSort(source.getSort());
+    copy.setDeleted(source.getDeleted());
     return copy;
   }
 
@@ -1480,7 +1548,37 @@ public class SiteService {
     response.setYearLabel(entry.getYearLabel());
     response.setContent(entry.getContent());
     response.setSort(entry.getSort());
+    response.setDeleted(Integer.valueOf(1).equals(entry.getDeleted()));
     return response;
+  }
+
+  private String normalizeDeletedFilter(String deleted) {
+    if (deleted == null || deleted.isBlank()) {
+      return ACTIVE_FILTER;
+    }
+    String normalized = deleted.trim().toLowerCase();
+    return switch (normalized) {
+      case ACTIVE_FILTER, DELETED_FILTER, ALL_FILTER -> normalized;
+      default -> ACTIVE_FILTER;
+    };
+  }
+
+  private void applyTimelineDeletedFilter(LambdaQueryWrapper<AboutTimelineEntry> query, String deletedFilter) {
+    switch (deletedFilter) {
+      case DELETED_FILTER -> query.eq(AboutTimelineEntry::getDeleted, 1);
+      case ALL_FILTER -> {
+      }
+      default -> query.eq(AboutTimelineEntry::getDeleted, 0);
+    }
+  }
+
+  private void applyTeamDeletedFilter(LambdaQueryWrapper<TeamMember> query, String deletedFilter) {
+    switch (deletedFilter) {
+      case DELETED_FILTER -> query.eq(TeamMember::getDeleted, 1);
+      case ALL_FILTER -> {
+      }
+      default -> query.eq(TeamMember::getDeleted, 0);
+    }
   }
 
   private String text(String next, String current) {

@@ -8,6 +8,7 @@ export type FlowerForm = Omit<Flower, "materials" | "tags" | "images"> & {
 };
 
 export type FeaturedFilter = "all" | "featured" | "normal";
+export type DeletedFilter = "active" | "deleted";
 
 export interface GeneratedAiImageResult {
   success: boolean;

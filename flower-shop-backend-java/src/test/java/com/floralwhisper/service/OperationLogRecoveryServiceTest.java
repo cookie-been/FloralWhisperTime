@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,6 +15,7 @@ import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.dto.FlowerResponse;
 import com.floralwhisper.dto.OperationLogDetailResponse;
+import com.floralwhisper.entity.Contact;
 import com.floralwhisper.entity.Flower;
 import com.floralwhisper.entity.FlowerImage;
 import com.floralwhisper.entity.FlowerMaterial;
@@ -135,6 +137,129 @@ class OperationLogRecoveryServiceTest {
     verify(flowerMaterialMapper).insert(isA(FlowerMaterial.class));
     verify(flowerTagMapper).insert(isA(FlowerTag.class));
     verify(auditLogService).record(any(AuditLogCommand.class));
+  }
+
+  @Test
+  void restoreFlowerUndeletesExistingLogicalDeletedRecordInsteadOfInsert() {
+    OperationLog log = new OperationLog();
+    log.setId(6L);
+    log.setModule("FLOWER");
+    log.setAction("DELETE");
+    log.setTargetType("FLOWER");
+    log.setTargetId("flower_002");
+    log.setBeforeSnapshot("{\"id\":\"flower_002\",\"name\":\"暮色绮语\",\"categoryId\":\"anniversary\",\"images\":[],\"price\":699,\"description\":\"desc\",\"materials\":[],\"meaning\":\"mean\",\"tags\":[],\"featured\":false,\"sort\":3,\"createdAt\":\"2026-05-15T00:00:00Z\"}");
+
+    OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    OperationLogQueryService queryService = mock(OperationLogQueryService.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+    FlowerMapper flowerMapper = mock(FlowerMapper.class);
+    FlowerImageMapper flowerImageMapper = mock(FlowerImageMapper.class);
+    FlowerMaterialMapper flowerMaterialMapper = mock(FlowerMaterialMapper.class);
+    FlowerTagMapper flowerTagMapper = mock(FlowerTagMapper.class);
+    FlowerService flowerService = mock(FlowerService.class);
+
+    Flower deletedFlower = new Flower();
+    deletedFlower.setId("flower_002");
+    deletedFlower.setDeleted(1);
+
+    when(operationLogMapper.selectById(6L)).thenReturn(log);
+    when(queryService.isRestorable(log)).thenReturn(true);
+    when(flowerService.getById("flower_002")).thenThrow(new ApiException(org.springframework.http.HttpStatus.NOT_FOUND, "作品不存在"));
+    when(flowerMapper.selectByIdIncludingDeleted("flower_002")).thenReturn(deletedFlower);
+
+    OperationLog restoredLog = new OperationLog();
+    restoredLog.setId(11L);
+    restoredLog.setAction("RESTORE");
+    restoredLog.setRestoredFromLogId(6L);
+    when(operationLogMapper.selectOne(any())).thenReturn(restoredLog);
+
+    OperationLogDetailResponse detail = new OperationLogDetailResponse();
+    detail.setId(11L);
+    when(queryService.getDetail(11L)).thenReturn(detail);
+
+    OperationLogRecoveryService service = new OperationLogRecoveryService(
+        operationLogMapper,
+        queryService,
+        auditLogService,
+        new com.fasterxml.jackson.databind.ObjectMapper(),
+        flowerMapper,
+        flowerImageMapper,
+        flowerMaterialMapper,
+        flowerTagMapper,
+        mock(SiteConfigMapper.class),
+        mock(ShopInfoMapper.class),
+        mock(BrandStoryMapper.class),
+        mock(BrandStoryImageMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        mock(TeamMemberMapper.class),
+        mock(ContactMapper.class),
+        mock(AiSettingsMapper.class),
+        flowerService,
+        mock(SiteService.class));
+
+    service.restore(6L, "恢复逻辑删除作品");
+
+    verify(flowerMapper).restoreDeletedById("flower_002");
+    verify(flowerMapper).updateById(isA(Flower.class));
+    verify(flowerMapper, never()).insert(isA(Flower.class));
+    verify(auditLogService).record(any(AuditLogCommand.class));
+  }
+
+  @Test
+  void restoreContactWithBlankSnapshotDeletesCurrentState() {
+    OperationLog log = new OperationLog();
+    log.setId(7L);
+    log.setModule("CONTACT");
+    log.setAction("CREATE");
+    log.setTargetType("CONTACT");
+    log.setTargetId("contact_001");
+    log.setBeforeSnapshot(null);
+
+    OperationLogMapper operationLogMapper = mock(OperationLogMapper.class);
+    OperationLogQueryService queryService = mock(OperationLogQueryService.class);
+    AuditLogService auditLogService = mock(AuditLogService.class);
+    ContactMapper contactMapper = mock(ContactMapper.class);
+
+    when(operationLogMapper.selectById(7L)).thenReturn(log);
+    when(queryService.isRestorable(log)).thenReturn(true);
+
+    OperationLog restoredLog = new OperationLog();
+    restoredLog.setId(12L);
+    restoredLog.setAction("RESTORE");
+    restoredLog.setRestoredFromLogId(7L);
+    when(operationLogMapper.selectOne(any())).thenReturn(restoredLog);
+
+    OperationLogDetailResponse detail = new OperationLogDetailResponse();
+    detail.setId(12L);
+    when(queryService.getDetail(12L)).thenReturn(detail);
+
+    OperationLogRecoveryService service = new OperationLogRecoveryService(
+        operationLogMapper,
+        queryService,
+        auditLogService,
+        new com.fasterxml.jackson.databind.ObjectMapper(),
+        mock(FlowerMapper.class),
+        mock(FlowerImageMapper.class),
+        mock(FlowerMaterialMapper.class),
+        mock(FlowerTagMapper.class),
+        mock(SiteConfigMapper.class),
+        mock(ShopInfoMapper.class),
+        mock(BrandStoryMapper.class),
+        mock(BrandStoryImageMapper.class),
+        mock(AboutPageMapper.class),
+        mock(AboutTimelineEntryMapper.class),
+        mock(TeamMemberMapper.class),
+        contactMapper,
+        mock(AiSettingsMapper.class),
+        mock(FlowerService.class),
+        mock(SiteService.class));
+
+    service.restore(7L, "撤销创建留言");
+
+    verify(contactMapper).deleteById(eq("contact_001"));
+    verify(contactMapper, never()).insert(isA(Contact.class));
+    verify(contactMapper, never()).updateById(isA(Contact.class));
   }
 
   @Test

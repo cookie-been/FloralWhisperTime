@@ -18,5 +18,5 @@ public class FlowerResponse {
   private Boolean featured;
   private Integer sort;
   private String createdAt;
+  private Boolean deleted;
 }
-

@@ -22,12 +22,13 @@ import {
   createFlower,
   deleteFlower,
   getAdminAiSettings,
+  listAllAdminFlowers,
   generateAdminAiFlowerSuggestion,
   generateAdminAiImage,
   getCategories,
   isAbortError,
+  restoreFlower,
   updateFlower,
-  listAllFlowers,
   uploadFlowerImage,
 } from "@/services/api";
 import type { AiSettings, Category, Flower } from "@/types";
@@ -41,6 +42,7 @@ import {
   toForm,
   truncateText,
   type AiSuggestionForm,
+  type DeletedFilter,
   type FeaturedFilter,
   type FlowerForm,
   type GeneratedAiImageResult,
@@ -68,6 +70,7 @@ export function AdminFlowers() {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [search, setSearch] = useState(searchParams.get("keyword") ?? "");
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get("category") ?? "all");
+  const [deletedFilter, setDeletedFilter] = useState<DeletedFilter>(searchParams.get("deleted") === "deleted" ? "deleted" : "active");
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiReferenceFiles, setAiReferenceFiles] = useState<RcFile[]>([]);
@@ -94,7 +97,7 @@ export function AdminFlowers() {
   );
 
   const imagePreviewList = useMemo(() => splitText(watchedImages), [watchedImages]);
-  const hasActiveFilters = Boolean(search.trim()) || selectedCategory !== "all" || featuredFilter !== "all";
+  const hasActiveFilters = Boolean(search.trim()) || selectedCategory !== "all" || featuredFilter !== "all" || deletedFilter !== "active";
 
   const filteredFlowers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -116,22 +119,23 @@ export function AdminFlowers() {
 
   const metrics = useMemo(
     () => [
-      { label: "全部作品", value: flowers.length, note: "当前后端数据中的总作品数" },
+      { label: deletedFilter === "deleted" ? "已删除作品" : "全部作品", value: flowers.length, note: deletedFilter === "deleted" ? "当前回收站中的作品数量" : "当前后端数据中的总作品数" },
       { label: "当前筛选结果", value: filteredFlowers.length, note: "列表中此刻可见的作品数量" },
       { label: "精选作品", value: flowers.filter((item) => item.featured).length, note: "会更容易在前台重点区域出现" },
       { label: "分类数量", value: categoryOptions.length, note: "用于前台筛选与后台内容组织" },
     ],
-    [categoryOptions.length, filteredFlowers.length, flowers],
+    [categoryOptions.length, deletedFilter, filteredFlowers.length, flowers],
   );
 
   const filterSummary = useMemo(() => {
     const parts = [];
+    if (deletedFilter === "deleted") parts.push("已删除数据");
     if (search.trim()) parts.push(`关键词“${search.trim()}”`);
     if (selectedCategory !== "all") parts.push(`分类“${categoryMap.get(selectedCategory) ?? selectedCategory}”`);
     if (featuredFilter === "featured") parts.push("仅看精选");
     if (featuredFilter === "normal") parts.push("仅看普通");
     return parts;
-  }, [categoryMap, featuredFilter, search, selectedCategory]);
+  }, [categoryMap, deletedFilter, featuredFilter, search, selectedCategory]);
 
   const featuredCount = useMemo(() => filteredFlowers.filter((item) => item.featured).length, [filteredFlowers]);
   const sortedFlowers = useMemo(
@@ -147,7 +151,7 @@ export function AdminFlowers() {
     try {
       const [categoryList, allFlowers, adminAiSettings] = await Promise.all([
         getCategories({ signal: controller.signal }),
-        listAllFlowers({ sortBy: "featured" }, { signal: controller.signal }),
+        listAllAdminFlowers({ sortBy: "featured", deleted: deletedFilter }, { signal: controller.signal }),
         getAdminAiSettings({ signal: controller.signal }),
       ]);
       setCategories(categoryList);
@@ -169,15 +173,16 @@ export function AdminFlowers() {
     return () => {
       requestControllerRef.current?.abort();
     };
-  }, []);
+  }, [deletedFilter]);
 
   useEffect(() => {
     const next = new URLSearchParams();
     if (search.trim()) next.set("keyword", search.trim());
     if (selectedCategory !== "all") next.set("category", selectedCategory);
     if (featuredFilter !== "all") next.set("featured", featuredFilter);
+    if (deletedFilter !== "active") next.set("deleted", deletedFilter);
     setSearchParams(next, { replace: true });
-  }, [featuredFilter, search, selectedCategory, setSearchParams]);
+  }, [deletedFilter, featuredFilter, search, selectedCategory, setSearchParams]);
 
   const startCreate = () => {
     setEditing(null);
@@ -213,6 +218,7 @@ export function AdminFlowers() {
     setSearch("");
     setSelectedCategory("all");
     setFeaturedFilter("all");
+    setDeletedFilter("active");
   };
 
   const selectedFlowers = useMemo(
@@ -359,6 +365,22 @@ export function AdminFlowers() {
     }
   };
 
+  const restore = async (id: string) => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await restoreFlower(id);
+      message.success("作品已恢复");
+      setSelectedRowKeys((current) => current.filter((item) => item !== id));
+      if (editing?.id === id) closeDrawer();
+      await load();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "恢复失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const updateFeaturedBatch = async (featured: boolean) => {
     if (!selectedFlowers.length || saving) return;
     setSaving(true);
@@ -415,6 +437,45 @@ export function AdminFlowers() {
       message.error("批量删除失败");
     } catch (error) {
       message.error(error instanceof Error ? error.message : "批量删除失败");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const restoreBatch = async () => {
+    if (!selectedFlowers.length || saving) return;
+
+    const restoringIds = new Set(selectedFlowers.map((flower) => flower.id));
+    setSaving(true);
+    try {
+      const results = await Promise.allSettled(selectedFlowers.map((flower) => restoreFlower(flower.id)));
+      const succeededIds = selectedFlowers
+        .filter((_, index) => results[index]?.status === "fulfilled")
+        .map((flower) => flower.id);
+      const failedCount = results.length - succeededIds.length;
+
+      if (succeededIds.length) {
+        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+      }
+      if (editing?.id && restoringIds.has(editing.id) && succeededIds.includes(editing.id)) {
+        closeDrawer();
+      }
+
+      await load();
+
+      if (failedCount === 0) {
+        message.success(`已批量恢复 ${succeededIds.length} 个作品`);
+        return;
+      }
+
+      if (succeededIds.length) {
+        message.warning(`已恢复 ${succeededIds.length} 个作品，另有 ${failedCount} 个恢复失败`);
+        return;
+      }
+
+      message.error("批量恢复失败");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "批量恢复失败");
     } finally {
       setSaving(false);
     }
@@ -509,52 +570,68 @@ export function AdminFlowers() {
 
         return (
           <Space>
-            <Button
-              size="small"
-              className="admin-action-button"
-              icon={<ArrowUp size={14} />}
-              disabled={isFirst || saving}
-              onClick={(event) => {
-                event.stopPropagation();
-                void moveFlower(record, "up");
-              }}
-            >
-              上移
-            </Button>
-            <Button
-              size="small"
-              className="admin-action-button"
-              icon={<ArrowDown size={14} />}
-              disabled={isLast || saving}
-              onClick={(event) => {
-                event.stopPropagation();
-                void moveFlower(record, "down");
-              }}
-            >
-              下移
-            </Button>
-            <Button
-              size="small"
-              className="admin-action-button"
-              onClick={(event) => {
-                event.stopPropagation();
-                startEdit(record);
-              }}
-            >
-              编辑
-            </Button>
-            <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
+            {deletedFilter === "active" ? (
+              <>
+                <Button
+                  size="small"
+                  className="admin-action-button"
+                  icon={<ArrowUp size={14} />}
+                  disabled={isFirst || saving}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void moveFlower(record, "up");
+                  }}
+                >
+                  上移
+                </Button>
+                <Button
+                  size="small"
+                  className="admin-action-button"
+                  icon={<ArrowDown size={14} />}
+                  disabled={isLast || saving}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void moveFlower(record, "down");
+                  }}
+                >
+                  下移
+                </Button>
+                <Button
+                  size="small"
+                  className="admin-action-button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    startEdit(record);
+                  }}
+                >
+                  编辑
+                </Button>
+                <Popconfirm title="确认删除该作品？" onConfirm={() => remove(record.id)}>
+                  <Button
+                    size="small"
+                    danger
+                    className="admin-action-button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    删除
+                  </Button>
+                </Popconfirm>
+              </>
+            ) : (
               <Button
                 size="small"
-                danger
+                type="primary"
                 className="admin-action-button"
                 onClick={(event) => {
                   event.stopPropagation();
+                  void restore(record.id);
                 }}
               >
-                删除
+                恢复
               </Button>
-            </Popconfirm>
+            )}
           </Space>
         );
       },
@@ -577,30 +654,43 @@ export function AdminFlowers() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="section-eyebrow">作品工作区</p>
-            <h3 className="admin-section-title mt-2 text-xl">作品工作台</h3>
-            <p className="admin-shell-copy mt-2 text-sm">先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。</p>
+            <h3 className="admin-section-title mt-2 text-xl">{deletedFilter === "deleted" ? "作品回收站" : "作品工作台"}</h3>
+            <p className="admin-shell-copy mt-2 text-sm">
+              {deletedFilter === "deleted" ? "这里显示已逻辑删除的作品，可按需恢复回正常列表。" : "先筛选，再打开右侧抽屉集中编辑。保存后列表会直接刷新，不打断浏览。"}
+            </p>
           </div>
-          <Space wrap className="w-full justify-end sm:w-auto">
-            <Button size="large" icon={<Sparkles size={16} />} onClick={() => setAiDialogOpen(true)} block={!screens.sm}>
-              AI生成作品
-            </Button>
-            <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate} block={!screens.sm}>
-              新增作品
-            </Button>
-          </Space>
+          {deletedFilter === "active" ? (
+            <Space wrap className="w-full justify-end sm:w-auto">
+              <Button size="large" icon={<Sparkles size={16} />} onClick={() => setAiDialogOpen(true)} block={!screens.sm}>
+                AI生成作品
+              </Button>
+              <Button type="primary" size="large" icon={<Plus size={16} />} onClick={startCreate} block={!screens.sm}>
+                新增作品
+              </Button>
+            </Space>
+          ) : null}
         </div>
 
         <div className="mt-5">
           <p className="admin-filter-caption">筛选条件</p>
         </div>
         <div className="admin-quick-filters">
+          <Button type={deletedFilter === "active" ? "primary" : "default"} onClick={() => setDeletedFilter("active")}>
+            正常数据
+          </Button>
+          <Button type={deletedFilter === "deleted" ? "primary" : "default"} onClick={() => setDeletedFilter("deleted")}>
+            已删除
+          </Button>
           <Button type={featuredFilter === "featured" ? "primary" : "default"} onClick={() => setFeaturedFilter("featured")}>
             精选优先
           </Button>
           <Button type={featuredFilter === "normal" ? "primary" : "default"} onClick={() => setFeaturedFilter("normal")}>
             只看普通
           </Button>
-          <Button type={selectedCategory === "all" ? "primary" : "default"} onClick={resetFilters}>
+          <Button
+            type={!search.trim() && selectedCategory === "all" && featuredFilter === "all" && deletedFilter === "active" ? "primary" : "default"}
+            onClick={resetFilters}
+          >
             查看全部
           </Button>
         </div>
@@ -645,24 +735,32 @@ export function AdminFlowers() {
               <span>可直接批量调整精选状态或删除，减少逐条进入编辑的重复操作。</span>
             </div>
             <Space wrap>
-              <Button type="primary" loading={saving} onClick={() => updateFeaturedBatch(true)}>
-                批量设为精选
-              </Button>
-              <Button loading={saving} onClick={() => updateFeaturedBatch(false)}>
-                批量取消精选
-              </Button>
-              <Popconfirm
-                title={`确认删除选中的 ${selectedFlowers.length} 个作品？`}
-                description="删除后可通过操作日志恢复结构化数据，但图片文件仍建议以备份为准。"
-                okText="确认删除"
-                cancelText="取消"
-                okButtonProps={{ danger: true }}
-                onConfirm={() => void removeBatch()}
-              >
-                <Button danger loading={saving}>
-                  批量删除
+              {deletedFilter === "active" ? (
+                <>
+                  <Button type="primary" loading={saving} onClick={() => updateFeaturedBatch(true)}>
+                    批量设为精选
+                  </Button>
+                  <Button loading={saving} onClick={() => updateFeaturedBatch(false)}>
+                    批量取消精选
+                  </Button>
+                  <Popconfirm
+                    title={`确认删除选中的 ${selectedFlowers.length} 个作品？`}
+                    description="删除后可通过操作日志恢复结构化数据，但图片文件仍建议以备份为准。"
+                    okText="确认删除"
+                    cancelText="取消"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={() => void removeBatch()}
+                  >
+                    <Button danger loading={saving}>
+                      批量删除
+                    </Button>
+                  </Popconfirm>
+                </>
+              ) : (
+                <Button type="primary" loading={saving} onClick={() => void restoreBatch()}>
+                  批量恢复
                 </Button>
-              </Popconfirm>
+              )}
               <Button onClick={clearSelection}>取消选择</Button>
             </Space>
           </div>
@@ -688,6 +786,7 @@ export function AdminFlowers() {
             onRow={(record) => ({
               onClick: (event) => {
                 if (shouldIgnoreRowClick(event.target)) return;
+                if (deletedFilter !== "active") return;
                 startEdit(record);
               },
             })}

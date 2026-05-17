@@ -244,9 +244,11 @@ public class OperationLogRecoveryService {
     entity.setFeatured(Boolean.TRUE.equals(data.getFeatured()));
     entity.setSort(data.getSort() == null ? 0 : data.getSort());
     entity.setCreatedAt(parseDate(data.getCreatedAt()));
-    if (flowerMapper.selectById(id) == null) {
+    entity.setDeleted(0);
+    if (flowerMapper.selectByIdIncludingDeleted(id) == null) {
       flowerMapper.insert(entity);
     } else {
+      flowerMapper.restoreDeletedById(id);
       flowerMapper.updateById(entity);
     }
     deleteFlowerStateChildren(id);
@@ -343,9 +345,11 @@ public class OperationLogRecoveryService {
     entity.setYearLabel(data.getYearLabel());
     entity.setContent(data.getContent());
     entity.setSort(data.getSort());
-    if (aboutTimelineEntryMapper.selectById(id) == null) {
+    entity.setDeleted(0);
+    if (aboutTimelineEntryMapper.selectByIdIncludingDeleted(id) == null) {
       aboutTimelineEntryMapper.insert(entity);
     } else {
+      aboutTimelineEntryMapper.restoreDeletedById(id);
       aboutTimelineEntryMapper.updateById(entity);
     }
   }
@@ -356,18 +360,26 @@ public class OperationLogRecoveryService {
       return;
     }
     TeamMember entity = readValue(snapshot, TeamMember.class);
-    if (teamMemberMapper.selectById(id) == null) {
+    entity.setDeleted(0);
+    if (teamMemberMapper.selectByIdIncludingDeleted(id) == null) {
       teamMemberMapper.insert(entity);
     } else {
+      teamMemberMapper.restoreDeletedById(id);
       teamMemberMapper.updateById(entity);
     }
   }
 
   private void restoreContact(String id, String snapshot) {
+    if (snapshot == null || snapshot.isBlank()) {
+      contactMapper.deleteById(id);
+      return;
+    }
     Contact entity = readValue(snapshot, Contact.class);
-    if (contactMapper.selectById(id) == null) {
+    entity.setDeleted(0);
+    if (contactMapper.selectByIdIncludingDeleted(id) == null) {
       contactMapper.insert(entity);
     } else {
+      contactMapper.restoreDeletedById(id);
       contactMapper.updateById(entity);
     }
   }

@@ -11,6 +11,7 @@ export interface Flower {
   featured: boolean;
   sort: number;
   createdAt: string;
+  deleted?: boolean;
 }
 
 export interface FlowerQuery {
@@ -77,6 +78,7 @@ export interface AboutTimelineEntry {
   yearLabel: string;
   content: string;
   sort: number;
+  deleted?: boolean;
 }
 
 export interface SiteStat {
@@ -206,6 +208,7 @@ export interface TeamMember {
   avatar: string;
   bio?: string;
   sort: number;
+  deleted?: boolean;
 }
 
 export interface PaginatedResult<T> {
@@ -228,6 +231,7 @@ export interface ContactMessage {
   message: string;
   createdAt: string;
   readAt?: string | null;
+  deleted?: boolean;
 }
 
 export interface SystemStatus {

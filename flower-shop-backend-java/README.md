@@ -175,6 +175,12 @@ mvn test
 mvn package
 ```
 
+Docker 部署说明：
+
+- 运行时镜像会在 Docker 构建阶段自行执行后端打包。
+- 不需要先在宿主机手工准备 `target/flower-shop-backend-java-1.0.0.jar`。
+- 这样可以避免“源码已更新，但容器仍复制旧 jar”导致的部署不一致问题。
+
 ## AI 配置说明
 
 后台“AI 生图配置”页面里的 AI 配置现在统一覆盖两类能力：

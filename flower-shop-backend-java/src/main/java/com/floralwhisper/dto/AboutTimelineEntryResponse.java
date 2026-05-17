@@ -8,4 +8,5 @@ public class AboutTimelineEntryResponse {
   private String yearLabel;
   private String content;
   private Integer sort;
+  private Boolean deleted;
 }

@@ -3,7 +3,7 @@ import { Button, Drawer, Empty, Grid, Input, Popconfirm, Select, Space, Spin, Ta
 import type { ColumnsType } from "antd/es/table";
 import { Inbox, MailCheck, MessageSquareMore, Phone, Search, UserRound } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { deleteAdminContact, getAdminContacts, isAbortError, markAdminContactRead } from "@/services/api";
+import { deleteAdminContact, getAdminContacts, isAbortError, markAdminContactRead, restoreAdminContact } from "@/services/api";
 import type { ContactMessage, PaginatedResult } from "@/types";
 
 function formatDateTime(value?: string) {
@@ -43,9 +43,10 @@ export function AdminContacts() {
   const [status, setStatus] = useState<"all" | "read" | "unread">(
     initialStatus === "read" || initialStatus === "unread" ? initialStatus : "all",
   );
+  const [deletedFilter, setDeletedFilter] = useState<"active" | "deleted">(searchParams.get("deleted") === "deleted" ? "deleted" : "active");
   const [activeContact, setActiveContact] = useState<ContactMessage | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const hasActiveFilters = Boolean(keyword.trim()) || status !== "all";
+  const hasActiveFilters = Boolean(keyword.trim()) || status !== "all" || deletedFilter !== "active";
   const requestControllerRef = useRef<AbortController | null>(null);
 
   const load = async (
@@ -53,6 +54,7 @@ export function AdminContacts() {
     nextPageSize = pageSize,
     nextKeyword = keyword,
     nextStatus = status,
+    nextDeletedFilter = deletedFilter,
   ) => {
     requestControllerRef.current?.abort();
     const controller = new AbortController();
@@ -64,6 +66,7 @@ export function AdminContacts() {
         limit: nextPageSize,
         keyword: nextKeyword.trim() || undefined,
         status: nextStatus,
+        deleted: nextDeletedFilter,
       }, { signal: controller.signal });
       setData(result);
       setPage(result.page);
@@ -80,18 +83,19 @@ export function AdminContacts() {
   };
 
   useEffect(() => {
-    load(1, 10, keyword, status).catch(() => undefined);
+    load(1, 10, keyword, status, deletedFilter).catch(() => undefined);
     return () => {
       requestControllerRef.current?.abort();
     };
-  }, []);
+  }, [deletedFilter]);
 
   useEffect(() => {
     const next = new URLSearchParams();
     if (keyword.trim()) next.set("keyword", keyword.trim());
     if (status !== "all") next.set("status", status);
+    if (deletedFilter !== "active") next.set("deleted", deletedFilter);
     setSearchParams(next, { replace: true });
-  }, [keyword, setSearchParams, status]);
+  }, [deletedFilter, keyword, setSearchParams, status]);
 
   const metrics = useMemo(() => {
     const list = data?.list ?? [];
@@ -109,11 +113,12 @@ export function AdminContacts() {
 
   const filterSummary = useMemo(() => {
     const parts = [];
+    if (deletedFilter === "deleted") parts.push("已删除数据");
     if (keyword.trim()) parts.push(`关键词“${keyword.trim()}”`);
     if (status === "read") parts.push("仅看已读");
     if (status === "unread") parts.push("仅看未读");
     return parts;
-  }, [keyword, status]);
+  }, [deletedFilter, keyword, status]);
 
   const pageStats = useMemo(() => {
     const list = data?.list ?? [];
@@ -171,6 +176,25 @@ export function AdminContacts() {
     }
   };
 
+  const handleRestore = async (id: string) => {
+    if (deletingId) return;
+    setDeletingId(id);
+    try {
+      await restoreAdminContact(id);
+      message.success("留言已恢复");
+      setSelectedRowKeys((current) => current.filter((item) => item !== id));
+      setActiveContact((current) => (current?.id === id ? null : current));
+      if (activeContact?.id === id) {
+        setDrawerOpen(false);
+      }
+      await load(page, pageSize, keyword, status);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "恢复失败");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleDeleteBatch = async () => {
     if (!selectedContacts.length || deletingId) return;
     const deletingIds = new Set(selectedContacts.map((item) => item.id));
@@ -208,6 +232,43 @@ export function AdminContacts() {
     }
   };
 
+  const handleRestoreBatch = async () => {
+    if (!selectedContacts.length || deletingId) return;
+    const restoringIds = new Set(selectedContacts.map((item) => item.id));
+    setDeletingId("__batch__");
+    try {
+      const results = await Promise.allSettled(selectedContacts.map((item) => restoreAdminContact(item.id)));
+      const succeededIds = selectedContacts
+        .filter((_, index) => results[index]?.status === "fulfilled")
+        .map((item) => item.id);
+      const failedCount = results.length - succeededIds.length;
+
+      if (succeededIds.length) {
+        setSelectedRowKeys((current) => current.filter((item) => !succeededIds.includes(item)));
+      }
+      if (activeContact?.id && restoringIds.has(activeContact.id) && succeededIds.includes(activeContact.id)) {
+        setActiveContact(null);
+        setDrawerOpen(false);
+      }
+
+      await load(page, pageSize, keyword, status, deletedFilter);
+
+      if (failedCount === 0) {
+        message.success(`已恢复 ${succeededIds.length} 条留言`);
+        return;
+      }
+      if (succeededIds.length) {
+        message.warning(`已恢复 ${succeededIds.length} 条留言，另有 ${failedCount} 条恢复失败`);
+        return;
+      }
+      message.error("批量恢复失败");
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "批量恢复失败");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const openDetail = (record: ContactMessage) => {
     setActiveContact(record);
     setDrawerOpen(true);
@@ -221,7 +282,8 @@ export function AdminContacts() {
   const resetFilters = () => {
     setKeyword("");
     setStatus("all");
-    load(1, pageSize, "", "all").catch(() => undefined);
+    setDeletedFilter("active");
+    load(1, pageSize, "", "all", "active").catch(() => undefined);
   };
 
   const columns: ColumnsType<ContactMessage> = [
@@ -285,33 +347,50 @@ export function AdminContacts() {
             >
               查看详情
             </Button>
-            {record.readAt ? (
-              <span className="text-sm text-muted">已处理</span>
+            {deletedFilter === "active" ? (
+              <>
+                {record.readAt ? (
+                  <span className="text-sm text-muted">已处理</span>
+                ) : (
+                  <Button
+                    size="small"
+                    className="admin-action-button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleMarkRead(record.id);
+                    }}
+                  >
+                    标记已读
+                  </Button>
+                )}
+                <Popconfirm title="确认删除该留言？" okText="删除" cancelText="取消" onConfirm={() => void handleDelete(record.id)}>
+                  <Button
+                    size="small"
+                    danger
+                    className="admin-action-button"
+                    loading={deletingId === record.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    删除
+                  </Button>
+                </Popconfirm>
+              </>
             ) : (
               <Button
                 size="small"
-                className="admin-action-button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleMarkRead(record.id);
-                }}
-              >
-                标记已读
-              </Button>
-            )}
-            <Popconfirm title="确认删除该留言？" okText="删除" cancelText="取消" onConfirm={() => void handleDelete(record.id)}>
-              <Button
-                size="small"
-                danger
+                type="primary"
                 className="admin-action-button"
                 loading={deletingId === record.id}
                 onClick={(event) => {
                   event.stopPropagation();
+                  void handleRestore(record.id);
                 }}
               >
-                删除
+                恢复
               </Button>
-            </Popconfirm>
+            )}
           </Space>
         ),
     },
@@ -350,13 +429,27 @@ export function AdminContacts() {
       <section className="admin-toolbar admin-sticky-toolbar p-5">
         <div>
           <p className="section-eyebrow">留言筛选</p>
-          <h3 className="admin-section-title mt-2 text-xl">留言筛选</h3>
-          <p className="admin-shell-copy mt-2 text-sm">按访客、联系方式和已读状态快速定位需要优先处理的留言。</p>
+          <h3 className="admin-section-title mt-2 text-xl">{deletedFilter === "deleted" ? "留言回收站" : "留言筛选"}</h3>
+          <p className="admin-shell-copy mt-2 text-sm">
+            {deletedFilter === "deleted" ? "这里显示已逻辑删除的留言，可按需恢复回正常列表。" : "按访客、联系方式和已读状态快速定位需要优先处理的留言。"}
+          </p>
         </div>
         <div className="mt-5">
           <p className="admin-filter-caption">筛选条件</p>
         </div>
         <div className="admin-quick-filters">
+          <Button type={deletedFilter === "active" ? "primary" : "default"} onClick={() => {
+            setDeletedFilter("active");
+            load(1, pageSize, keyword, status, "active").catch(() => undefined);
+          }}>
+            正常数据
+          </Button>
+          <Button type={deletedFilter === "deleted" ? "primary" : "default"} onClick={() => {
+            setDeletedFilter("deleted");
+            load(1, pageSize, keyword, status, "deleted").catch(() => undefined);
+          }}>
+            已删除
+          </Button>
           <Button type={status === "unread" ? "primary" : "default"} onClick={() => {
             setStatus("unread");
             load(1, pageSize, keyword, "unread").catch(() => undefined);
@@ -369,7 +462,7 @@ export function AdminContacts() {
           }}>
             只看已读
           </Button>
-          <Button type={!keyword.trim() && status === "all" ? "primary" : "default"} onClick={resetFilters}>
+          <Button type={!keyword.trim() && status === "all" && deletedFilter === "active" ? "primary" : "default"} onClick={resetFilters}>
             查看全部
           </Button>
         </div>
@@ -419,21 +512,29 @@ export function AdminContacts() {
               <span>可批量标记已读或删除，适合处理同一批已确认的访客留言。</span>
             </div>
             <Space wrap>
-              <Button type="primary" onClick={() => void handleMarkReadBatch()}>
-                批量标记已读
-              </Button>
-              <Popconfirm
-                title={`确认删除选中的 ${selectedContacts.length} 条留言？`}
-                description="删除后可通过操作日志恢复结构化数据。"
-                okText="确认删除"
-                cancelText="取消"
-                okButtonProps={{ danger: true }}
-                onConfirm={() => void handleDeleteBatch()}
-              >
-                <Button danger loading={deletingId === "__batch__"}>
-                  批量删除
+              {deletedFilter === "active" ? (
+                <>
+                  <Button type="primary" onClick={() => void handleMarkReadBatch()}>
+                    批量标记已读
+                  </Button>
+                  <Popconfirm
+                    title={`确认删除选中的 ${selectedContacts.length} 条留言？`}
+                    description="删除后可通过操作日志恢复结构化数据。"
+                    okText="确认删除"
+                    cancelText="取消"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={() => void handleDeleteBatch()}
+                  >
+                    <Button danger loading={deletingId === "__batch__"}>
+                      批量删除
+                    </Button>
+                  </Popconfirm>
+                </>
+              ) : (
+                <Button type="primary" loading={deletingId === "__batch__"} onClick={() => void handleRestoreBatch()}>
+                  批量恢复
                 </Button>
-              </Popconfirm>
+              )}
               <Button onClick={() => setSelectedRowKeys([])}>取消选择</Button>
             </Space>
           </div>
@@ -497,16 +598,24 @@ export function AdminContacts() {
         extra={
           activeContact ? (
             <Space wrap className="w-full justify-end sm:w-auto">
-              <Popconfirm title="确认删除该留言？" okText="删除" cancelText="取消" onConfirm={() => void handleDelete(activeContact.id)}>
-                <Button danger loading={deletingId === activeContact.id} block={!screens.sm}>
-                  删除留言
+              {deletedFilter === "active" ? (
+                <>
+                  <Popconfirm title="确认删除该留言？" okText="删除" cancelText="取消" onConfirm={() => void handleDelete(activeContact.id)}>
+                    <Button danger loading={deletingId === activeContact.id} block={!screens.sm}>
+                      删除留言
+                    </Button>
+                  </Popconfirm>
+                  {!activeContact.readAt ? (
+                    <Button type="primary" onClick={() => handleMarkRead(activeContact.id)} block={!screens.sm}>
+                      标记已读
+                    </Button>
+                  ) : null}
+                </>
+              ) : (
+                <Button type="primary" loading={deletingId === activeContact.id} onClick={() => void handleRestore(activeContact.id)} block={!screens.sm}>
+                  恢复留言
                 </Button>
-              </Popconfirm>
-              {!activeContact.readAt ? (
-                <Button type="primary" onClick={() => handleMarkRead(activeContact.id)} block={!screens.sm}>
-                  标记已读
-                </Button>
-              ) : null}
+              )}
             </Space>
           ) : null
         }

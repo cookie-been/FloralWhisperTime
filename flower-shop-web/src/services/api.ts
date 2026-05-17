@@ -429,7 +429,7 @@ export function importAdminConfig(file: File) {
 }
 
 export function getAdminContacts(
-  query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread" } = {},
+  query: { page?: number; limit?: number; keyword?: string; status?: "all" | "read" | "unread"; deleted?: "active" | "deleted" | "all" } = {},
   options: RequestOptions = {},
 ) {
   return request<PaginatedResult<ContactMessage>>(withQuery("/api/admin/contacts", query), options);
@@ -447,6 +447,14 @@ export function deleteAdminContact(id: string) {
   return withMutationGuard(`admin:contact:delete:${id}`, () =>
     request<void>(`/api/admin/contacts/${id}`, {
       method: "DELETE",
+    }),
+  );
+}
+
+export function restoreAdminContact(id: string) {
+  return withMutationGuard(`admin:contact:restore:${id}`, () =>
+    request<ContactMessage>(`/api/admin/contacts/${id}/restore`, {
+      method: "POST",
     }),
   );
 }
@@ -599,6 +607,42 @@ export function deleteFlower(id: string) {
   );
 }
 
+export function getAdminFlowers(
+  query: FlowerQuery & { deleted?: "active" | "deleted" | "all" } = {},
+  options: RequestOptions = {},
+) {
+  return request<PaginatedResult<Flower>>(withQuery("/api/admin/flowers", query), options);
+}
+
+export async function listAllAdminFlowers(
+  baseQuery: Omit<FlowerQuery, "page" | "limit"> & { deleted?: "active" | "deleted" | "all" } = {},
+  options: RequestOptions = {},
+) {
+  const pageSize = 200;
+  const firstPage = await getAdminFlowers({ ...baseQuery, page: 1, limit: pageSize }, options);
+  const totalPages = Math.max(1, Math.ceil(firstPage.total / pageSize));
+  const remainingPages = totalPages > 1
+    ? await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          getAdminFlowers({ ...baseQuery, page: index + 2, limit: pageSize }, options),
+        ),
+      )
+    : [];
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.list);
+}
+
+export function restoreFlower(id: string) {
+  return withMutationGuard(`admin:flower:restore:${id}`, () =>
+    request<Flower>(`/api/admin/flowers/${id}/restore`, {
+      method: "POST",
+    }).then((result) => {
+      invalidateCache("dashboard:data");
+      return result;
+    }),
+  );
+}
+
 export async function uploadFlowerImage(file: File) {
   const formData = new FormData();
   formData.append("file", file);
@@ -735,6 +779,13 @@ export function getAdminAboutTimeline(options: RequestOptions = {}) {
   }, options);
 }
 
+export function getAdminAboutTimelineByDeleted(
+  deleted: "active" | "deleted" | "all" = "active",
+  options: RequestOptions = {},
+) {
+  return request<AboutTimelineEntry[]>(withQuery("/api/admin/about-timeline", { deleted }), options);
+}
+
 export function createAdminAboutTimeline(entry: Omit<AboutTimelineEntry, "id"> & { id?: string }) {
   return withMutationGuard(`admin:about-timeline:create:${entry.id ?? entry.yearLabel}`, () =>
     request<AboutTimelineEntry>("/api/admin/about-timeline", {
@@ -770,11 +821,29 @@ export function deleteAdminAboutTimeline(id: string) {
   );
 }
 
+export function restoreAdminAboutTimeline(id: string) {
+  return withMutationGuard(`admin:about-timeline:restore:${id}`, () =>
+    request<AboutTimelineEntry>(`/api/admin/about-timeline/${id}/restore`, {
+      method: "POST",
+    }).then((result) => {
+      invalidateCache("admin:about-timeline", "public:about-timeline");
+      return result;
+    }),
+  );
+}
+
 export function getAdminTeamMembers(options: RequestOptions = {}) {
   return requestCached<TeamMember[]>("/api/admin/team", {
     key: "admin:team",
     ttlMs: 30_000,
   }, options);
+}
+
+export function getAdminTeamMembersByDeleted(
+  deleted: "active" | "deleted" | "all" = "active",
+  options: RequestOptions = {},
+) {
+  return request<TeamMember[]>(withQuery("/api/admin/team", { deleted }), options);
 }
 
 export function createAdminTeamMember(member: TeamMember) {
@@ -805,6 +874,17 @@ export function deleteAdminTeamMember(id: string) {
   return withMutationGuard(`admin:team:delete:${id}`, () =>
     request<void>(`/api/admin/team/${id}`, {
       method: "DELETE",
+    }).then((result) => {
+      invalidateCache("admin:team", "public:team");
+      return result;
+    }),
+  );
+}
+
+export function restoreAdminTeamMember(id: string) {
+  return withMutationGuard(`admin:team:restore:${id}`, () =>
+    request<TeamMember>(`/api/admin/team/${id}/restore`, {
+      method: "POST",
     }).then((result) => {
       invalidateCache("admin:team", "public:team");
       return result;

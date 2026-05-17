@@ -24,6 +24,7 @@ import com.floralwhisper.dto.OperationLogRestoreRequest;
 import com.floralwhisper.dto.SiteConfigResponse;
 import com.floralwhisper.dto.SystemStatusResponse;
 import com.floralwhisper.dto.TeamMemberRequest;
+import com.floralwhisper.dto.FlowerResponse;
 import com.floralwhisper.entity.Contact;
 import com.floralwhisper.entity.TeamMember;
 import com.floralwhisper.protection.HeavyOperationGuard;
@@ -31,6 +32,7 @@ import com.floralwhisper.service.OperationLogQueryService;
 import com.floralwhisper.service.OperationLogRecoveryService;
 import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.ContactService;
+import com.floralwhisper.service.FlowerService;
 import com.floralwhisper.service.SiteService;
 import com.floralwhisper.service.AdminOpsTaskService;
 import jakarta.validation.Valid;
@@ -62,6 +64,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AdminController {
   private final AuthService authService;
   private final ContactService contactService;
+  private final FlowerService flowerService;
   private final SiteService siteService;
   private final AdminOpsTaskService adminOpsTaskService;
   private final OperationLogQueryService operationLogQueryService;
@@ -71,6 +74,7 @@ public class AdminController {
   public AdminController(
       AuthService authService,
       ContactService contactService,
+      FlowerService flowerService,
       SiteService siteService,
       AdminOpsTaskService adminOpsTaskService,
       OperationLogQueryService operationLogQueryService,
@@ -78,6 +82,7 @@ public class AdminController {
       HeavyOperationGuard heavyOperationGuard) {
     this.authService = authService;
     this.contactService = contactService;
+    this.flowerService = flowerService;
     this.siteService = siteService;
     this.adminOpsTaskService = adminOpsTaskService;
     this.operationLogQueryService = operationLogQueryService;
@@ -196,8 +201,12 @@ public class AdminController {
       @RequestParam(required = false) Integer page,
       @RequestParam(required = false) Integer limit,
       @RequestParam(required = false) String keyword,
-      @RequestParam(required = false) String status) {
-    return contactService.listContacts(page, limit, keyword, status);
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String deleted) {
+    if (deleted == null || deleted.isBlank()) {
+      return contactService.listContacts(page, limit, keyword, status);
+    }
+    return contactService.listContacts(page, limit, keyword, status, deleted);
   }
 
   @PatchMapping("/contacts/{id}/read")
@@ -209,6 +218,28 @@ public class AdminController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteContact(@PathVariable String id) {
     contactService.delete(id);
+  }
+
+  @PostMapping("/contacts/{id}/restore")
+  public Contact restoreContact(@PathVariable String id) {
+    return contactService.restore(id);
+  }
+
+  @GetMapping("/flowers")
+  public PaginatedResult<FlowerResponse> adminFlowers(
+      @RequestParam(required = false) String categoryId,
+      @RequestParam(required = false) String tag,
+      @RequestParam(required = false) String keyword,
+      @RequestParam(required = false) String sortBy,
+      @RequestParam(required = false) Integer page,
+      @RequestParam(required = false) Integer limit,
+      @RequestParam(required = false) String deleted) {
+    return flowerService.adminList(categoryId, tag, keyword, sortBy, page, limit, deleted);
+  }
+
+  @PostMapping("/flowers/{id}/restore")
+  public FlowerResponse restoreFlower(@PathVariable String id) {
+    return flowerService.restore(id);
   }
 
   @GetMapping("/operation-logs")
@@ -265,8 +296,11 @@ public class AdminController {
   }
 
   @GetMapping("/about-timeline")
-  public List<AboutTimelineEntryResponse> aboutTimeline() {
-    return siteService.getAboutTimeline();
+  public List<AboutTimelineEntryResponse> aboutTimeline(@RequestParam(required = false) String deleted) {
+    if (deleted == null || deleted.isBlank()) {
+      return siteService.getAboutTimeline();
+    }
+    return siteService.getAdminAboutTimeline(deleted);
   }
 
   @PostMapping("/about-timeline")
@@ -286,9 +320,17 @@ public class AdminController {
     siteService.deleteAboutTimelineEntry(id);
   }
 
+  @PostMapping("/about-timeline/{id}/restore")
+  public AboutTimelineEntryResponse restoreTimelineEntry(@PathVariable String id) {
+    return siteService.restoreAboutTimelineEntry(id);
+  }
+
   @GetMapping("/team")
-  public List<TeamMember> teamMembers() {
-    return siteService.getAdminTeamMembers();
+  public List<TeamMember> teamMembers(@RequestParam(required = false) String deleted) {
+    if (deleted == null || deleted.isBlank()) {
+      return siteService.getAdminTeamMembers();
+    }
+    return siteService.getAdminTeamMembers(deleted);
   }
 
   @PostMapping("/team")
@@ -306,6 +348,11 @@ public class AdminController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void deleteTeamMember(@PathVariable String id) {
     siteService.deleteTeamMember(id);
+  }
+
+  @PostMapping("/team/{id}/restore")
+  public TeamMember restoreTeamMember(@PathVariable String id) {
+    return siteService.restoreTeamMember(id);
   }
 
   private String buildOperationLogCsv(List<OperationLogResponse> logs) {

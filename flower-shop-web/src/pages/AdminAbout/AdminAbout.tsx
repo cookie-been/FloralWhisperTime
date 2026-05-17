@@ -25,9 +25,11 @@ import {
   deleteAdminAboutTimeline,
   deleteAdminTeamMember,
   getAdminAboutPage,
-  getAdminAboutTimeline,
-  getAdminTeamMembers,
+  getAdminAboutTimelineByDeleted,
+  getAdminTeamMembersByDeleted,
   isAbortError,
+  restoreAdminAboutTimeline,
+  restoreAdminTeamMember,
   updateAdminAboutPage,
   updateAdminAboutTimeline,
   updateAdminTeamMember,
@@ -86,6 +88,8 @@ export function AdminAbout({
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [timeline, setTimeline] = useState<AboutTimelineEntry[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [timelineDeletedFilter, setTimelineDeletedFilter] = useState<"active" | "deleted">("active");
+  const [memberDeletedFilter, setMemberDeletedFilter] = useState<"active" | "deleted">("active");
   const [timelineDrawerOpen, setTimelineDrawerOpen] = useState(false);
   const [memberDrawerOpen, setMemberDrawerOpen] = useState(false);
   const [editingTimeline, setEditingTimeline] = useState<AboutTimelineEntry | null>(null);
@@ -128,8 +132,8 @@ export function AdminAbout({
     try {
       const [aboutPage, aboutTimeline, adminTeamMembers] = await Promise.all([
         getAdminAboutPage({ signal: controller.signal }),
-        getAdminAboutTimeline({ signal: controller.signal }),
-        getAdminTeamMembers({ signal: controller.signal }),
+        getAdminAboutTimelineByDeleted(timelineDeletedFilter, { signal: controller.signal }),
+        getAdminTeamMembersByDeleted(memberDeletedFilter, { signal: controller.signal }),
       ]);
       aboutForm.setFieldsValue(aboutPage);
       setTimeline(aboutTimeline);
@@ -171,7 +175,7 @@ export function AdminAbout({
     return () => {
       requestControllerRef.current?.abort();
     };
-  }, []);
+  }, [memberDeletedFilter, timelineDeletedFilter]);
 
   useEffect(() => {
     if (!embedded) return;
@@ -276,6 +280,16 @@ export function AdminAbout({
     }
   };
 
+  const restoreTimeline = async (id: string) => {
+    try {
+      await restoreAdminAboutTimeline(id);
+      message.success("时间轴条目已恢复");
+      await load();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "恢复失败");
+    }
+  };
+
   const openCreateMember = () => {
     setEditingMember(null);
     memberForm.setFieldsValue({
@@ -336,6 +350,16 @@ export function AdminAbout({
     }
   };
 
+  const restoreMember = async (id: string) => {
+    try {
+      await restoreAdminTeamMember(id);
+      message.success("团队成员已恢复");
+      await load();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : "恢复失败");
+    }
+  };
+
   const timelineColumns: ColumnsType<AboutTimelineEntry> = [
     {
       title: "年份",
@@ -359,14 +383,22 @@ export function AdminAbout({
       width: 180,
       render: (_value, record) => (
         <Space>
-          <Button className="admin-action-button" size="small" onClick={() => openEditTimeline(record)}>
-            编辑
-          </Button>
-          <Popconfirm title="确认删除这条时间轴记录？" okText="删除" cancelText="取消" onConfirm={() => void removeTimeline(record.id)}>
-            <Button className="admin-action-button" size="small" danger>
-              删除
+          {timelineDeletedFilter === "active" ? (
+            <>
+              <Button className="admin-action-button" size="small" onClick={() => openEditTimeline(record)}>
+                编辑
+              </Button>
+              <Popconfirm title="确认删除这条时间轴记录？" okText="删除" cancelText="取消" onConfirm={() => void removeTimeline(record.id)}>
+                <Button className="admin-action-button" size="small" danger>
+                  删除
+                </Button>
+              </Popconfirm>
+            </>
+          ) : (
+            <Button className="admin-action-button" size="small" type="primary" onClick={() => void restoreTimeline(record.id)}>
+              恢复
             </Button>
-          </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -406,14 +438,22 @@ export function AdminAbout({
       width: 190,
       render: (_value, record) => (
         <Space>
-          <Button className="admin-action-button" size="small" onClick={() => openEditMember(record)}>
-            编辑
-          </Button>
-          <Popconfirm title="确认删除这位团队成员？" okText="删除" cancelText="取消" onConfirm={() => void removeMember(record.id)}>
-            <Button className="admin-action-button" size="small" danger>
-              删除
+          {memberDeletedFilter === "active" ? (
+            <>
+              <Button className="admin-action-button" size="small" onClick={() => openEditMember(record)}>
+                编辑
+              </Button>
+              <Popconfirm title="确认删除这位团队成员？" okText="删除" cancelText="取消" onConfirm={() => void removeMember(record.id)}>
+                <Button className="admin-action-button" size="small" danger>
+                  删除
+                </Button>
+              </Popconfirm>
+            </>
+          ) : (
+            <Button className="admin-action-button" size="small" type="primary" onClick={() => void restoreMember(record.id)}>
+              恢复
             </Button>
-          </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -526,11 +566,21 @@ export function AdminAbout({
           <div className="flex items-center justify-between border-b border-black/6 px-5 py-4">
             <div>
               <p className="section-eyebrow">发展历程</p>
-              <h3 className="admin-section-title mt-2 text-xl">发展时间轴</h3>
+              <h3 className="admin-section-title mt-2 text-xl">{timelineDeletedFilter === "deleted" ? "时间轴回收站" : "发展时间轴"}</h3>
             </div>
-            <Button type="primary" icon={<Plus size={16} />} onClick={openCreateTimeline}>
-              新增节点
-            </Button>
+            <Space wrap>
+              <Button type={timelineDeletedFilter === "active" ? "primary" : "default"} onClick={() => setTimelineDeletedFilter("active")}>
+                正常数据
+              </Button>
+              <Button type={timelineDeletedFilter === "deleted" ? "primary" : "default"} onClick={() => setTimelineDeletedFilter("deleted")}>
+                已删除
+              </Button>
+              {timelineDeletedFilter === "active" ? (
+                <Button type="primary" icon={<Plus size={16} />} onClick={openCreateTimeline}>
+                  新增节点
+                </Button>
+              ) : null}
+            </Space>
           </div>
           <Table<AboutTimelineEntry>
             rowKey="id"
@@ -542,8 +592,8 @@ export function AdminAbout({
               emptyText: (
                 <div className="admin-empty-state min-h-[220px]">
                   <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  <h4>暂无时间轴条目</h4>
-                  <p>新增 3 到 6 条关键节点后，前台 About 页面会自动展示完整时间线。</p>
+                  <h4>{timelineDeletedFilter === "deleted" ? "回收站中暂无时间轴条目" : "暂无时间轴条目"}</h4>
+                  <p>{timelineDeletedFilter === "deleted" ? "已删除的时间轴节点会显示在这里，可按需恢复。" : "新增 3 到 6 条关键节点后，前台 About 页面会自动展示完整时间线。"}</p>
                 </div>
               ),
             }}
@@ -554,11 +604,21 @@ export function AdminAbout({
           <div className="flex items-center justify-between border-b border-black/6 px-5 py-4">
             <div>
               <p className="section-eyebrow">团队信息</p>
-              <h3 className="admin-section-title mt-2 text-xl">团队成员</h3>
+              <h3 className="admin-section-title mt-2 text-xl">{memberDeletedFilter === "deleted" ? "团队成员回收站" : "团队成员"}</h3>
             </div>
-            <Button type="primary" icon={<Plus size={16} />} onClick={openCreateMember}>
-              新增成员
-            </Button>
+            <Space wrap>
+              <Button type={memberDeletedFilter === "active" ? "primary" : "default"} onClick={() => setMemberDeletedFilter("active")}>
+                正常数据
+              </Button>
+              <Button type={memberDeletedFilter === "deleted" ? "primary" : "default"} onClick={() => setMemberDeletedFilter("deleted")}>
+                已删除
+              </Button>
+              {memberDeletedFilter === "active" ? (
+                <Button type="primary" icon={<Plus size={16} />} onClick={openCreateMember}>
+                  新增成员
+                </Button>
+              ) : null}
+            </Space>
           </div>
           <Table<TeamMember>
             rowKey="id"
@@ -570,8 +630,8 @@ export function AdminAbout({
               emptyText: (
                 <div className="admin-empty-state min-h-[220px]">
                   <Empty description={null} image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  <h4>暂无团队成员</h4>
-                  <p>建议至少配置 2 到 4 位核心成员，保持 About 页面信息完整。</p>
+                  <h4>{memberDeletedFilter === "deleted" ? "回收站中暂无团队成员" : "暂无团队成员"}</h4>
+                  <p>{memberDeletedFilter === "deleted" ? "已删除的团队成员会显示在这里，可按需恢复。" : "建议至少配置 2 到 4 位核心成员，保持 About 页面信息完整。"}</p>
                 </div>
               ),
             }}

@@ -34,6 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class FlowerService {
   private static final DateTimeFormatter API_CREATED_AT_FORMATTER = DateTimeFormatter.ISO_INSTANT;
+  private static final String ACTIVE_FILTER = "active";
+  private static final String DELETED_FILTER = "deleted";
+  private static final String ALL_FILTER = "all";
 
   private final FlowerMapper flowerMapper;
   private final FlowerImageMapper flowerImageMapper;
@@ -55,11 +58,36 @@ public class FlowerService {
   }
 
   public PaginatedResult<FlowerResponse> list(String categoryId, String tag, String keyword, String sortBy, Integer page, Integer limit) {
+    return listInternal(categoryId, tag, keyword, sortBy, page, limit, ACTIVE_FILTER);
+  }
+
+  public PaginatedResult<FlowerResponse> adminList(
+      String categoryId,
+      String tag,
+      String keyword,
+      String sortBy,
+      Integer page,
+      Integer limit,
+      String deleted) {
+    return listInternal(categoryId, tag, keyword, sortBy, page, limit, deleted);
+  }
+
+  private PaginatedResult<FlowerResponse> listInternal(
+      String categoryId,
+      String tag,
+      String keyword,
+      String sortBy,
+      Integer page,
+      Integer limit,
+      String deleted) {
     int currentPage = page == null || page < 1 ? 1 : page;
     int pageSize = limit == null || limit < 1 ? 20 : limit;
     String normalizedKeyword = keyword == null ? "" : keyword.trim().toLowerCase();
+    String deletedFilter = normalizeDeletedFilter(deleted);
+    LambdaQueryWrapper<Flower> query = new LambdaQueryWrapper<>();
+    applyDeletedFilter(query, deletedFilter);
 
-    List<FlowerResponse> filtered = flowerMapper.selectList(null).stream()
+    List<FlowerResponse> filtered = flowerMapper.selectList(query).stream()
         .map(this::toResponse)
         .filter(flower -> categoryId == null || categoryId.isBlank() || "all".equals(categoryId) || categoryId.equals(flower.getCategoryId()))
         .filter(flower -> tag == null || tag.isBlank() || flower.getTags().contains(tag))
@@ -197,6 +225,18 @@ public class FlowerService {
     }
   }
 
+  @Transactional
+  public FlowerResponse restore(String id) {
+    Flower current = flowerMapper.selectByIdIncludingDeleted(id);
+    if (current == null) {
+      throw new ApiException(HttpStatus.NOT_FOUND, "作品不存在");
+    }
+    if (Integer.valueOf(1).equals(current.getDeleted())) {
+      flowerMapper.restoreDeletedById(id);
+    }
+    return getById(id);
+  }
+
   private Flower toEntity(FlowerRequest request, String id) {
     Flower flower = new Flower();
     flower.setId(id);
@@ -208,6 +248,7 @@ public class FlowerService {
     flower.setFeatured(Boolean.TRUE.equals(request.getFeatured()));
     flower.setSort(request.getSort() == null ? 0 : request.getSort());
     flower.setCreatedAt(parseDate(request.getCreatedAt()));
+    flower.setDeleted(0);
     return flower;
   }
 
@@ -237,10 +278,31 @@ public class FlowerService {
     response.setCreatedAt(flower.getCreatedAt() == null
         ? API_CREATED_AT_FORMATTER.format(Instant.now())
         : API_CREATED_AT_FORMATTER.format(flower.getCreatedAt().toInstant(ZoneOffset.UTC)));
+    response.setDeleted(Integer.valueOf(1).equals(flower.getDeleted()));
     response.setImages(selectImages(flower.getId()));
     response.setMaterials(selectMaterials(flower.getId()));
     response.setTags(selectTags(flower.getId()));
     return response;
+  }
+
+  private String normalizeDeletedFilter(String deleted) {
+    if (deleted == null || deleted.isBlank()) {
+      return ACTIVE_FILTER;
+    }
+    String normalized = deleted.trim().toLowerCase();
+    return switch (normalized) {
+      case ACTIVE_FILTER, DELETED_FILTER, ALL_FILTER -> normalized;
+      default -> ACTIVE_FILTER;
+    };
+  }
+
+  private void applyDeletedFilter(LambdaQueryWrapper<Flower> query, String deletedFilter) {
+    switch (deletedFilter) {
+      case DELETED_FILTER -> query.eq(Flower::getDeleted, 1);
+      case ALL_FILTER -> {
+      }
+      default -> query.eq(Flower::getDeleted, 0);
+    }
   }
 
   private void replaceChildren(String flowerId, FlowerRequest request) {

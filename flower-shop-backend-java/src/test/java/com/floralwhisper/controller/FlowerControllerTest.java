@@ -12,11 +12,14 @@ import com.floralwhisper.audit.AuditLogService;
 import com.floralwhisper.common.ApiException;
 import com.floralwhisper.common.GlobalExceptionHandler;
 import com.floralwhisper.config.AppProperties;
+import com.floralwhisper.config.ProtectionWebMvcConfigurer;
 import com.floralwhisper.config.SecurityConfig;
 import com.floralwhisper.dto.FlowerResponse;
 import com.floralwhisper.dto.PaginatedResult;
 import com.floralwhisper.mapper.AboutPageMapper;
 import com.floralwhisper.mapper.AboutTimelineEntryMapper;
+import com.floralwhisper.mapper.AdminOpsTaskMapper;
+import com.floralwhisper.mapper.AdminSecurityStateMapper;
 import com.floralwhisper.mapper.AiSettingsMapper;
 import com.floralwhisper.mapper.BrandStoryImageMapper;
 import com.floralwhisper.mapper.BrandStoryMapper;
@@ -30,11 +33,19 @@ import com.floralwhisper.mapper.ShopHourMapper;
 import com.floralwhisper.mapper.ShopInfoMapper;
 import com.floralwhisper.mapper.SiteConfigMapper;
 import com.floralwhisper.mapper.TeamMemberMapper;
+import com.floralwhisper.protection.ClientIdentityResolver;
+import com.floralwhisper.protection.ProtectionMetrics;
+import com.floralwhisper.protection.RateLimitInterceptor;
+import com.floralwhisper.protection.RateLimitService;
+import com.floralwhisper.protection.RouteProtectionClassifier;
+import com.floralwhisper.security.AdminPasswordChangeEnforcementFilter;
 import com.floralwhisper.security.JwtAuthenticationFilter;
 import com.floralwhisper.security.JwtService;
+import com.floralwhisper.service.AuthService;
 import com.floralwhisper.service.FlowerService;
 import java.math.BigDecimal;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -48,13 +59,29 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(FlowerController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class, GlobalExceptionHandler.class, FlowerControllerTest.TestConfig.class})
+@Import({
+    SecurityConfig.class,
+    JwtAuthenticationFilter.class,
+    AdminPasswordChangeEnforcementFilter.class,
+    JwtService.class,
+    GlobalExceptionHandler.class,
+    ProtectionWebMvcConfigurer.class,
+    RouteProtectionClassifier.class,
+    ClientIdentityResolver.class,
+    ProtectionMetrics.class,
+    RateLimitService.class,
+    RateLimitInterceptor.class,
+    FlowerControllerTest.TestConfig.class
+})
 @TestPropertySource(properties = {
     "app.admin.username=admin",
     "app.admin.password=Floral@2026",
     "app.jwt.secret=12345678901234567890123456789012",
     "app.jwt.expires-in-seconds=43200",
-    "app.jwt.issuer=flower-shop-backend-java"
+    "app.jwt.issuer=flower-shop-backend-java",
+    "app.protection.public-read.capacity=10",
+    "app.protection.public-read.refill-seconds=60",
+    "app.protection.public-read.enabled=true"
 })
 class FlowerControllerTest {
   @Autowired
@@ -66,9 +93,15 @@ class FlowerControllerTest {
   @MockBean
   private FlowerService flowerService;
   @MockBean
+  private AuthService authService;
+  @MockBean
   private AuditLogService auditLogService;
   @MockBean
+  private RateLimitInterceptor rateLimitInterceptor;
+  @MockBean
   private com.floralwhisper.mapper.OperationLogMapper operationLogMapper;
+  @MockBean private AdminOpsTaskMapper adminOpsTaskMapper;
+  @MockBean private AdminSecurityStateMapper adminSecurityStateMapper;
   @MockBean private AboutPageMapper aboutPageMapper;
   @MockBean private AboutTimelineEntryMapper aboutTimelineEntryMapper;
   @MockBean private AiSettingsMapper aiSettingsMapper;
@@ -84,6 +117,12 @@ class FlowerControllerTest {
   @MockBean private ShopInfoMapper shopInfoMapper;
   @MockBean private SiteConfigMapper siteConfigMapper;
   @MockBean private TeamMemberMapper teamMemberMapper;
+
+  @BeforeEach
+  void setUpInterceptors() throws Exception {
+    when(rateLimitInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+    when(authService.isPasswordChangeRequired(any())).thenReturn(false);
+  }
 
   @Test
   void listPreservesArrayFieldsAndCreatedAtShape() throws Exception {

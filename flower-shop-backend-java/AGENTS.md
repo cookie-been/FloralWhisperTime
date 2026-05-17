@@ -45,6 +45,7 @@ mvn test
 
 - 保持响应错误格式 `{ "message": "..." }`，前端依赖该格式展示错误。
 - 管理端继续使用 `Authorization: Bearer <token>`。
+- `Dockerfile.runtime` 必须在容器内完成后端打包，不能依赖宿主机已有的 `target/*.jar`，否则容易把旧包部署进容器。
 - 管理员密码新写入使用 `BCrypt`；历史旧摘要需通过改密逐步收敛。
 - AI `apiKey` 在数据库中按服务端密钥加密存储，对外接口只返回是否已配置和掩码值。
 - 图片上传接口返回 `{ "url": "..." }`，本地默认是绝对 URL；`PUBLIC_BASE_URL` 为空时可返回相对 `/uploads/...`。

@@ -97,13 +97,12 @@ check_git_worktree() {
 }
 
 check_backend_artifact() {
-  if [[ ! -f "$REPO_ROOT/flower-shop-backend-java/target/flower-shop-backend-java-1.0.0.jar" ]]; then
-    log "Backend jar is not present yet. This is acceptable; build-release.sh will package it."
-    return
-  fi
+  [[ -f "$REPO_ROOT/flower-shop-backend-java/Dockerfile.runtime" ]] \
+    || fail "Missing backend Docker runtime file"
 
-  [[ -s "$REPO_ROOT/flower-shop-backend-java/target/flower-shop-backend-java-1.0.0.jar" ]] \
-    || fail "Backend jar exists but is empty"
+  if grep -q "COPY flower-shop-backend-java/target/flower-shop-backend-java-1.0.0.jar" "$REPO_ROOT/flower-shop-backend-java/Dockerfile.runtime"; then
+    fail "Backend Dockerfile.runtime still depends on local target jar; this can ship stale code"
+  fi
 }
 
 print_summary() {

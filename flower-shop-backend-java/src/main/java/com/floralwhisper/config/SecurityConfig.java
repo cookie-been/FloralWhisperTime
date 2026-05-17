@@ -48,11 +48,13 @@ public class SecurityConfig {
             }))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers(HttpMethod.POST, "/api/admin/login").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/flowers").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PUT, "/api/flowers/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.DELETE, "/api/flowers/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.POST, "/api/uploads").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PUT, "/api/site-config").hasRole("ADMIN")
+            .requestMatchers("/api/admin/**").hasRole("ADMIN")
             .requestMatchers(HttpMethod.PATCH, "/api/admin/contacts/*/read").hasRole("ADMIN")
             .requestMatchers(HttpMethod.DELETE, "/api/admin/contacts/*").hasRole("ADMIN")
             .requestMatchers("/api/admin/operation-logs/**").hasRole("ADMIN")
